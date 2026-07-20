@@ -93,20 +93,20 @@
         border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
   @keyframes sp{to{transform:rotate(360deg)}}
   /* ===== Animação de caça no carregamento ===== */
-  .hunt{position:relative;height:200px;max-width:520px;margin:14px auto 0;overflow:hidden}
-  .hunt-boar{position:absolute;top:52%;left:50%;width:118px;transform:translate(-50%,-50%);animation:huntBoar 3s ease-in-out infinite;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}
-  .hunt-mira{position:absolute;top:52%;left:50%;width:80px;height:80px;transform:translate(-50%,-50%);animation:huntMira 3s ease-in-out infinite}
-  .hunt-flash{position:absolute;top:52%;left:50%;width:130px;height:130px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,#fff 0%,#ffb347 38%,rgba(255,140,0,0) 70%);animation:huntFlash 3s ease-in-out infinite}
+  .hunt{position:relative;height:300px;max-width:620px;margin:24px auto 0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .hunt-boar{position:absolute;top:50%;left:50%;width:210px;transform:translate(-50%,-50%);animation:huntBoar 3s ease-in-out infinite;filter:drop-shadow(0 5px 5px rgba(0,0,0,.28))}
+  .hunt-mira{position:absolute;top:50%;left:50%;width:150px;height:150px;transform:translate(-50%,-50%);animation:huntMira 3s ease-in-out infinite}
+  .hunt-flash{position:absolute;top:50%;left:50%;width:240px;height:240px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,#fff 0%,#ffb347 38%,rgba(255,140,0,0) 70%);animation:huntFlash 3s ease-in-out infinite}
   @keyframes huntBoar{
-    0%{transform:translate(-50%,-50%) translateX(330px);opacity:1}
+    0%{transform:translate(-50%,-50%) translateX(440px);opacity:1}
     30%{transform:translate(-50%,-50%) translateX(0);opacity:1}
     60%{transform:translate(-50%,-50%) translateX(0);opacity:1}
-    66%{transform:translate(-50%,-50%) translateX(14px) rotate(6deg);opacity:.92}
-    74%{transform:translate(-50%,-50%) translateX(36px) scale(.6) rotate(16deg);opacity:0}
-    100%{transform:translate(-50%,-50%) translateX(36px) scale(.6);opacity:0}
+    66%{transform:translate(-50%,-50%) translateX(18px) rotate(6deg);opacity:.92}
+    74%{transform:translate(-50%,-50%) translateX(48px) scale(.6) rotate(16deg);opacity:0}
+    100%{transform:translate(-50%,-50%) translateX(48px) scale(.6);opacity:0}
   }
   @keyframes huntMira{
-    0%{transform:translate(-50%,-50%) translateX(-340px) scale(1.5);opacity:0}
+    0%{transform:translate(-50%,-50%) translateX(-450px) scale(1.5);opacity:0}
     18%{opacity:.9}
     56%{transform:translate(-50%,-50%) translateX(0) scale(1);opacity:.95}
     63%{transform:translate(-50%,-50%) translateX(0) scale(.82);opacity:1}
