@@ -109,6 +109,10 @@
   .kpi b{display:block;font-size:22px;color:var(--verde)} .kpi span{font-size:11px;color:var(--txt2)}
   .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--txt2);margin-top:8px}
   .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
+  .filtros{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--linha);color:var(--txt2);padding:6px 10px;border-radius:20px;font-size:12px;cursor:pointer;user-select:none}
+  .chip.on{border-color:var(--verde);background:#eef3ea;color:var(--verde);font-weight:600}
+  .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
 </style>
 </head>
 <body>
@@ -139,7 +143,8 @@ var VIEWS = {};
 var EDIT = null;         // item em edição (null = novo)
 var CACHE = {};          // últimas listas por entidade (p/ editar)
 var FORMVIEW = { ceva:'cevaForm', alimento:'alimentoForm', nivel:'nivelForm', transporte:'transpForm',
-                 canil:'canilForm', cao:'caoForm', saude:'saudeForm', armadilha:'armForm', abate:'abateForm' };
+                 canil:'canilForm', cao:'caoForm', saude:'saudeForm', armadilha:'armForm', abate:'abateForm',
+                 saudeTransp:'transpSaudeForm' };
 
 var AUTH = { token:'', manejador:null };
 try { AUTH.token = localStorage.getItem('mj_token') || ''; } catch(e) {}
@@ -179,6 +184,7 @@ function setConn(ok){ var d=document.getElementById('connDot'); if(!d)return; d.
 function nav(view, push){ if(push!==false) STATE.stack.push(view); render(); }
 function voltar(){ STATE.stack.pop(); render(); }
 function render(){
+  if(CURRENTMAP){ try{ CURRENTMAP.remove(); }catch(e){} CURRENTMAP=null; }
   var padrao = AUTH.token ? 'modulos' : 'login';
   var view = STATE.stack[STATE.stack.length-1] || padrao;
   var noLogin = (view==='login' || view==='registrar');
@@ -320,8 +326,8 @@ VIEWS.manejo=function(){ setTitulo('Manejo'); setCrumb('Módulos','Manejo');
       moduloCard('🐕','Caça com cães','Canil, cães e saúde',true,"nav('caes')")+
       moduloCard('🪤','Armadilha (captura)','Tipos e localização',true,"nav('armadilha')")+
       moduloCard('🎯','Abates','Registrar e listar abates',true,"nav('abates')")+
-      moduloCard('🗺️','Mapa de cevas','Todas as cevas no mapa',true,"nav('mapaCevas')")+
-      moduloCard('📍','Mapa de abates','Abates + dashboard',true,"nav('mapaAbates')")); };
+      moduloCard('📅','Agenda de saúde','Cães e cavalos: vacinas e retornos',true,"nav('agenda')")+
+      moduloCard('🗺️','Mapa','Cevas, abates, armadilhas e canis · com filtro',true,"nav('mapaGeral')")); };
 
 /* ============================================================
    ESPERA / CEVAS
@@ -396,8 +402,33 @@ VIEWS.espreita=function(){ setTitulo('Caça ativa / espreita'); setCrumb('Manejo
   server('apiListarTransportes').then(function(l){ CACHE.transporte=l;
     var html=l.length? l.map(function(t){ return '<div class="card"><div class="row">'+
       (t.fotoUrl?'<img class="thumb" src="'+esc(t.fotoUrl)+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
-      '<div class="grow"><h3>'+esc(t.tipo)+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🥾</div>Nenhum transporte cadastrado.</div>';
+      '<div class="grow click" onclick="abrirTransporte(\''+t.id+'\')"><h3>'+esc(t.tipo)+(isAnimalTransp(t.tipo)?' <span class="pill">🐎 agenda</span>':'')+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🥾</div>Nenhum transporte cadastrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'transpForm\')">＋ Novo transporte</button>'); }); };
+function isAnimalTransp(t){ return t==='Cavalo'; }
+window.abrirTransporte=function(id){ STATE.transporte=(CACHE.transporte||[]).filter(function(t){return t.id===id;})[0]; nav('transpDetail'); };
+var TIPOS_SAUDE_CAVALO=['Vacina','Vermífugo','Ferrageamento','Casqueamento','Consulta','Exame','Odontológico','Medicação','Outro'];
+VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb('Espreita',esc(t.tipo));
+  var ficha='<div class="card"><div class="row">'+(t.fotoUrl?'<img class="thumb" src="'+esc(t.fotoUrl)+'" style="width:80px;height:80px">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
+    '<div class="grow"><h3>'+esc(t.tipo)+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div></div></div>';
+  if(!isAnimalTransp(t.tipo)){ app(ficha+'<div class="empty">Este transporte não é um animal, então não tem agenda de saúde.</div>'); return; }
+  app(ficha+'<h3 style="margin:6px 4px">Saúde & Agenda</h3><div id="tsaudeList"><div class="loading"><div class="spin"></div></div></div>');
+  server('apiListarSaudeTransp',t.id).then(function(l){ CACHE.saudeTransp=l;
+    var html=l.length? l.map(function(s){ var cls=s.tipo==='Vacina'?'ok':(s.tipo==='Vermífugo'?'':'gray');
+      var al=s.proximaData?'<br><span class="pill warn">Próxima: '+fmtData(s.proximaData)+'</span>':'';
+      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px"><span class="pill '+cls+'">'+esc(s.tipo)+'</span> '+esc(s.descricao||'')+'</h3><div class="meta">'+fmtData(s.data)+al+(s.obs?'<br>'+esc(s.obs):'')+'</div></div>'+acoes('saudeTransp',s.id)+'</div></div>'; }).join('') : '<div class="empty">Nenhum registro de saúde ainda.</div>';
+    document.getElementById('tsaudeList').innerHTML=html; fab('<button class="btn" onclick="novo(\'transpSaudeForm\')">＋ Registrar saúde/agenda</button>'); }); };
+VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('Espreita',esc(STATE.transporte.tipo),'Saúde');
+  app('<div class="card"><label>Tipo *</label><select id="ts_tipo">'+TIPOS_SAUDE_CAVALO.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<label>Descrição</label><input id="ts_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: Influenza equina, casqueamento…">'+
+    '<div class="two"><div><label>Data</label><input id="ts_data" type="date"></div><div><label>Próxima</label><input id="ts_prox" type="date"></div></div>'+
+    '<label>Observações</label><textarea id="ts_obs">'+esc(pv('obs'))+'</textarea>'+
+    '<button class="btn" onclick="salvarSaudeTransp(this)">Salvar</button></div>');
+  document.getElementById('ts_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):new Date().toISOString().substring(0,10);
+  if(ed){ setVal('ts_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('ts_prox',String(EDIT.proximaData).substring(0,10)); } };
+window.salvarSaudeTransp=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
+  var d={transporteId:STATE.transporte.id,tipo:val('ts_tipo'),descricao:val('ts_desc'),data:val('ts_data'),proximaData:val('ts_prox'),obs:val('ts_obs')};
+  var p=EDIT? server('apiEditar','saudeTransp',EDIT.id,d) : server('apiCriarSaudeTransp',d);
+  p.then(function(){ EDIT=null; toast('Salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar'; }); };
 VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'Novo transporte'); setCrumb('Espreita',ed?'Editar':'Novo');
   app('<div class="card"><label>Tipo *</label><select id="t_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Identificação / apelido</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="Ex: Cavalo Trovão / Placa">'+
@@ -570,61 +601,85 @@ window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:ti
   else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
-   MAPAS
+   AGENDA DE SAÚDE (cães + cavalos)
    ============================================================ */
-function initMapa(divId, pontos){ // pontos: [{lat,lng,...}] só p/ ajustar bounds
-  var map=L.map(divId,{zoomControl:true}).setView([-15.78,-47.93],4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-  setTimeout(function(){ map.invalidateSize(); if(pontos && pontos.length){ map.fitBounds(pontos.map(function(p){return [p.lat,p.lng];}),{padding:[40,40],maxZoom:15}); } },80);
-  return map;
+function diaHoje(){ return new Date().toISOString().substring(0,10); }
+function statusProx(prox){ if(!prox) return ''; var p=String(prox).substring(0,10), h=diaHoje(); return p<h?'atrasada':(p===h?'hoje':'proxima'); }
+VIEWS.agenda=function(){ setTitulo('Agenda de saúde'); setCrumb('Manejo','Agenda'); loadingBox('Carregando agenda…');
+  server('apiAgenda').then(function(itens){
+    var h=diaHoje();
+    var comProx=itens.filter(function(i){return i.proximaData;});
+    comProx.sort(function(a,b){return String(a.proximaData).localeCompare(String(b.proximaData));});
+    var atrasadas=comProx.filter(function(i){return String(i.proximaData).substring(0,10)<h;});
+    var proximas=comProx.filter(function(i){return String(i.proximaData).substring(0,10)>=h;});
+    var em30=proximas.filter(function(i){ return (new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=30; }).length;
+    var semData=itens.filter(function(i){return !i.proximaData;}).sort(function(a,b){return String(b.data).localeCompare(String(a.data));}).slice(0,20);
+    function item(i){ var ent=i.escopo==='cao'?'saude':'saudeTransp'; var ic=i.escopo==='cao'?'🐕':'🐎';
+      var st=statusProx(i.proximaData); var pill=st==='atrasada'?'<span class="pill dan">Atrasada</span>':(st==='hoje'?'<span class="pill warn">Hoje</span>':(st==='proxima'?'<span class="pill ok">Agendada</span>':''));
+      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(i.animalNome||'')+' — <span class="pill gray">'+esc(i.tipo)+'</span> '+esc(i.descricao||'')+'</h3>'+
+        '<div class="meta">'+(i.proximaData?'Próxima: <b>'+fmtData(i.proximaData)+'</b> '+pill:'Feito em '+fmtData(i.data))+(i.obs?'<br>'+esc(i.obs):'')+'</div></div>'+
+        '<button class="ib" onclick="delItem(\''+ent+'\',\''+i.id+'\')" title="Excluir">🗑️</button></div></div>'; }
+    if(!itens.length){ app('<div class="empty"><div class="big">📅</div>Nada na agenda ainda.<br>Registre vacinas e retornos nos cães (na ficha de cada cão) e nos cavalos (no detalhe do transporte).</div>'); return; }
+    var html='<div class="dash"><div class="kpi"><b style="color:var(--danger)">'+atrasadas.length+'</b><span>atrasadas</span></div><div class="kpi"><b>'+em30+'</b><span>próx. 30 dias</span></div><div class="kpi"><b>'+itens.length+'</b><span>registros</span></div></div>';
+    if(atrasadas.length) html+='<h3 style="margin:8px 4px;color:var(--danger)">⚠️ Atrasadas</h3>'+atrasadas.map(item).join('');
+    if(proximas.length) html+='<h3 style="margin:8px 4px">📌 Próximas</h3>'+proximas.map(item).join('');
+    if(semData.length) html+='<h3 style="margin:8px 4px;color:var(--txt2)">Histórico recente</h3>'+semData.map(item).join('');
+    app(html);
+  }); };
+
+/* ============================================================
+   MAPA (todas as modalidades, com filtro)
+   ============================================================ */
+var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
+var MAPFILTER={ ceva:true, armadilha:true, canil:true, 'Espera':true, 'Cães':true, 'Espreita':true, 'Armadilha':true };
+function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
+
+VIEWS.mapaGeral=function(){ setTitulo('Mapa'); setCrumb('Manejo','Mapa'); loadingBox('Montando o mapa…');
+  server('apiMapaDados').then(function(d){ MAPDATA=d;
+    d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
+    d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
+    d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
+    d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
+    app('<div class="filtros" id="filtros"></div><div id="map"></div><div class="meta" id="mapinfo" style="text-align:center;margin-top:8px"></div>');
+    document.getElementById('filtros').innerHTML=chipsFiltro();
+    var map=L.map('map',{zoomControl:true}).setView([-15.78,-47.93],4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
+    setTimeout(function(){ map.invalidateSize(); desenharMapa(); },120);
+  }); };
+
+function chipsFiltro(){
+  var defs=[ ['ceva','🌽 Cevas',TIPO_COR.Espera], ['armadilha','🪤 Armadilhas','#b23b3b'], ['canil','🏠 Canis','#3b6ea5'],
+    ['Espera','🎯 Abate espera',TIPO_COR.Espera], ['Cães','🎯 Abate cães',TIPO_COR['Cães']],
+    ['Espreita','🎯 Abate espreita',TIPO_COR.Espreita], ['Armadilha','🎯 Abate armadilha',TIPO_COR.Armadilha] ];
+  return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
-function coord(x){ var n=parseFloat(x); return isNaN(n)?null:n; }
+window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; document.getElementById('filtros').innerHTML=chipsFiltro(); desenharMapa(); };
 
-VIEWS.mapaCevas=function(){ setTitulo('Mapa de cevas'); setCrumb('Manejo','Mapa de cevas'); loadingBox('Montando o mapa…');
-  server('apiMapaDados').then(function(d){
-    var cevas=d.cevas.filter(function(c){return coord(c.lat)!=null&&coord(c.lng)!=null;});
-    var abatesPorCeva={}; d.abates.forEach(function(a){ if(a.cevaId){ (abatesPorCeva[a.cevaId]=abatesPorCeva[a.cevaId]||[]).push(a); } });
-    var totalAbCeva=d.abates.filter(function(a){return a.tipoManejo==='Espera';}).length;
-    app('<div class="dash"><div class="kpi"><b>'+d.cevas.length+'</b><span>cevas</span></div><div class="kpi"><b>'+cevas.length+'</b><span>com GPS</span></div><div class="kpi"><b>'+totalAbCeva+'</b><span>abates em ceva</span></div></div>'+
-        (cevas.length?'<div id="map"></div>':'<div class="empty"><div class="big">🗺️</div>Nenhuma ceva com latitude/longitude. Edite suas cevas e informe as coordenadas.</div>'));
-    if(!cevas.length) return;
-    var map=initMapa('map',cevas.map(function(c){return {lat:coord(c.lat),lng:coord(c.lng)};}));
-    cevas.forEach(function(c){ var abs=abatesPorCeva[c.id]||[]; var al=d.ultimoAlimento[c.id];
-      var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br>'+
-        '<b>Alimento atual:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br>'+
-        '<b>Abates nesta ceva:</b> '+abs.length+'</div>'+(abs.length?'<div style="margin-top:6px">'+barChart(porMes(abs),{color:TIPO_COR.Espera,w:230})+'</div>':'')+'</div>';
-      L.circleMarker([coord(c.lat),coord(c.lng)],{radius:9,color:'#1f5130',fillColor:TIPO_COR.Espera,fillOpacity:.9,weight:2}).addTo(map).bindPopup(pop);
-    });
-  }); };
-
-VIEWS.mapaAbates=function(){ setTitulo('Mapa de abates'); setCrumb('Manejo','Mapa de abates'); loadingBox('Montando o mapa…');
-  server('apiMapaDados').then(function(d){
-    var cevaN={}, transN={}, armN={}, caoN={};
-    d.cevas.forEach(function(c){cevaN[c.id]=c.nome;}); d.transportes.forEach(function(t){transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
-    d.armadilhas.forEach(function(a){armN[a.id]=a.tipo;}); d.caes.forEach(function(c){caoN[c.id]=c.nome;});
-    var abates=d.abates, comGps=abates.filter(function(a){return coord(a.lat)!=null&&coord(a.lng)!=null;});
-    // dashboard: por tipo
-    var porTipo={}; abates.forEach(function(a){ porTipo[a.tipoManejo]=(porTipo[a.tipoManejo]||0)+1; });
-    var barsTipo=TIPOS_MANEJO.map(function(t){ return {label:t.substring(0,4), value:porTipo[t]||0, color:TIPO_COR[t]}; });
-    var totalAnimais=abates.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||0);},0);
-    var legenda=TIPOS_MANEJO.map(function(t){return '<span><i style="background:'+TIPO_COR[t]+'"></i>'+rotuloManejo(t)+'</span>';}).join('');
-    app('<div class="dash"><div class="kpi"><b>'+abates.length+'</b><span>abates</span></div><div class="kpi"><b>'+totalAnimais+'</b><span>animais</span></div><div class="kpi"><b>'+comGps.length+'</b><span>no mapa</span></div></div>'+
-        '<div class="card"><h3 style="font-size:14px">Abates por tipo de manejo</h3>'+barChart(barsTipo,{w:280,h:100})+'</div>'+
-        '<div class="card"><h3 style="font-size:14px">Abates por mês</h3>'+barChart(porMes(abates),{w:280,h:100,color:'#3f6b3f'})+'</div>'+
-        (comGps.length?'<div id="map"></div><div class="legend">'+legenda+'</div>':'<div class="empty"><div class="big">📍</div>Nenhum abate com coordenadas ainda.</div>'));
-    if(!comGps.length) return;
-    var map=initMapa('map',comGps.map(function(a){return {lat:coord(a.lat),lng:coord(a.lng)};}));
-    comGps.forEach(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666'; var ctx='';
-      if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(cevaN[a.cevaId]||'—');
-      else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(transN[a.transporteId]||'—');
-      else if(a.tipoManejo==='Armadilha') ctx='<b>Armadilha:</b> '+esc(armN[a.armadilhaId]||'—');
-      else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
-      var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta">'+
-        '<b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+
-        (a.fotoUrl?'<img src="'+esc(a.fotoUrl)+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'</div>';
-      L.circleMarker([coord(a.lat),coord(a.lng)],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).addTo(map).bindPopup(pop);
-    });
-  }); };
+function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
+  function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
+  if(MAPFILTER.ceva) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(la==null||ln==null)return;
+    var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
+    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(abs.length?barChart(porMes(abs),{color:TIPO_COR.Espera,w:220}):'')+'</div>';
+    add(L.circleMarker([la,ln],{radius:9,color:'#1f5130',fillColor:TIPO_COR.Espera,fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
+  if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(la==null||ln==null)return;
+    var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
+    add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
+  if(MAPFILTER.canil) (d.canis||[]).forEach(function(k){ var la=coord(k.lat),ln=coord(k.lng); if(la==null||ln==null)return;
+    var pop='<div class="pop"><h4>🏠 '+esc(k.nome||'Canil')+'</h4><div class="meta">'+(k.obs?esc(k.obs):'')+'</div></div>';
+    add(L.circleMarker([la,ln],{radius:8,color:'#274a6b',fillColor:'#3b6ea5',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
+  d.abates.forEach(function(a){ if(!MAPFILTER[a.tipoManejo])return; var la=coord(a.lat),ln=coord(a.lng); if(la==null||ln==null)return;
+    var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
+    if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
+    else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
+    else if(a.tipoManejo==='Armadilha') ctx='<b>Armadilha:</b> '+esc(d._armN[a.armadilhaId]||'—');
+    else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return d._caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
+    var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(a.fotoUrl)+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'</div>';
+    add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
+  var info=document.getElementById('mapinfo'); if(info) info.textContent = pts.length? (pts.length+' ponto(s) no mapa') : 'Nada para mostrar com esse filtro (verifique também se os itens têm coordenadas).';
+  if(pts.length===1) CURRENTMAP.setView(pts[0],14);
+  else if(pts.length>1) CURRENTMAP.fitBounds(pts,{padding:[40,40],maxZoom:15});
+}
 
 /* ============================================================
    INÍCIO
