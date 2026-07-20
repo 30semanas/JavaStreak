@@ -851,6 +851,7 @@ function renderAgenda(){ var itens=AGENDA||[];
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
 var MAPFILTER={ ceva:true, armadilha:true, canil:true, 'Espera':true, 'Cães':true, 'Espreita':true, 'Armadilha':true };
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
+function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=180&&!(la===0&&ln===0); }
 
 VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
   document.body.classList.add('map-mode'); posicionarMapShell();
@@ -862,12 +863,14 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
     MAPDATA=d;
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
-    var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false}).setView([-15.78,-47.93],4);
+    var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
     CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
     buildMapBar(); buildMapPanel();
-    setTimeout(function(){ map.invalidateSize(); desenharMapa(); },160);
+    map.whenReady(function(){ map.invalidateSize(); });
+    setTimeout(function(){ map.invalidateSize(); desenharMapa(); },180);
+    setTimeout(function(){ if(CURRENTMAP===map){ try{map.invalidateSize();}catch(e){} } },600);
   }).catch(function(){ document.getElementById('mapCount').textContent='Falha ao carregar'; }); };
 
 function posicionarMapShell(){ var h=document.querySelector('header'), s=document.getElementById('mapshell'); if(h&&s) s.style.top=h.offsetHeight+'px'; }
@@ -898,17 +901,17 @@ function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAP
 
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
-  if(MAPFILTER.ceva) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(la==null||ln==null)return;
+  if(MAPFILTER.ceva) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
     var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(abs.length?barChart(porMes(abs),{color:TIPO_COR.Espera,w:220}):'')+'</div>';
     add(L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop),la,ln); });
-  if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(la==null||ln==null)return;
+  if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
-  if(MAPFILTER.canil) (d.canis||[]).forEach(function(k){ var la=coord(k.lat),ln=coord(k.lng); if(la==null||ln==null)return;
+  if(MAPFILTER.canil) (d.canis||[]).forEach(function(k){ var la=coord(k.lat),ln=coord(k.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🏠 '+esc(k.nome||'Canil')+'</h4><div class="meta">'+(k.obs?esc(k.obs):'')+'</div></div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#274a6b',fillColor:'#3b6ea5',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
-  d.abates.forEach(function(a){ if(!MAPFILTER[a.tipoManejo])return; var la=coord(a.lat),ln=coord(a.lng); if(la==null||ln==null)return;
+  d.abates.forEach(function(a){ if(!MAPFILTER[a.tipoManejo])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
     if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
     else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
@@ -917,8 +920,10 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(imgSrc(a.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'</div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
   var info=document.getElementById('mapCount'); if(info) info.textContent = pts.length? (pts.length+' ponto(s)') : 'Nada com esse filtro (ou sem coordenadas)';
-  if(pts.length===1) CURRENTMAP.setView(pts[0],14);
-  else if(pts.length>1) CURRENTMAP.fitBounds(pts,{padding:[40,40],maxZoom:15});
+  try{
+    if(pts.length===1) CURRENTMAP.setView(pts[0],14);
+    else if(pts.length>1) CURRENTMAP.fitBounds(pts,{padding:[40,40],maxZoom:15});
+  }catch(e){ CURRENTMAP.setView([-15.78,-47.93],4); }
 }
 
 /* ============================================================
