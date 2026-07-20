@@ -133,14 +133,14 @@
   body.logged.menu-open #overlay{opacity:1;pointer-events:auto}
   .sb-brand{padding:12px 10px;display:flex;justify-content:center;border-bottom:1px solid rgba(255,255,255,.12)}
   .sb-brand img{width:100%;max-width:200px;height:auto;max-height:200px;object-fit:contain;border-radius:8px}
-  .sb-user{padding:9px 16px;font-size:12px;color:#b7c3a5;border-bottom:1px solid rgba(255,255,255,.08)}
+  .sb-user{padding:9px 16px;font-size:12px;color:#b7c3a5;border-bottom:1px solid rgba(255,255,255,.08);text-transform:uppercase;letter-spacing:.3px}
   #sbNav{flex:1;padding:8px}
-  .sb-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:10px;cursor:pointer;color:#e9e2cf;font-size:14px;margin-bottom:2px}
+  .sb-item{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:10px;cursor:pointer;color:#e9e2cf;font-size:14px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px}
   .sb-item:hover{background:rgba(255,255,255,.07)}
   .sb-item.active{background:rgba(238,138,46,.20);font-weight:600;box-shadow:inset 3px 0 0 #ee8a2e}
   .sb-item img{width:36px;height:36px;object-fit:cover;border-radius:9px;background:#fff;padding:2px;flex:none;border:1px solid rgba(0,0,0,.1)}
   .sb-item .emoji{width:36px;text-align:center;font-size:21px;flex:none}
-  .sb-sair{margin:8px 12px 14px;padding:11px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#e9e2cf;border-radius:10px;cursor:pointer;font-size:14px}
+  .sb-sair{margin:8px 12px 14px;padding:11px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#e9e2cf;border-radius:10px;cursor:pointer;font-size:14px;text-transform:uppercase;letter-spacing:.3px}
   .sb-sair:active{background:rgba(255,255,255,.08)}
   .hamb{font-size:22px;background:transparent;border:none;color:#fff;cursor:pointer;width:32px;line-height:1;display:none}
   @media(max-width:899px){ body.logged .hamb{display:block} }
@@ -1130,7 +1130,7 @@ function renderAgenda(){ var itens=AGENDA||[];
    MAPA (tela cheia, lado direito) com filtro e resumo
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
-var MAPFILTER={ espera:true, armadilha:true, rastreio:true };
+var MAPFILTER={ espera:true, armadilha:true, busca:true };
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=180&&!(la===0&&ln===0); }
 
@@ -1162,7 +1162,7 @@ function posicionarMapShell(){ var h=document.querySelector('header'), s=documen
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['rastreio','🐕 Rastreio','#3b6ea5'] ];
+  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Busca sem cães','#3b6ea5'] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
@@ -1193,10 +1193,16 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
-  if(MAPFILTER.rastreio) (d.canis||[]).forEach(function(k){ var la=coord(k.lat),ln=coord(k.lng); if(!ptOk(la,ln))return;
-    var pop='<div class="pop"><h4>🏠 '+esc(k.nome||'Canil')+'</h4><div class="meta">'+(k.obs?esc(k.obs):'')+'</div></div>';
-    add(L.circleMarker([la,ln],{radius:8,color:'#274a6b',fillColor:'#3b6ea5',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
-  d.abates.forEach(function(a){ var fk={'Espera':'espera','Armadilha':'armadilha','Cães':'rastreio'}[a.tipoManejo]; if(!fk||!MAPFILTER[fk])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
+  if(MAPFILTER.busca){
+    (d.rotas||[]).forEach(function(r){ var line=(r.pontos||[]).map(function(p){return [coord(p.lat),coord(p.lng)];}).filter(function(xy){return ptOk(xy[0],xy[1]);});
+      if(line.length>1){ L.polyline(line,{color:'#3b6ea5',weight:4,opacity:.85}).addTo(MAPLAYER); line.forEach(function(xy){pts.push(xy);});
+        L.marker(line[0],{icon:emojiIcon('🚩')}).addTo(MAPLAYER).bindPopup('🚩 Início — '+esc(r.nome||'Rota'));
+        L.marker(line[line.length-1],{icon:emojiIcon('🏁')}).addTo(MAPLAYER).bindPopup('🏁 Chegada — '+esc(r.nome||'Rota')); }
+    });
+    (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
+      L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
+  }
+  d.abates.forEach(function(a){ var fk={'Espera':'espera','Armadilha':'armadilha'}[a.tipoManejo]; if(!fk||!MAPFILTER[fk])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
     if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
     else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
