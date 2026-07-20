@@ -106,6 +106,7 @@
       <span class="sub" id="hSub">Carregando…</span>
     </div>
     <span class="dot" id="connDot" title="Status da conexão"></span>
+    <button id="btnSair" onclick="logout()" title="Sair" style="display:none;background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">Sair</button>
   </header>
 
   <div class="wrap">
@@ -133,6 +134,11 @@ var STATE = {
 
 var VIEWS = {}; // registrado abaixo
 
+/* Sessão do usuário (token guardado no navegador) */
+var AUTH = { token: '', manejador: null };
+try { AUTH.token = localStorage.getItem('mj_token') || ''; } catch(e) {}
+function salvarToken(t){ AUTH.token=t||''; try{ t?localStorage.setItem('mj_token',t):localStorage.removeItem('mj_token'); }catch(e){} }
+
 /* ============================================================
    >>>>>>  COLE AQUI A SUA URL /exec DO APPS SCRIPT  <<<<<<
    (Implantar > App da Web > "Qualquer pessoa". Se publicar nova
@@ -142,9 +148,8 @@ var API_URL = 'https://script.google.com/macros/s/AKfycby_LWJgdy0nffHnXE0Zi9eHvi
 
 /* Chama a API via fetch. Corpo text/plain = requisição "simples":
    o navegador NÃO dispara preflight OPTIONS (que o Apps Script não responde).
-   Inclui timeout (Apps Script pode demorar no "cold start") e atualiza o
-   indicador de conexão no topo. NÃO faz retry automático em gravações
-   (evita cadastro duplicado se o servidor respondeu mas a rede caiu). */
+   Envia o token de sessão; se o servidor recusar (NAO_AUTENTICADO),
+   derruba a sessão e volta pro login. Timeout de 25s p/ cold start. */
 function server(fn){
   var args = Array.prototype.slice.call(arguments,1);
   var ctrl = new AbortController();
@@ -153,16 +158,29 @@ function server(fn){
     method: 'POST',
     redirect: 'follow',
     signal: ctrl.signal,
-    body: JSON.stringify({ action: fn, args: args })
+    body: JSON.stringify({ action: fn, args: args, token: AUTH.token })
     // sem header Content-Type -> vira text/plain automaticamente (sem CORS preflight)
   })
   .then(function(r){ clearTimeout(to); return r.json(); })
-  .then(function(j){ if(!j.ok) throw new Error(j.error || 'Erro no servidor'); setConn(true); return j.data; })
+  .then(function(j){
+    if(!j.ok){
+      if(j.error === 'NAO_AUTENTICADO'){ setConn(true); sessaoExpirada(); throw new Error('Sessão expirada'); }
+      throw new Error(j.error || 'Erro no servidor');
+    }
+    setConn(true); return j.data;
+  })
   .catch(function(e){
-    clearTimeout(to); setConn(false);
+    clearTimeout(to);
+    if(e && e.message === 'Sessão expirada'){ throw e; }
+    setConn(false);
     var msg = (e && e.name === 'AbortError') ? 'Servidor não respondeu (tempo esgotado)' : (e && e.message ? e.message : e);
     toast('Erro: '+msg); throw e;
   });
+}
+function sessaoExpirada(){
+  salvarToken(''); AUTH.manejador=null; STATE.manejador=null;
+  toast('Sua sessão expirou, entre novamente');
+  STATE.stack=['login']; render();
 }
 function setConn(ok){
   var d = document.getElementById('connDot'); if(!d) return;
@@ -176,21 +194,24 @@ function nav(view, pushToStack){
 }
 function voltar(){
   STATE.stack.pop();
-  var v = STATE.stack[STATE.stack.length-1] || 'home';
   render();
 }
 function render(){
-  var view = STATE.stack[STATE.stack.length-1] || 'home';
-  document.getElementById('btnBack').style.display = STATE.stack.length>1 ? 'block':'none';
+  var padrao = AUTH.token ? 'modulos' : 'login';
+  var view = STATE.stack[STATE.stack.length-1] || padrao;
+  var noLogin = (view==='login' || view==='registrar');
+  document.getElementById('btnBack').style.display = (STATE.stack.length>1 && !noLogin) ? 'block':'none';
   document.getElementById('fab').style.display='none';
   document.getElementById('fab').innerHTML='';
-  var fn = VIEWS[view] || VIEWS.home;
+  var fn = VIEWS[view] || VIEWS.login;
   fn();
   updateHeader();
 }
 function updateHeader(){
+  var logado = !!AUTH.token && !!STATE.manejador;
   document.getElementById('hSub').textContent =
-    STATE.manejador ? ('Manejador: '+STATE.manejador.nome) : STATE.appNome;
+    logado ? ('Manejador: '+STATE.manejador.nome) : STATE.appNome;
+  document.getElementById('btnSair').style.display = logado ? 'block':'none';
 }
 function setTitulo(t){ document.getElementById('hTitulo').textContent=t; }
 function setCrumb(){
@@ -273,60 +294,68 @@ function bindFoto(inputId,prevId){
 function fotoData(inputId){ var i=document.getElementById(inputId); return i&&i._data?i._data:''; }
 
 /* ============================================================
-   VIEW: HOME (lista de manejadores)
+   VIEW: LOGIN
    ============================================================ */
-VIEWS.home = function(){
+var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
+
+VIEWS.login = function(){
   setTitulo(STATE.appNome);
-  STATE.manejador=null;
+  STATE.manejador=null; AUTH.manejador=null;
   document.getElementById('crumb').innerHTML='';
-  loadingBox('Carregando manejadores…');
-  server('apiListarManejadores').then(function(lista){
-    var html='';
-    if(!lista.length){
-      html='<div class="empty"><div class="big">👤</div>Nenhum manejador cadastrado ainda.<br>Toque em <b>Novo Manejador</b> para começar.</div>';
-    } else {
-      html = lista.map(function(m){
-        var perfis=(m.perfis||[]).map(function(p){ return '<span class="pill'+(p==='Manejador'?'':' gray')+'">'+esc(p)+'</span>'; }).join('');
-        return '<div class="card click" onclick="abrirManejador(\''+m.id+'\')">'+
-          '<div class="row"><div class="grow"><h3>'+esc(m.nome)+'</h3>'+
-          '<div class="meta">CPF: '+esc(m.cpf||'—')+' · CR: '+esc(m.cr||'—')+'<br>'+esc(m.telefone||'')+'</div>'+
-          '<div style="margin-top:6px">'+perfis+'</div></div><div class="chev" style="color:#b7bdae;font-size:22px">›</div></div></div>';
-      }).join('');
-    }
-    app(html);
-    fab('<button class="btn" onclick="nav(\'manejadorForm\')">＋ Novo Manejador</button>');
-  });
+  app(
+    '<div class="card" style="margin-top:10px">'+
+      '<h3 style="margin-bottom:2px">Entrar</h3>'+
+      '<div class="meta" style="margin-bottom:6px">Acesse com seu login e senha.</div>'+
+      '<label>Login</label><input id="l_login" autocomplete="username" placeholder="usuário ou e-mail">'+
+      '<label>Senha</label><input id="l_senha" type="password" autocomplete="current-password" placeholder="••••••">'+
+      '<button class="btn" onclick="fazerLogin(this)">Entrar</button>'+
+    '</div>'+
+    '<div class="card click" onclick="nav(\'registrar\')" style="text-align:center">'+
+      '<div class="meta">Ainda não tem conta? <b style="color:var(--verde)">Criar conta</b></div>'+
+    '</div>'
+  );
+  var s=document.getElementById('l_senha');
+  if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
 };
-window.abrirManejador=function(id){
-  server('apiListarManejadores').then(function(l){
-    STATE.manejador = l.filter(function(m){return m.id===id;})[0];
-    nav('modulos');
-  });
+window.fazerLogin=function(btn){
+  var login=val('l_login'), senha=val('l_senha');
+  if(!login||!senha){ toast('Preencha login e senha'); return; }
+  btn.disabled=true; btn.textContent='Entrando…';
+  server('apiLogin', login, senha).then(function(r){
+    salvarToken(r.token); AUTH.manejador=r.manejador; STATE.manejador=r.manejador;
+    STATE.stack=['modulos']; render();
+  }).catch(function(){ btn.disabled=false; btn.textContent='Entrar'; });
 };
 
 /* ============================================================
-   VIEW: FORM MANEJADOR
+   VIEW: CRIAR CONTA (registro do manejador + credenciais)
    ============================================================ */
-var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
-VIEWS.manejadorForm = function(){
-  setTitulo('Novo Manejador'); setCrumb('Novo Manejador');
+VIEWS.registrar = function(){
+  setTitulo('Criar conta'); setCrumb('Criar conta');
   var checks=PERFIS.map(function(p){
     return '<label class="check" onclick="togglePerfil(this)"><input type="checkbox" value="'+p+'">'+p+'</label>';
   }).join('');
   app(
     '<div class="card">'+
+      '<h3>Dados de acesso</h3>'+
+      '<label>Login *</label><input id="f_login" autocomplete="username" placeholder="usuário ou e-mail">'+
+      '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div>'+
+      '<div><label>Confirmar senha *</label><input id="f_senha2" type="password" autocomplete="new-password"></div></div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<h3>Dados do manejador</h3>'+
       '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
       '<div class="two"><div><label>Data de nascimento</label><input id="f_nasc" type="date"></div>'+
       '<div><label>CPF *</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></div></div>'+
-      '<div class="two"><div><label>CR (Certif. de Registro)</label><input id="f_cr" placeholder="Nº do CR"></div>'+
+      '<div class="two"><div><label>CR</label><input id="f_cr" placeholder="Nº do CR"></div>'+
       '<div><label>Telefone</label><input id="f_tel" inputmode="tel" placeholder="(00) 00000-0000"></div></div>'+
       '<label>E-mail</label><input id="f_email" type="email" placeholder="email@exemplo.com">'+
       '<label>Endereço da residência</label><textarea id="f_end" placeholder="Rua, nº, bairro, cidade/UF"></textarea>'+
-      '<div class="two"><div><label>Latitude</label><input id="f_lat" inputmode="decimal" placeholder="-23.000000"></div>'+
-      '<div><label>Longitude</label><input id="f_lng" inputmode="decimal" placeholder="-45.000000"></div></div>'+
+      '<div class="two"><div><label>Latitude</label><input id="f_lat" inputmode="decimal"></div>'+
+      '<div><label>Longitude</label><input id="f_lng" inputmode="decimal"></div></div>'+
       gpsButton('f_lat','f_lng')+
       '<label>Perfis *</label><div class="checks">'+checks+'</div>'+
-      '<button class="btn" onclick="salvarManejador(this)">Salvar manejador</button>'+
+      '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button>'+
     '</div>'
   );
 };
@@ -334,22 +363,31 @@ window.togglePerfil=function(lbl){
   var cb=lbl.querySelector('input'); cb.checked=!cb.checked;
   lbl.classList.toggle('on',cb.checked);
 };
-window.salvarManejador=function(btn){
+window.salvarConta=function(btn){
+  var login=val('f_login'), senha=val('f_senha'), senha2=val('f_senha2');
   var nome=val('f_nome'), cpf=val('f_cpf');
   var perfis=[].slice.call(document.querySelectorAll('.checks input:checked')).map(function(c){return c.value;});
+  if(!login){ toast('Informe um login'); return; }
+  if(!senha||senha.length<4){ toast('Senha muito curta (mín. 4)'); return; }
+  if(senha!==senha2){ toast('As senhas não conferem'); return; }
   if(!nome){ toast('Informe o nome'); return; }
   if(!cpf){ toast('Informe o CPF'); return; }
   if(!perfis.length){ toast('Selecione ao menos 1 perfil'); return; }
-  btn.disabled=true; btn.textContent='Salvando…';
-  server('apiCriarManejador',{
-    nome:nome, dataNascimento:val('f_nasc'), cpf:cpf, cr:val('f_cr'),
+  btn.disabled=true; btn.textContent='Criando…';
+  server('apiRegistrar',{
+    login:login, senha:senha, nome:nome, dataNascimento:val('f_nasc'), cpf:cpf, cr:val('f_cr'),
     telefone:val('f_tel'), email:val('f_email'), endereco:val('f_end'),
     lat:val('f_lat'), lng:val('f_lng'), perfis:perfis
-  }).then(function(m){
-    m.perfis=perfis; STATE.manejador=m;
-    toast('Manejador cadastrado ✔');
-    STATE.stack=['home','modulos']; render();
-  }).catch(function(){ btn.disabled=false; btn.textContent='Salvar manejador'; });
+  }).then(function(r){
+    salvarToken(r.token); AUTH.manejador=r.manejador; STATE.manejador=r.manejador;
+    toast('Conta criada ✔'); STATE.stack=['modulos']; render();
+  }).catch(function(){ btn.disabled=false; btn.textContent='Criar conta e entrar'; });
+};
+
+window.logout=function(){
+  server('apiLogout').catch(function(){}); // best-effort no servidor
+  salvarToken(''); AUTH.manejador=null; STATE.manejador=null;
+  STATE.stack=['login']; render();
 };
 
 /* ============================================================
@@ -720,11 +758,22 @@ window.salvarArm=function(btn){
    ============================================================ */
 function iniciar(){
   loadingBox('Conectando ao servidor…');
-  server('apiBoot').then(function(b){
-    STATE.appNome=b.appNome||'Manejo de Javali';
+  // 1) apiPing é público: confirma conexão e pega o nome do app p/ a tela de login
+  server('apiPing').then(function(p){
+    STATE.appNome = (p && p.appNome) || 'Manejo de Javali';
     setTitulo(STATE.appNome);
-    STATE.stack=['home'];
-    render();
+    if(AUTH.token){
+      // 2) tem token salvo -> tenta retomar a sessão
+      return server('apiBoot').then(function(b){
+        STATE.appNome=b.appNome||STATE.appNome;
+        AUTH.manejador=b.manejador; STATE.manejador=b.manejador;
+        STATE.stack=['modulos']; render();
+      }).catch(function(e){
+        // token inválido/expirado já cai no fluxo de sessaoExpirada; senão mostra login
+        if(!(e && e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['login']; render(); }
+      });
+    }
+    STATE.stack=['login']; render();
   }).catch(function(){
     app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>'+
         'Confira se a <b>API_URL</b> no topo do index.html é a sua URL <b>/exec</b> e se a implantação do '+
