@@ -332,6 +332,8 @@ function mapaLink(lat,lng){ if(!lat||!lng)return''; return '<a class="mapa" targ
 function val(id){ var e=document.getElementById(id); return e?String(e.value).trim():''; }
 function setVal(id,v){ var e=document.getElementById(id); if(e&&v!=null&&v!=='') e.value=v; }
 function pv(f){ return (EDIT && EDIT[f]!=null) ? EDIT[f] : ''; }
+function pvCoord(f){ var v=pv(f); if(v==='') return ''; var n=parseFloat(String(v).replace(',','.')); if(isNaN(n)) return '';
+  if(f==='lat' && (n<-90||n>90)) return ''; if(f==='lng' && (n<-180||n>180)) return ''; return v; }
 function acoes(ent,id){ return '<div class="acoes"><button class="ib" onclick="editItem(\''+ent+'\',\''+id+'\')" title="Editar">✏️</button><button class="ib" onclick="delItem(\''+ent+'\',\''+id+'\')" title="Excluir">🗑️</button></div>'; }
 window.editItem=function(ent,id){ EDIT=(CACHE[ent]||[]).filter(function(x){return String(x.id)===String(id);})[0]; if(!EDIT){toast('Item não encontrado');return;} nav(FORMVIEW[ent]); };
 window.delItem=function(ent,id){ if(!confirm('Excluir este item? Esta ação não pode ser desfeita.'))return; server('apiExcluir',ent,id).then(function(){ toast('Excluído ✔'); render(); }); };
@@ -471,7 +473,7 @@ VIEWS.espera=function(){ setTitulo('Espera – Cevas'); setCrumb('Manejo','Esper
 VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'); setCrumb('Espera',ed?'Editar':'Nova');
   app('<div class="card"><label>Nome / identificação *</label><input id="c_nome" value="'+esc(pv('nome'))+'" placeholder="Ex: Ceva do Riacho">'+
     '<label>Tipo de ponto *</label><select id="c_tipo">'+TIPOS_CEVA.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
-    '<div class="two"><div><label>Latitude</label><input id="c_lat" inputmode="decimal" value="'+esc(pv('lat'))+'"></div><div><label>Longitude</label><input id="c_lng" inputmode="decimal" value="'+esc(pv('lng'))+'"></div></div>'+
+    '<div class="two"><div><label>Latitude</label><input id="c_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="c_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('c_lat','c_lng')+'<label>Observações</label><textarea id="c_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(do comedouro/ponto)')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
@@ -619,7 +621,7 @@ VIEWS.caes=function(){ setTitulo('Manejo com cães'); setCrumb('Manejo com cães
     app(html); fab('<button class="btn" onclick="novo(\'canilForm\')">＋ Novo canil</button>'); }); };
 VIEWS.canilForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar canil':'Novo canil'); setCrumb('Cães',ed?'Editar':'Novo canil');
   app('<div class="card"><label>Nome do canil *</label><input id="k_nome" value="'+esc(pv('nome'))+'">'+
-    '<div class="two"><div><label>Latitude</label><input id="k_lat" inputmode="decimal" value="'+esc(pv('lat'))+'"></div><div><label>Longitude</label><input id="k_lng" inputmode="decimal" value="'+esc(pv('lng'))+'"></div></div>'+
+    '<div class="two"><div><label>Latitude</label><input id="k_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="k_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('k_lat','k_lng')+'<label>Observações</label><textarea id="k_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarCanil(this)">'+(ed?'Salvar alterações':'Salvar canil')+'</button></div>'); };
 window.salvarCanil=function(btn){ if(!val('k_nome')){toast('Informe o nome');return;} btn.disabled=true; btn.textContent='Salvando…';
@@ -698,7 +700,7 @@ window.ciclarStatus=function(id,atual){ var seq=['Ativa','Armada','Capturado','D
 VIEWS.armForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar armadilha':'Nova armadilha'); setCrumb('Armadilha',ed?'Editar':'Nova');
   app('<div class="card"><label>Tipo *</label><select id="r_tipo">'+TIPOS_ARM.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Status</label><select id="r_status"><option>Ativa</option><option>Armada</option><option>Capturado</option><option>Desativada</option></select>'+
-    '<div class="two"><div><label>Latitude</label><input id="r_lat" inputmode="decimal" value="'+esc(pv('lat'))+'"></div><div><label>Longitude</label><input id="r_lng" inputmode="decimal" value="'+esc(pv('lng'))+'"></div></div>'+
+    '<div class="two"><div><label>Latitude</label><input id="r_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="r_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('r_lat','r_lng')+'<label>Observações</label><textarea id="r_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarArm(this)">'+(ed?'Salvar alterações':'Salvar armadilha')+'</button></div>');
   if(ed){ setVal('r_tipo',EDIT.tipo); setVal('r_status',EDIT.status); } };
@@ -728,7 +730,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<div id="abateCtx"></div>'+
         '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
         '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
-        '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pv('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pv('lng'))+'"></div></div>'+
+        '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
         gpsButton('ab_lat','ab_lng')+
         '<label>Observações</label><textarea id="ab_obs">'+esc(pv('obs'))+'</textarea>'+
         '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(opcional)')+'</label>'+
