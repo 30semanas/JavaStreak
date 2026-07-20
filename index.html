@@ -672,9 +672,9 @@ VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Busca sem cães','Rotas');
   server('apiListarRotas').then(function(l){ CACHE.rota=l;
     l.sort(function(a,b){return String(b.dataCadastro).localeCompare(String(a.dataCadastro));});
     var banner = ROTA_REC.ativo ? '<div class="card" style="border-left:5px solid var(--danger)"><h3 style="margin:0 0 4px">● Gravação em andamento</h3><div class="meta">'+esc(ROTA_REC.nome||'')+' · '+((ROTA_REC.pontos||[]).length)+' pontos</div><button class="btn sm" style="margin-top:8px" onclick="nav(\'rotaGravar\')">Retomar gravação</button></div>' : '';
-    var html=banner+(l.length? l.map(function(r){ return '<div class="card"><div class="row"><div class="grow"><h3>🧭 '+esc(r.nome||'Rota')+'</h3>'+
-      '<div class="meta">'+(r.propriedade?esc(r.propriedade)+' · ':'')+esc(r.tipoTransporte||'')+'<br>'+fmtDist(parseFloat(r.distancia)||0)+' · '+((r.pontos||[]).length)+' pontos · '+fmtData(r.dataCadastro)+'</div></div></div>'+
-      '<button class="btn sm" style="margin-top:8px;width:auto" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar por esta rota</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
+    var html=banner+(l.length? l.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+'</h3>'+
+      '<div class="meta">'+(r.propriedade?esc(r.propriedade)+' · ':'')+esc(r.tipoTransporte||'')+'<br>'+fmtDist(parseFloat(r.distancia)||0)+' · '+((r.pontos||[]).length)+' pts GPS · '+fmtData(r.dataCadastro)+'</div></div><div class="chev">›</div></div>'+
+      '<button class="btn sm" style="margin-top:8px;width:auto" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
       : '<div class="empty"><div class="big">🧭</div>Nenhuma rota gravada ainda.<br>Toque em <b>Gravar nova rota</b>.</div>');
     app(html); fab('<button class="btn" onclick="nav(\'rotaForm\')">＋ Gravar nova rota</button>'); }); };
 
@@ -799,6 +799,34 @@ window.salvarMarcacao=function(btn){ if(!LASTPOS){ toast('Sem posição do GPS')
   .then(function(m){ if(ROUTEMAP&&ROTA_GUIA&&ROTA_GUIA._markLayer) L.marker([coord(m.lat),coord(m.lng)],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m));
     toast('Ponto salvo ✔'); fecharMark(); btn.disabled=false; btn.textContent='Salvar ponto'; })
   .catch(function(){ btn.disabled=false; btn.textContent='Salvar ponto'; }); };
+
+/* ----- Detalhe da rota (trajeto + pontos que enriquecem a rota) ----- */
+window.abrirRota=function(id){ STATE.rota=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(STATE.rota) nav('rotaDetalhe'); else toast('Rota não encontrada'); };
+VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita','rotas']; render(); return; }
+  setTitulo(r.nome||'Rota'); setCrumb('Rotas',esc(r.nome||'Rota'));
+  var pts=(r.pontos||[]).map(function(p){return [p.lat,p.lng];});
+  app('<div class="card"><div class="meta">'+(r.propriedade?'🏡 '+esc(r.propriedade)+' · ':'')+esc(r.tipoTransporte||'')+' · '+fmtDist(parseFloat(r.distancia)||0)+'</div></div>'+
+    '<div id="rdMap" style="height:44vh;min-height:260px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<h3 style="margin:12px 4px 6px">📍 Pontos registrados</h3><div id="rdPontos"><div class="loading"><div class="spin"></div></div></div>');
+  var map=L.map('rdMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView(pts.length?pts[0]:[-15.78,-47.93],pts.length?15:4);
+  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
+  ruas.addTo(map); L.control.layers({'Ruas':ruas,'Satélite':sat},null,{position:'topright'}).addTo(map);
+  ROUTEMAP=map;
+  if(pts.length){ L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
+    L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
+    L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada'); }
+  var mk=L.featureGroup().addTo(map);
+  setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} } },150);
+  server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms;
+    (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(ptOk(la,ln)) L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(mk).bindPopup(marcaPopup(m)); });
+    var el=document.getElementById('rdPontos'); if(!el) return;
+    el.innerHTML=(ms&&ms.length)? ms.map(function(m){ return '<div class="card"><div class="row">'+
+      (m.fotoUrl?'<img class="thumb" style="width:54px;height:54px;cursor:zoom-in" onclick="verFoto(\''+esc(imgSrc(m.fotoUrl))+'\')" src="'+esc(imgSrc(m.fotoUrl))+'">':'<div class="ic" style="width:54px;height:54px;font-size:24px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeMarca(m.tipo)+'</div>')+
+      '<div class="grow"><h3 style="font-size:15px">'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h3><div class="meta">'+(m.descricao?esc(m.descricao)+'<br>':'')+fmtDataHora(m.dataHora)+'</div></div><button class="ib" onclick="delItem(\'marcacao\',\''+m.id+'\')" title="Excluir">🗑️</button></div></div>'; }).join('')
+      : '<div class="empty">Nenhum ponto ainda. Toque em <b>Guiar</b> e use <b>📍 Marcar ponto</b> no caminho para enriquecer esta rota.</div>';
+  }).catch(function(){});
+  fab('<button class="btn" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar por esta rota</button>'); };
 
 /* ----- Rota desenhada manualmente (clicando no mapa) ----- */
 var DRAW=null;
