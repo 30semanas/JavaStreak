@@ -113,6 +113,17 @@
   .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--linha);color:var(--txt2);padding:6px 10px;border-radius:20px;font-size:12px;cursor:pointer;user-select:none}
   .chip.on{border-color:var(--verde);background:#eef3ea;color:var(--verde);font-weight:600}
   .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .cal{background:#fff;border:1px solid var(--linha);border-radius:14px;padding:10px 12px;margin-bottom:12px;box-shadow:var(--sombra)}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .calhead b{font-size:14px}
+  .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cwd{text-align:center;font-size:11px;color:var(--txt2);padding:4px 0;font-weight:600}
+  .cday{position:relative;text-align:center;padding:9px 0;font-size:13px;border-radius:8px;cursor:pointer}
+  .cday.empty{cursor:default}
+  .cday.tem{font-weight:700}
+  .cday.hoje{outline:2px solid var(--verde-claro);outline-offset:-2px}
+  .cday.sel{background:var(--verde);color:#fff}
+  .cdot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%}
 </style>
 </head>
 <body>
@@ -601,31 +612,68 @@ window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:ti
   else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
-   AGENDA DE SAÚDE (cães + cavalos)
+   AGENDA DE SAÚDE (cães + cavalos) — com calendário
    ============================================================ */
 function diaHoje(){ return new Date().toISOString().substring(0,10); }
 function statusProx(prox){ if(!prox) return ''; var p=String(prox).substring(0,10), h=diaHoje(); return p<h?'atrasada':(p===h?'hoje':'proxima'); }
+function pad2(n){ return (n<10?'0':'')+n; }
+var AGENDA=null, AG_MES=null, AG_DIA=null;
+
 VIEWS.agenda=function(){ setTitulo('Agenda de saúde'); setCrumb('Manejo','Agenda'); loadingBox('Carregando agenda…');
-  server('apiAgenda').then(function(itens){
-    var h=diaHoje();
-    var comProx=itens.filter(function(i){return i.proximaData;});
-    comProx.sort(function(a,b){return String(a.proximaData).localeCompare(String(b.proximaData));});
-    var atrasadas=comProx.filter(function(i){return String(i.proximaData).substring(0,10)<h;});
-    var proximas=comProx.filter(function(i){return String(i.proximaData).substring(0,10)>=h;});
-    var em30=proximas.filter(function(i){ return (new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=30; }).length;
-    var semData=itens.filter(function(i){return !i.proximaData;}).sort(function(a,b){return String(b.data).localeCompare(String(a.data));}).slice(0,20);
-    function item(i){ var ent=i.escopo==='cao'?'saude':'saudeTransp'; var ic=i.escopo==='cao'?'🐕':'🐎';
-      var st=statusProx(i.proximaData); var pill=st==='atrasada'?'<span class="pill dan">Atrasada</span>':(st==='hoje'?'<span class="pill warn">Hoje</span>':(st==='proxima'?'<span class="pill ok">Agendada</span>':''));
-      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(i.animalNome||'')+' — <span class="pill gray">'+esc(i.tipo)+'</span> '+esc(i.descricao||'')+'</h3>'+
-        '<div class="meta">'+(i.proximaData?'Próxima: <b>'+fmtData(i.proximaData)+'</b> '+pill:'Feito em '+fmtData(i.data))+(i.obs?'<br>'+esc(i.obs):'')+'</div></div>'+
-        '<button class="ib" onclick="delItem(\''+ent+'\',\''+i.id+'\')" title="Excluir">🗑️</button></div></div>'; }
-    if(!itens.length){ app('<div class="empty"><div class="big">📅</div>Nada na agenda ainda.<br>Registre vacinas e retornos nos cães (na ficha de cada cão) e nos cavalos (no detalhe do transporte).</div>'); return; }
-    var html='<div class="dash"><div class="kpi"><b style="color:var(--danger)">'+atrasadas.length+'</b><span>atrasadas</span></div><div class="kpi"><b>'+em30+'</b><span>próx. 30 dias</span></div><div class="kpi"><b>'+itens.length+'</b><span>registros</span></div></div>';
-    if(atrasadas.length) html+='<h3 style="margin:8px 4px;color:var(--danger)">⚠️ Atrasadas</h3>'+atrasadas.map(item).join('');
-    if(proximas.length) html+='<h3 style="margin:8px 4px">📌 Próximas</h3>'+proximas.map(item).join('');
-    if(semData.length) html+='<h3 style="margin:8px 4px;color:var(--txt2)">Histórico recente</h3>'+semData.map(item).join('');
-    app(html);
+  server('apiAgenda').then(function(itens){ AGENDA=itens;
+    if(!AG_MES){ var h=new Date(); AG_MES=new Date(h.getFullYear(),h.getMonth(),1); }
+    renderAgenda();
   }); };
+
+window.agMes=function(delta){ AG_MES=new Date(AG_MES.getFullYear(),AG_MES.getMonth()+delta,1); AG_DIA=null; renderAgenda(); };
+window.agDia=function(k){ AG_DIA=(AG_DIA===k?null:k); renderAgenda(); };
+
+function agItemHtml(i){ var ent=i.escopo==='cao'?'saude':'saudeTransp'; var ic=i.escopo==='cao'?'🐕':'🐎';
+  var st=statusProx(i.proximaData); var pill=st==='atrasada'?'<span class="pill dan">Atrasada</span>':(st==='hoje'?'<span class="pill warn">Hoje</span>':(st==='proxima'?'<span class="pill ok">Agendada</span>':''));
+  return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(i.animalNome||'')+' — <span class="pill gray">'+esc(i.tipo)+'</span> '+esc(i.descricao||'')+'</h3>'+
+    '<div class="meta">'+(i.proximaData?'Próxima: <b>'+fmtData(i.proximaData)+'</b> '+pill:'Feito em '+fmtData(i.data))+(i.obs?'<br>'+esc(i.obs):'')+'</div></div>'+
+    '<button class="ib" onclick="delItem(\''+ent+'\',\''+i.id+'\')" title="Excluir">🗑️</button></div></div>'; }
+
+function calendario(itens){
+  var y=AG_MES.getFullYear(), m=AG_MES.getMonth(), hoje=diaHoje();
+  var inicio=new Date(y,m,1).getDay(), diasNoMes=new Date(y,m+1,0).getDate();
+  var byDay={};
+  itens.forEach(function(i){
+    if(i.proximaData){ var k=String(i.proximaData).substring(0,10); byDay[k]=byDay[k]||{ag:0,re:0,atr:0}; byDay[k].ag++; if(k<hoje) byDay[k].atr++; }
+    if(i.data){ var k2=String(i.data).substring(0,10); byDay[k2]=byDay[k2]||{ag:0,re:0,atr:0}; byDay[k2].re++; }
+  });
+  var nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var head='<div class="calhead"><button class="ib" onclick="agMes(-1)">‹</button><b>'+nomes[m]+' '+y+'</b><button class="ib" onclick="agMes(1)">›</button></div>';
+  var wd=['D','S','T','Q','Q','S','S'].map(function(d){return '<div class="cwd">'+d+'</div>';}).join('');
+  var cells=''; for(var i=0;i<inicio;i++) cells+='<div class="cday empty"></div>';
+  for(var dia=1;dia<=diasNoMes;dia++){ var k=y+'-'+pad2(m+1)+'-'+pad2(dia); var ev=byDay[k]; var cls='cday';
+    if(k===hoje) cls+=' hoje'; if(AG_DIA===k) cls+=' sel';
+    var dot=''; if(ev){ cls+=' tem'; var cor= ev.atr? 'var(--danger)' : (ev.ag? 'var(--ok)' : '#98a08f'); dot='<span class="cdot" style="background:'+cor+'"></span>'; }
+    cells+='<div class="'+cls+'" onclick="agDia(\''+k+'\')">'+dia+dot+'</div>'; }
+  var leg='<div class="legend" style="margin-top:8px"><span><i style="background:var(--danger)"></i>atrasado</span><span><i style="background:var(--ok)"></i>agendado</span><span><i style="background:#98a08f"></i>realizado</span></div>';
+  return '<div class="cal">'+head+'<div class="cgrid">'+wd+cells+'</div>'+leg+'</div>';
+}
+
+function renderAgenda(){ var itens=AGENDA||[];
+  if(!itens.length){ app('<div class="empty"><div class="big">📅</div>Nada na agenda ainda.<br>Registre vacinas e retornos nos cães (na ficha de cada cão) e nos cavalos (no detalhe do transporte).</div>'); return; }
+  var h=diaHoje();
+  var atrasadas=itens.filter(function(i){return i.proximaData && String(i.proximaData).substring(0,10)<h;}).sort(function(a,b){return String(a.proximaData).localeCompare(String(b.proximaData));});
+  var em30=itens.filter(function(i){return i.proximaData && String(i.proximaData).substring(0,10)>=h && (new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=30;}).length;
+  var html=calendario(itens);
+  html+='<div class="dash"><div class="kpi"><b style="color:var(--danger)">'+atrasadas.length+'</b><span>atrasadas</span></div><div class="kpi"><b>'+em30+'</b><span>próx. 30 dias</span></div><div class="kpi"><b>'+itens.length+'</b><span>registros</span></div></div>';
+  if(AG_DIA){
+    var doDia=itens.filter(function(i){ return (i.proximaData&&String(i.proximaData).substring(0,10)===AG_DIA) || (i.data&&String(i.data).substring(0,10)===AG_DIA); });
+    html+='<div class="row" style="margin:4px 4px 8px"><h3 style="margin:0" class="grow">📆 '+fmtData(AG_DIA)+'</h3><button class="btn sm sec" onclick="agDia(\''+AG_DIA+'\')">Ver tudo</button></div>';
+    html+= doDia.length? doDia.map(agItemHtml).join('') : '<div class="empty">Nenhum evento neste dia.</div>';
+  } else {
+    var proximas=itens.filter(function(i){return i.proximaData && String(i.proximaData).substring(0,10)>=h;}).sort(function(a,b){return String(a.proximaData).localeCompare(String(b.proximaData));});
+    var semData=itens.filter(function(i){return !i.proximaData;}).sort(function(a,b){return String(b.data).localeCompare(String(a.data));}).slice(0,20);
+    if(atrasadas.length) html+='<h3 style="margin:8px 4px;color:var(--danger)">⚠️ Atrasadas</h3>'+atrasadas.map(agItemHtml).join('');
+    if(proximas.length) html+='<h3 style="margin:8px 4px">📌 Próximas</h3>'+proximas.map(agItemHtml).join('');
+    if(semData.length) html+='<h3 style="margin:8px 4px;color:var(--txt2)">Histórico recente</h3>'+semData.map(agItemHtml).join('');
+  }
+  app(html);
+}
 
 /* ============================================================
    MAPA (todas as modalidades, com filtro)
