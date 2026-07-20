@@ -180,6 +180,14 @@
   .map-count{position:absolute;bottom:10px;left:8px;z-index:820;background:rgba(255,255,255,.92);border:1px solid var(--linha);
              border-radius:20px;padding:5px 12px;font-size:12px;color:var(--txt2);box-shadow:0 1px 4px rgba(0,0,0,.15)}
   @media(min-width:900px){ body.logged #mapshell{left:250px} }
+  .ceva-panel{position:absolute;top:8px;right:8px;bottom:8px;z-index:840;width:min(380px,94%);overflow:auto;
+              background:rgba(255,251,244,.98);border:1px solid var(--linha);border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);display:none}
+  .ceva-panel.open{display:block}
+  .tl{position:relative;margin:4px 0 0 6px;padding-left:16px;border-left:2px solid #d8c79f}
+  .tl-item{position:relative;margin-bottom:10px}
+  .tl-dot{position:absolute;left:-23px;top:14px;width:11px;height:11px;border-radius:50%;background:var(--verde);border:2px solid #fff;box-shadow:0 0 0 1px #d8c79f}
+  .tl-card{background:#fff;border:1px solid var(--linha);border-radius:10px;padding:9px 11px}
+  .tl-card .dt{font-size:12px;color:var(--verde);font-weight:700}
 </style>
 </head>
 <body>
@@ -213,6 +221,7 @@
     <div id="map"></div>
     <div class="map-bar" id="mapBar"></div>
     <div class="map-panel" id="mapPanel"></div>
+    <div class="ceva-panel" id="cevaPanel"></div>
     <div class="map-count" id="mapCount"></div>
   </div>
 
@@ -857,7 +866,7 @@ function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=
 
 VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
   document.body.classList.add('map-mode'); posicionarMapShell();
-  document.getElementById('mapBar').innerHTML=''; document.getElementById('mapPanel').classList.remove('open'); document.getElementById('mapPanel').innerHTML=''; document.getElementById('mapCount').textContent='Carregando…';
+  document.getElementById('mapBar').innerHTML=''; document.getElementById('mapPanel').classList.remove('open'); document.getElementById('mapPanel').innerHTML=''; document.getElementById('cevaPanel').classList.remove('open'); document.getElementById('cevaPanel').innerHTML=''; document.getElementById('mapCount').textContent='Carregando…';
   server('apiMapaDados').then(function(d){
     d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
     d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
@@ -867,7 +876,11 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
     var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
+    var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
+    var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:17,noWrap:true,attribution:'© OpenTopoMap (CC-BY-SA)'});
+    var satelite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{minZoom:3,maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
+    ruas.addTo(map);
+    L.control.layers({'Ruas':ruas,'Relevo':relevo,'Satélite':satelite}, null, {position:'topright',collapsed:true}).addTo(map);
     CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
     buildMapBar(); buildMapPanel();
     map.whenReady(function(){ map.invalidateSize(); });
@@ -905,8 +918,10 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
   if(MAPFILTER.ceva) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
-    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(abs.length?barChart(porMes(abs),{color:TIPO_COR.Espera,w:220}):'')+'</div>';
-    add(L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop),la,ln); });
+    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
+    var mk=L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop);
+    mk.on('dblclick',function(){ abrirCevaTimeline(c.id); });
+    add(mk,la,ln); });
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
@@ -919,13 +934,64 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
     else if(a.tipoManejo==='Armadilha') ctx='<b>Armadilha:</b> '+esc(d._armN[a.armadilhaId]||'—');
     else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return d._caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
-    var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(imgSrc(a.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'</div>';
+    var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(imgSrc(a.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(a.tipoManejo==='Espera'&&a.cevaId?'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+a.cevaId+'\')">📈 Linha do tempo da ceva</button>':'')+'</div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
   var info=document.getElementById('mapCount'); if(info) info.textContent = pts.length? (pts.length+' ponto(s)') : 'Nada com esse filtro (ou sem coordenadas)';
   try{
     if(pts.length===1) CURRENTMAP.setView(pts[0],14);
     else if(pts.length>1) CURRENTMAP.fitBounds(pts,{padding:[40,40],maxZoom:15});
   }catch(e){ CURRENTMAP.setView([-15.78,-47.93],4); }
+}
+
+/* ===== Painel: Linha do tempo / Resumo da ceva ===== */
+var CEVATL={ cevaId:null, tab:'tl', dim:'Atrativo' };
+window.abrirCevaTimeline=function(cevaId){ if(CURRENTMAP) CURRENTMAP.closePopup(); CEVATL.cevaId=cevaId; CEVATL.tab='tl'; CEVATL.dim='Atrativo'; renderCevaPanel(); document.getElementById('cevaPanel').classList.add('open'); };
+window.fecharCevaPanel=function(){ document.getElementById('cevaPanel').classList.remove('open'); };
+window.cevaTab=function(t){ CEVATL.tab=t; renderCevaPanel(); };
+window.cevaDim=function(d){ CEVATL.dim=d; renderCevaPanel(); };
+function periodoDe(h){ if(h<6)return'Madrugada'; if(h<12)return'Manhã'; if(h<18)return'Tarde'; return'Noite'; }
+function horaDe(iso){ var s=String(iso||''); var i=s.indexOf('T'); return i>0? parseInt(s.substring(i+1,i+3),10) : null; }
+function agruparCeva(abs,d,dim){
+  var m={};
+  abs.forEach(function(a){ var k;
+    if(dim==='Atrativo') k=d.alimentoTipo[a.alimentoId]||'—';
+    else if(dim==='Sexo') k=a.sexo||'—';
+    else if(dim==='Período'){ var h=horaDe(a.dataHora); k=h==null?'—':periodoDe(h); }
+    else { var h2=horaDe(a.dataHora); k=h2==null?'—':(h2+'h'); }
+    m[k]=(m[k]||0)+1;
+  });
+  var keys=Object.keys(m);
+  if(dim==='Horário') keys.sort(function(a,b){return (parseInt(a,10)||0)-(parseInt(b,10)||0);});
+  else if(dim==='Período') keys.sort(function(a,b){var o={'Madrugada':0,'Manhã':1,'Tarde':2,'Noite':3,'—':4};return (o[a]||9)-(o[b]||9);});
+  return keys.map(function(k){ return {label:k, value:m[k]}; });
+}
+function timelineCevaHtml(abs,d){
+  return '<div class="tl">'+abs.map(function(a){
+    var atr=d.alimentoTipo[a.alimentoId]||'—';
+    return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="row">'+
+      (a.fotoUrl?'<img class="thumb" style="width:52px;height:52px" src="'+esc(imgSrc(a.fotoUrl))+'">':'')+
+      '<div class="grow"><div class="dt">'+fmtDataHora(a.dataHora)+'</div><div class="meta">'+
+      esc(a.quantidade||'1')+' animal(is)'+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>🌽 Atrativo: <b>'+esc(atr)+'</b>'+(a.obs?'<br>'+esc(a.obs):'')+'</div></div></div></div></div>';
+  }).join('')+'</div>';
+}
+function resumoCevaHtml(abs,d){
+  var animais=abs.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||0);},0);
+  var dims=['Atrativo','Sexo','Período','Horário'];
+  var btns=dims.map(function(x){ return '<button class="chip'+(CEVATL.dim===x?' on':'')+'" onclick="cevaDim(\''+x+'\')">'+x+'</button>'; }).join(' ');
+  var pairs=agruparCeva(abs,d,CEVATL.dim);
+  return '<div class="dash"><div class="kpi"><b>'+abs.length+'</b><span>abates</span></div><div class="kpi"><b>'+animais+'</b><span>animais</span></div></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+btns+'</div>'+
+    '<h4 style="margin:4px 0 2px;font-size:12px;color:var(--txt2)">Abates por '+CEVATL.dim.toLowerCase()+'</h4>'+
+    barChart(pairs,{w:330,h:130,color:TIPO_COR.Espera});
+}
+function renderCevaPanel(){
+  var d=MAPDATA; if(!d) return; var ceva=(d.cevas||[]).filter(function(c){return c.id===CEVATL.cevaId;})[0]; if(!ceva) return;
+  var abs=d.abates.filter(function(a){return a.cevaId===ceva.id;}).sort(function(a,b){return String(b.dataHora).localeCompare(String(a.dataHora));});
+  var head='<div class="row"><h3 class="grow" style="margin:0">🌽 '+esc(ceva.nome||'Ceva')+'</h3><button class="ib" onclick="fecharCevaPanel()">✕</button></div>'+
+    '<div class="tabs" style="margin:10px 0"><div class="tab'+(CEVATL.tab==='tl'?' on':'')+'" onclick="cevaTab(\'tl\')">📈 Linha do tempo</div><div class="tab'+(CEVATL.tab==='res'?' on':'')+'" onclick="cevaTab(\'res\')">📊 Resumo</div></div>';
+  var body = !abs.length ? '<div class="empty">Nenhum abate registrado nesta ceva ainda.</div>'
+    : (CEVATL.tab==='tl' ? timelineCevaHtml(abs,d) : resumoCevaHtml(abs,d));
+  document.getElementById('cevaPanel').innerHTML=head+body;
 }
 
 /* ============================================================
