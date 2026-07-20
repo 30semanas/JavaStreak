@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Manejo de Javali</title>
+<style>
+  :root{
+    --verde:#2e4d2e; --verde-claro:#3f6b3f; --verde-esc:#213a21;
+    --terra:#8a6d3b; --areia:#f4f1e8; --card:#ffffff;
+    --txt:#22301f; --txt2:#5c6b58; --linha:#e2ded2;
+    --danger:#b23b3b; --ok:#2f7d3a; --alerta:#c8892b;
+    --sombra:0 2px 8px rgba(0,0,0,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+       background:var(--areia);color:var(--txt);padding-bottom:80px}
+  header{position:sticky;top:0;z-index:20;background:var(--verde);color:#fff;
+         padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sombra)}
+  header .back{font-size:22px;cursor:pointer;width:30px;line-height:1;opacity:.95}
+  header .titulo{font-size:16px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  header .sub{font-size:11px;opacity:.75;font-weight:400;display:block}
+  .wrap{max-width:640px;margin:0 auto;padding:14px}
+  .crumb{font-size:12px;color:var(--txt2);margin:2px 0 12px;display:flex;flex-wrap:wrap;gap:4px}
+  .crumb b{color:var(--verde)}
+
+  .card{background:var(--card);border:1px solid var(--linha);border-radius:14px;
+        padding:14px;margin-bottom:12px;box-shadow:var(--sombra)}
+  .card.click{cursor:pointer;transition:transform .06s}
+  .card.click:active{transform:scale(.985)}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card .meta{font-size:12px;color:var(--txt2);line-height:1.5}
+  .row{display:flex;align-items:center;gap:10px}
+  .grow{flex:1}
+  .pill{display:inline-block;background:var(--verde-claro);color:#fff;font-size:11px;
+        padding:3px 9px;border-radius:20px;margin:2px 4px 0 0}
+  .pill.gray{background:#98a08f}
+  .pill.warn{background:var(--alerta)} .pill.ok{background:var(--ok)} .pill.dan{background:var(--danger)}
+
+  .menu-card{display:flex;align-items:center;gap:14px}
+  .menu-card .ic{font-size:26px;width:44px;height:44px;border-radius:12px;
+                 display:flex;align-items:center;justify-content:center;background:var(--areia)}
+  .menu-card .txt h3{margin:0;font-size:15px}
+  .menu-card .txt p{margin:2px 0 0;font-size:12px;color:var(--txt2)}
+  .menu-card .chev{margin-left:auto;color:#b7bdae;font-size:20px}
+  .menu-card.disabled{opacity:.5}
+
+  label{display:block;font-size:13px;font-weight:600;color:var(--txt2);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--linha);
+        border-radius:10px;font-size:15px;background:#fff;color:var(--txt);font-family:inherit}
+  textarea{min-height:70px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde-claro);
+        box-shadow:0 0 0 3px rgba(63,107,63,.15)}
+  .two{display:flex;gap:10px} .two>div{flex:1}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+       width:100%;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:600;
+       cursor:pointer;background:var(--verde);color:#fff;margin-top:16px}
+  .btn:active{background:var(--verde-esc)}
+  .btn.sec{background:#fff;color:var(--verde);border:1.5px solid var(--verde)}
+  .btn.gps{background:var(--terra);margin-top:6px;padding:10px}
+  .btn.sm{width:auto;padding:9px 14px;font-size:13px;margin-top:0}
+  .btn.danger{background:var(--danger)}
+
+  .fab{position:fixed;bottom:20px;right:50%;transform:translateX(50%);max-width:612px;width:calc(100% - 28px);
+       z-index:15}
+  .fab .btn{box-shadow:0 6px 18px rgba(46,77,46,.4)}
+
+  .checks{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .check{display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--linha);
+         padding:9px 12px;border-radius:10px;font-size:14px;cursor:pointer;user-select:none}
+  .check.on{border-color:var(--verde);background:#eef3ea;color:var(--verde);font-weight:600}
+  .check input{width:auto;margin:0}
+
+  .empty{text-align:center;color:var(--txt2);padding:34px 16px;font-size:14px}
+  .empty .big{font-size:40px;margin-bottom:8px;opacity:.5}
+
+  .tabs{display:flex;gap:6px;margin:4px 0 14px;background:#fff;padding:5px;border-radius:12px;border:1px solid var(--linha)}
+  .tab{flex:1;text-align:center;padding:9px;border-radius:8px;font-size:13px;font-weight:600;
+       color:var(--txt2);cursor:pointer}
+  .tab.on{background:var(--verde);color:#fff}
+
+  .foto-prev{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-top:8px;display:none;border:1px solid var(--linha)}
+  .thumb{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--linha)}
+
+  .nivel-bar{height:14px;background:#e7e3d6;border-radius:8px;overflow:hidden;margin-top:6px}
+  .nivel-bar span{display:block;height:100%;background:linear-gradient(90deg,#c8892b,#2f7d3a)}
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#222;color:#fff;
+         padding:11px 18px;border-radius:24px;font-size:14px;z-index:50;opacity:0;transition:.25s;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .loading{text-align:center;padding:40px;color:var(--txt2)}
+  .spin{width:26px;height:26px;border:3px solid var(--linha);border-top-color:var(--verde);
+        border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  a.mapa{font-size:12px;color:var(--terra);text-decoration:none}
+</style>
+</head>
+<body>
+  <header>
+    <div class="back" id="btnBack" onclick="voltar()" style="display:none">‹</div>
+    <div class="grow">
+      <div class="titulo" id="hTitulo">Manejo de Javali</div>
+      <span class="sub" id="hSub">Carregando…</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="crumb" id="crumb"></div>
+    <div id="app">
+      <div class="loading"><div class="spin"></div>Iniciando o sistema…</div>
+    </div>
+  </div>
+
+  <div class="fab" id="fab" style="display:none"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ESTADO E NAVEGAÇÃO
+   ============================================================ */
+var STATE = {
+  appNome: 'Manejo de Javali',
+  manejador: null,   // objeto selecionado
+  ceva: null,
+  canil: null,
+  cao: null,
+  stack: []          // pilha de views para o botão voltar
+};
+
+var VIEWS = {}; // registrado abaixo
+
+/* ============================================================
+   >>>>>>  COLE AQUI A SUA URL /exec DO APPS SCRIPT  <<<<<<
+   (Implantar > App da Web > "Qualquer pessoa". Se publicar nova
+    versão, use "Gerenciar implantações" p/ manter a mesma URL.)
+   ============================================================ */
+var API_URL = 'https://script.google.com/macros/s/AKfycby_LWJgdy0nffHnXE0Zi9eHviuVgiDPbByini4eyWyqsotc3wsUz0zLMV3-ZBRUvp7rXQ/exec';
+
+/* Chama a API via fetch. Corpo text/plain = requisição "simples":
+   o navegador NÃO dispara preflight OPTIONS (que o Apps Script não responde). */
+function server(fn){
+  var args = Array.prototype.slice.call(arguments,1);
+  return fetch(API_URL, {
+    method: 'POST',
+    redirect: 'follow',
+    body: JSON.stringify({ action: fn, args: args })
+    // sem header Content-Type -> vira text/plain automaticamente (sem CORS preflight)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(j){ if(!j.ok) throw new Error(j.error || 'Erro no servidor'); return j.data; })
+  .catch(function(e){ toast('Erro: '+(e && e.message ? e.message : e)); throw e; });
+}
+
+function nav(view, pushToStack){
+  if(pushToStack !== false) STATE.stack.push(view);
+  render();
+}
+function voltar(){
+  STATE.stack.pop();
+  var v = STATE.stack[STATE.stack.length-1] || 'home';
+  render();
+}
+function render(){
+  var view = STATE.stack[STATE.stack.length-1] || 'home';
+  document.getElementById('btnBack').style.display = STATE.stack.length>1 ? 'block':'none';
+  document.getElementById('fab').style.display='none';
+  document.getElementById('fab').innerHTML='';
+  var fn = VIEWS[view] || VIEWS.home;
+  fn();
+  updateHeader();
+}
+function updateHeader(){
+  document.getElementById('hSub').textContent =
+    STATE.manejador ? ('Manejador: '+STATE.manejador.nome) : STATE.appNome;
+}
+function setTitulo(t){ document.getElementById('hTitulo').textContent=t; }
+function setCrumb(){
+  var parts=[]; 
+  if(STATE.manejador) parts.push(esc(STATE.manejador.nome));
+  for(var i=0;i<arguments.length;i++) parts.push(arguments[i]);
+  document.getElementById('crumb').innerHTML = parts.map(function(p,i){
+    return i===parts.length-1 ? '<b>'+p+'</b>' : p;
+  }).join(' › ');
+}
+function app(html){ document.getElementById('app').innerHTML = html; }
+function fab(html){ var f=document.getElementById('fab'); f.innerHTML=html; f.style.display='block'; }
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function toast(msg){
+  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600);
+}
+function loadingBox(txt){ app('<div class="loading"><div class="spin"></div>'+(txt||'Carregando…')+'</div>'); }
+function fmtData(iso){
+  if(!iso) return '';
+  var s=String(iso);
+  if(s.indexOf('T')>0){ var d=s.split('T')[0].split('-'); return d[2]+'/'+d[1]+'/'+d[0]; }
+  if(s.indexOf('-')===4){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  return s;
+}
+function idade(dataNasc){
+  if(!dataNasc) return '';
+  var d=new Date(dataNasc); if(isNaN(d)) return '';
+  var a=Math.floor((Date.now()-d.getTime())/(365.25*24*3600*1000));
+  return a>=0 ? a+' ano'+(a!==1?'s':'') : '';
+}
+function gpsButton(latId,lngId){
+  return '<button type="button" class="btn gps" onclick="pegarGps(\''+latId+'\',\''+lngId+'\',this)">📍 Usar minha localização atual</button>';
+}
+function pegarGps(latId,lngId,btn){
+  if(!navigator.geolocation){ toast('GPS não suportado'); return; }
+  var t=btn.textContent; btn.textContent='📡 Localizando…'; btn.disabled=true;
+  navigator.geolocation.getCurrentPosition(function(p){
+    document.getElementById(latId).value=p.coords.latitude.toFixed(6);
+    document.getElementById(lngId).value=p.coords.longitude.toFixed(6);
+    btn.textContent=t; btn.disabled=false; toast('Localização capturada ✔');
+  },function(e){ btn.textContent=t; btn.disabled=false; toast('Falha no GPS: '+e.message); },
+  {enableHighAccuracy:true,timeout:12000});
+}
+function mapaLink(lat,lng){
+  if(!lat||!lng) return '';
+  return '<a class="mapa" target="_blank" href="https://www.google.com/maps?q='+lat+','+lng+'">🗺️ '+lat+', '+lng+'</a>';
+}
+function val(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+/* leitura de foto -> dataURL */
+function bindFoto(inputId,prevId){
+  var inp=document.getElementById(inputId), prev=document.getElementById(prevId);
+  inp._data='';
+  inp.addEventListener('change',function(){
+    var f=inp.files[0]; if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        // redimensiona p/ no máx 1280px e comprime em JPEG (economiza rede/quota)
+        var max=1280, w=img.width, h=img.height;
+        if(w>max||h>max){ if(w>h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+        var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        try { inp._data=cv.toDataURL('image/jpeg',0.82); }
+        catch(e){ inp._data=r.result; } // fallback se o canvas falhar
+        prev.src=inp._data; prev.style.display='block';
+      };
+      img.onerror=function(){ inp._data=r.result; prev.src=r.result; prev.style.display='block'; };
+      img.src=r.result;
+    };
+    r.readAsDataURL(f);
+  });
+}
+function fotoData(inputId){ var i=document.getElementById(inputId); return i&&i._data?i._data:''; }
+
+/* ============================================================
+   VIEW: HOME (lista de manejadores)
+   ============================================================ */
+VIEWS.home = function(){
+  setTitulo(STATE.appNome);
+  STATE.manejador=null;
+  document.getElementById('crumb').innerHTML='';
+  loadingBox('Carregando manejadores…');
+  server('apiListarManejadores').then(function(lista){
+    var html='';
+    if(!lista.length){
+      html='<div class="empty"><div class="big">👤</div>Nenhum manejador cadastrado ainda.<br>Toque em <b>Novo Manejador</b> para começar.</div>';
+    } else {
+      html = lista.map(function(m){
+        var perfis=(m.perfis||[]).map(function(p){ return '<span class="pill'+(p==='Manejador'?'':' gray')+'">'+esc(p)+'</span>'; }).join('');
+        return '<div class="card click" onclick="abrirManejador(\''+m.id+'\')">'+
+          '<div class="row"><div class="grow"><h3>'+esc(m.nome)+'</h3>'+
+          '<div class="meta">CPF: '+esc(m.cpf||'—')+' · CR: '+esc(m.cr||'—')+'<br>'+esc(m.telefone||'')+'</div>'+
+          '<div style="margin-top:6px">'+perfis+'</div></div><div class="chev" style="color:#b7bdae;font-size:22px">›</div></div></div>';
+      }).join('');
+    }
+    app(html);
+    fab('<button class="btn" onclick="nav(\'manejadorForm\')">＋ Novo Manejador</button>');
+  });
+};
+window.abrirManejador=function(id){
+  server('apiListarManejadores').then(function(l){
+    STATE.manejador = l.filter(function(m){return m.id===id;})[0];
+    nav('modulos');
+  });
+};
+
+/* ============================================================
+   VIEW: FORM MANEJADOR
+   ============================================================ */
+var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
+VIEWS.manejadorForm = function(){
+  setTitulo('Novo Manejador'); setCrumb('Novo Manejador');
+  var checks=PERFIS.map(function(p){
+    return '<label class="check" onclick="togglePerfil(this)"><input type="checkbox" value="'+p+'">'+p+'</label>';
+  }).join('');
+  app(
+    '<div class="card">'+
+      '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
+      '<div class="two"><div><label>Data de nascimento</label><input id="f_nasc" type="date"></div>'+
+      '<div><label>CPF *</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></div></div>'+
+      '<div class="two"><div><label>CR (Certif. de Registro)</label><input id="f_cr" placeholder="Nº do CR"></div>'+
+      '<div><label>Telefone</label><input id="f_tel" inputmode="tel" placeholder="(00) 00000-0000"></div></div>'+
+      '<label>E-mail</label><input id="f_email" type="email" placeholder="email@exemplo.com">'+
+      '<label>Endereço da residência</label><textarea id="f_end" placeholder="Rua, nº, bairro, cidade/UF"></textarea>'+
+      '<div class="two"><div><label>Latitude</label><input id="f_lat" inputmode="decimal" placeholder="-23.000000"></div>'+
+      '<div><label>Longitude</label><input id="f_lng" inputmode="decimal" placeholder="-45.000000"></div></div>'+
+      gpsButton('f_lat','f_lng')+
+      '<label>Perfis *</label><div class="checks">'+checks+'</div>'+
+      '<button class="btn" onclick="salvarManejador(this)">Salvar manejador</button>'+
+    '</div>'
+  );
+};
+window.togglePerfil=function(lbl){
+  var cb=lbl.querySelector('input'); cb.checked=!cb.checked;
+  lbl.classList.toggle('on',cb.checked);
+};
+window.salvarManejador=function(btn){
+  var nome=val('f_nome'), cpf=val('f_cpf');
+  var perfis=[].slice.call(document.querySelectorAll('.checks input:checked')).map(function(c){return c.value;});
+  if(!nome){ toast('Informe o nome'); return; }
+  if(!cpf){ toast('Informe o CPF'); return; }
+  if(!perfis.length){ toast('Selecione ao menos 1 perfil'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiCriarManejador',{
+    nome:nome, dataNascimento:val('f_nasc'), cpf:cpf, cr:val('f_cr'),
+    telefone:val('f_tel'), email:val('f_email'), endereco:val('f_end'),
+    lat:val('f_lat'), lng:val('f_lng'), perfis:perfis
+  }).then(function(m){
+    m.perfis=perfis; STATE.manejador=m;
+    toast('Manejador cadastrado ✔');
+    STATE.stack=['home','modulos']; render();
+  }).catch(function(){ btn.disabled=false; btn.textContent='Salvar manejador'; });
+};
+
+/* ============================================================
+   VIEW: MÓDULOS (após selecionar manejador)
+   ============================================================ */
+VIEWS.modulos = function(){
+  var m=STATE.manejador; setTitulo(m.nome); setCrumb('Módulos');
+  var temManejo=(m.perfis||[]).indexOf('Manejador')>=0;
+  var cards='';
+  cards+=moduloCard('🐗','Manejo','Espera, espreita, cães e armadilhas', temManejo, temManejo?"nav('manejo')":'');
+  // outros perfis: placeholders para evolução futura
+  (m.perfis||[]).forEach(function(p){
+    if(p==='Logista') cards+=moduloCard('🏪','Loja','Estoque, vendas, munição','em breve','');
+    if(p==='Despachante') cards+=moduloCard('📋','Despacho','Documentação e licenças','em breve','');
+    if(p==='Agricultor') cards+=moduloCard('🌾','Lavoura','Danos, áreas, ocorrências','em breve','');
+    if(p==='Clube de Tiro') cards+=moduloCard('🎯','Clube de Tiro','Eventos, sócios, estande','em breve','');
+  });
+  app('<div class="card"><div class="meta">Perfis: '+
+      (m.perfis||[]).map(function(p){return '<span class="pill'+(p==='Manejador'?'':' gray')+'">'+esc(p)+'</span>';}).join('')+
+      '</div></div>'+cards);
+};
+function moduloCard(ic,titulo,desc,ativo,onclick){
+  var dis = ativo!==true;
+  var badge = ativo==='em breve' ? '<span class="pill warn">em breve</span>' : '';
+  return '<div class="card menu-card'+(dis?' disabled':' click')+'" '+(onclick?('onclick="'+onclick+'"'):'')+'>'+
+    '<div class="ic">'+ic+'</div><div class="txt"><h3>'+titulo+' '+badge+'</h3><p>'+desc+'</p></div>'+
+    (dis?'':'<div class="chev">›</div>')+'</div>';
+}
+
+/* ============================================================
+   VIEW: MANEJO (4 submenus)
+   ============================================================ */
+VIEWS.manejo = function(){
+  setTitulo('Manejo'); setCrumb('Módulos','Manejo');
+  app(
+    moduloCard('🌽','Espera (com ceva)','Cevas, alimento e nível do tratadouro',true,"nav('espera')")+
+    moduloCard('🥾','Caça ativa / espreita','Sem cães · meios de transporte',true,"nav('espreita')")+
+    moduloCard('🐕','Caça com cães','Canil, cães e controle de saúde',true,"nav('caes')")+
+    moduloCard('🪤','Armadilha (captura)','Tipos e localização das armadilhas',true,"nav('armadilha')")
+  );
+};
+
+/* ============================================================
+   ESPERA: lista de cevas
+   ============================================================ */
+var TIPOS_CEVA=['Árvore','Banco','Standart','Plataforma','Chão','Mangueiro','Outro'];
+VIEWS.espera = function(){
+  setTitulo('Espera – Cevas'); setCrumb('Manejo','Espera');
+  loadingBox();
+  server('apiListarCevas',STATE.manejador.id).then(function(l){
+    var html = l.length? l.map(function(c){
+      return '<div class="card click" onclick="abrirCeva(\''+c.id+'\')">'+
+        '<div class="row"><div class="grow"><h3>'+esc(c.nome||'Ceva')+'</h3>'+
+        '<div class="meta"><span class="pill">'+esc(c.tipo||'—')+'</span><br>'+mapaLink(c.lat,c.lng)+'</div>'+
+        (c.obs?'<div class="meta" style="margin-top:4px">'+esc(c.obs)+'</div>':'')+
+        '</div><div class="chev" style="color:#b7bdae;font-size:22px">›</div></div></div>';
+    }).join('') : '<div class="empty"><div class="big">🌽</div>Nenhuma ceva cadastrada.</div>';
+    app(html);
+    fab('<button class="btn" onclick="nav(\'cevaForm\')">＋ Nova Ceva</button>');
+  });
+};
+VIEWS.cevaForm = function(){
+  setTitulo('Nova Ceva'); setCrumb('Manejo','Espera','Nova');
+  app('<div class="card">'+
+    '<label>Nome / identificação *</label><input id="c_nome" placeholder="Ex: Ceva do Riacho">'+
+    '<label>Tipo de ponto *</label><select id="c_tipo">'+
+      TIPOS_CEVA.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<div class="two"><div><label>Latitude</label><input id="c_lat" inputmode="decimal"></div>'+
+    '<div><label>Longitude</label><input id="c_lng" inputmode="decimal"></div></div>'+
+    gpsButton('c_lat','c_lng')+
+    '<label>Observações</label><textarea id="c_obs" placeholder="Acesso, referências, distância…"></textarea>'+
+    '<button class="btn" onclick="salvarCeva(this)">Salvar ceva</button></div>');
+};
+window.salvarCeva=function(btn){
+  if(!val('c_nome')){ toast('Informe o nome da ceva'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiCriarCeva',{manejadorId:STATE.manejador.id,nome:val('c_nome'),tipo:val('c_tipo'),
+    lat:val('c_lat'),lng:val('c_lng'),obs:val('c_obs')}).then(function(){
+    toast('Ceva cadastrada ✔'); voltar();
+  }).catch(function(){ btn.disabled=false; btn.textContent='Salvar ceva'; });
+};
+window.abrirCeva=function(id){
+  server('apiListarCevas',STATE.manejador.id).then(function(l){
+    STATE.ceva=l.filter(function(c){return c.id===id;})[0];
+    STATE.cevaTab='alimento'; nav('cevaDetail');
+  });
+};
+
+/* ============================================================
+   CEVA DETAIL: tabs Alimento / Nível do Tratadouro
+   ============================================================ */
+VIEWS.cevaDetail = function(){
+  var c=STATE.ceva; setTitulo(c.nome||'Ceva'); setCrumb('Espera',esc(c.nome||'Ceva'));
+  var tab=STATE.cevaTab||'alimento';
+  var head='<div class="card"><div class="meta"><span class="pill">'+esc(c.tipo)+'</span> '+mapaLink(c.lat,c.lng)+'</div></div>'+
+    '<div class="tabs"><div class="tab'+(tab==='alimento'?' on':'')+'" onclick="STATE.cevaTab=\'alimento\';render()">🌽 Alimento</div>'+
+    '<div class="tab'+(tab==='nivel'?' on':'')+'" onclick="STATE.cevaTab=\'nivel\';render()">📊 Nível</div></div>';
+  app(head+'<div id="tabc" class="loading"><div class="spin"></div></div>');
+  if(tab==='alimento') renderAlimentos(); else renderNiveis();
+};
+var TIPOS_ALIM=['Milho','Fubá','Farelo','Soja','Ração','Sal mineral','Melaço','Outro'];
+function renderAlimentos(){
+  server('apiListarAlimentos',STATE.ceva.id).then(function(l){
+    var lista = l.length? l.map(function(a){
+      return '<div class="card"><div class="row"><div class="grow"><h3>'+esc(a.tipo)+'</h3>'+
+        '<div class="meta">'+esc(a.quantidade||'')+' '+esc(a.unidade||'')+' · '+fmtData(a.data)+
+        (a.obs?'<br>'+esc(a.obs):'')+'</div></div></div></div>';
+    }).join('') : '<div class="empty">Nenhum alimento registrado.</div>';
+    document.getElementById('tabc').outerHTML='<div id="tabc">'+lista+'</div>';
+    fab('<button class="btn" onclick="nav(\'alimentoForm\')">＋ Registrar alimento</button>');
+  });
+}
+VIEWS.alimentoForm=function(){
+  setTitulo('Registrar alimento'); setCrumb('Espera',esc(STATE.ceva.nome),'Alimento');
+  app('<div class="card">'+
+    '<label>Tipo de alimento *</label><select id="a_tipo">'+TIPOS_ALIM.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<div class="two"><div><label>Quantidade</label><input id="a_qtd" inputmode="decimal" placeholder="Ex: 20"></div>'+
+    '<div><label>Unidade</label><select id="a_uni"><option>kg</option><option>saco(s)</option><option>litro(s)</option><option>lata(s)</option></select></div></div>'+
+    '<label>Data</label><input id="a_data" type="date">'+
+    '<label>Observações</label><textarea id="a_obs"></textarea>'+
+    '<button class="btn" onclick="salvarAlimento(this)">Salvar</button></div>');
+  document.getElementById('a_data').value=new Date().toISOString().split('T')[0];
+};
+window.salvarAlimento=function(btn){
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiCriarAlimento',{cevaId:STATE.ceva.id,tipo:val('a_tipo'),quantidade:val('a_qtd'),
+    unidade:val('a_uni'),data:val('a_data'),obs:val('a_obs')}).then(function(){
+    toast('Alimento registrado ✔'); voltar();
+  }).catch(function(){btn.disabled=false;btn.textContent='Salvar';});
+};
+function renderNiveis(){
+  server('apiListarNiveis',STATE.ceva.id).then(function(l){
+    var atual = l.length? l[0].percentual : null;
+    var topo='';
+    if(atual!=null && atual!==''){
+      topo='<div class="card"><h3>Nível atual: '+esc(atual)+'%</h3>'+
+        '<div class="nivel-bar"><span style="width:'+Math.max(0,Math.min(100,parseFloat(atual)||0))+'%"></span></div>'+
+        '<div class="meta" style="margin-top:6px">Atualizado em '+fmtData(l[0].data)+'</div></div>';
+    }
+    var hist = l.length? '<div class="card"><h3>Histórico</h3>'+l.map(function(n){
+      return '<div class="meta" style="padding:6px 0;border-top:1px solid var(--linha)">'+
+        fmtData(n.data)+' — <b>'+esc(n.percentual)+'%</b>'+(n.obs?' · '+esc(n.obs):'')+'</div>';
+    }).join('')+'</div>' : '<div class="empty">Nenhuma leitura de nível ainda.</div>';
+    document.getElementById('tabc').outerHTML='<div id="tabc">'+topo+hist+'</div>';
+    fab('<button class="btn" onclick="nav(\'nivelForm\')">＋ Registrar nível</button>');
+  });
+}
+VIEWS.nivelForm=function(){
+  setTitulo('Nível do tratadouro'); setCrumb('Espera',esc(STATE.ceva.nome),'Nível');
+  app('<div class="card">'+
+    '<label>Percentual de alimento no tratadouro *</label>'+
+    '<input id="n_perc" type="range" min="0" max="100" value="50" oninput="document.getElementById(\'n_lbl\').textContent=this.value+\'%\'">'+
+    '<div style="text-align:center;font-size:30px;font-weight:700;color:var(--verde)" id="n_lbl">50%</div>'+
+    '<label>Data</label><input id="n_data" type="date">'+
+    '<label>Observações</label><textarea id="n_obs" placeholder="Consumo alto? Presença de javali?"></textarea>'+
+    '<button class="btn" onclick="salvarNivel(this)">Salvar leitura</button></div>');
+  document.getElementById('n_data').value=new Date().toISOString().split('T')[0];
+};
+window.salvarNivel=function(btn){
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiRegistrarNivel',{cevaId:STATE.ceva.id,percentual:val('n_perc'),data:val('n_data'),obs:val('n_obs')})
+  .then(function(){ toast('Nível registrado ✔'); voltar(); })
+  .catch(function(){btn.disabled=false;btn.textContent='Salvar leitura';});
+};
+
+/* ============================================================
+   ESPREITA: transportes
+   ============================================================ */
+var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Cavalo','A pé','Bicicleta','Caminhonete','Outro'];
+VIEWS.espreita=function(){
+  setTitulo('Caça ativa / espreita'); setCrumb('Manejo','Espreita');
+  loadingBox();
+  server('apiListarTransportes',STATE.manejador.id).then(function(l){
+    var html=l.length? l.map(function(t){
+      return '<div class="card"><div class="row">'+
+        (t.fotoUrl?'<img class="thumb" src="'+esc(t.fotoUrl)+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
+        '<div class="grow"><h3>'+esc(t.tipo)+'</h3><div class="meta">'+esc(t.identificacao||'')+
+        (t.obs?'<br>'+esc(t.obs):'')+'</div></div></div></div>';
+    }).join('') : '<div class="empty"><div class="big">🥾</div>Nenhum meio de transporte cadastrado.</div>';
+    app(html);
+    fab('<button class="btn" onclick="nav(\'transpForm\')">＋ Novo transporte</button>');
+  });
+};
+function iconeTransp(t){var m={'Carro':'🚗','Moto':'🏍️','Quadriciclo':'🛺','Cavalo':'🐎','A pé':'🚶','Bicicleta':'🚲','Caminhonete':'🛻'};return m[t]||'🧭';}
+VIEWS.transpForm=function(){
+  setTitulo('Novo transporte'); setCrumb('Espreita','Novo');
+  app('<div class="card">'+
+    '<label>Tipo *</label><select id="t_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<label>Identificação / apelido</label><input id="t_id" placeholder="Ex: Cavalo Trovão / Placa ABC-1234">'+
+    '<label>Observações</label><textarea id="t_obs" placeholder="Características, cuidados, autonomia…"></textarea>'+
+    '<label>Foto</label><input id="t_foto" type="file" accept="image/*" capture="environment">'+
+    '<img id="t_prev" class="foto-prev">'+
+    '<button class="btn" onclick="salvarTransp(this)">Salvar transporte</button></div>');
+  bindFoto('t_foto','t_prev');
+};
+window.salvarTransp=function(btn){
+  btn.disabled=true; btn.textContent='Enviando…';
+  server('apiCriarTransporte',{manejadorId:STATE.manejador.id,tipo:val('t_tipo'),
+    identificacao:val('t_id'),obs:val('t_obs'),foto:fotoData('t_foto')}).then(function(){
+    toast('Transporte cadastrado ✔'); voltar();
+  }).catch(function(){btn.disabled=false;btn.textContent='Salvar transporte';});
+};
+
+/* ============================================================
+   CAÇA COM CÃES: canis -> cães -> saúde
+   ============================================================ */
+VIEWS.caes=function(){
+  setTitulo('Caça com cães'); setCrumb('Manejo','Cães');
+  loadingBox();
+  server('apiListarCanis',STATE.manejador.id).then(function(l){
+    var html=l.length? l.map(function(c){
+      return '<div class="card click" onclick="abrirCanil(\''+c.id+'\')"><div class="row"><div class="grow">'+
+        '<h3>🏠 '+esc(c.nome||'Canil')+'</h3><div class="meta">'+mapaLink(c.lat,c.lng)+
+        (c.obs?'<br>'+esc(c.obs):'')+'</div></div><div class="chev" style="color:#b7bdae;font-size:22px">›</div></div></div>';
+    }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum canil cadastrado.</div>';
+    app(html);
+    fab('<button class="btn" onclick="nav(\'canilForm\')">＋ Novo canil</button>');
+  });
+};
+VIEWS.canilForm=function(){
+  setTitulo('Novo canil'); setCrumb('Cães','Novo canil');
+  app('<div class="card">'+
+    '<label>Nome do canil *</label><input id="k_nome" placeholder="Ex: Canil da Sede">'+
+    '<div class="two"><div><label>Latitude</label><input id="k_lat" inputmode="decimal"></div>'+
+    '<div><label>Longitude</label><input id="k_lng" inputmode="decimal"></div></div>'+
+    gpsButton('k_lat','k_lng')+
+    '<label>Observações</label><textarea id="k_obs"></textarea>'+
+    '<button class="btn" onclick="salvarCanil(this)">Salvar canil</button></div>');
+};
+window.salvarCanil=function(btn){
+  if(!val('k_nome')){toast('Informe o nome do canil');return;}
+  btn.disabled=true;btn.textContent='Salvando…';
+  server('apiCriarCanil',{manejadorId:STATE.manejador.id,nome:val('k_nome'),lat:val('k_lat'),lng:val('k_lng'),obs:val('k_obs')})
+  .then(function(){toast('Canil cadastrado ✔');voltar();})
+  .catch(function(){btn.disabled=false;btn.textContent='Salvar canil';});
+};
+window.abrirCanil=function(id){
+  server('apiListarCanis',STATE.manejador.id).then(function(l){
+    STATE.canil=l.filter(function(c){return c.id===id;})[0]; nav('canilDetail');
+  });
+};
+var FUNCOES_CAO=['Rastreio','Busca','Agarro','Faro','Cerco','Misto','Outro'];
+VIEWS.canilDetail=function(){
+  var k=STATE.canil; setTitulo(k.nome||'Canil'); setCrumb('Cães',esc(k.nome||'Canil'));
+  loadingBox();
+  server('apiListarCaes',k.id).then(function(l){
+    var html=l.length? l.map(function(c){
+      return '<div class="card click" onclick="abrirCao(\''+c.id+'\')"><div class="row">'+
+        (c.fotoUrl?'<img class="thumb" src="'+esc(c.fotoUrl)+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">🐕</div>')+
+        '<div class="grow"><h3>'+esc(c.nome)+'</h3><div class="meta"><span class="pill">'+esc(c.funcao||'—')+'</span> '+esc(c.raca||'')+'<br>'+
+        (c.sexo?esc(c.sexo)+' · ':'')+(idade(c.dataNascimento)||'')+'</div></div><div class="chev" style="color:#b7bdae;font-size:22px">›</div></div></div>';
+    }).join('') : '<div class="empty">Nenhum cão neste canil.</div>';
+    app(html);
+    fab('<button class="btn" onclick="nav(\'caoForm\')">＋ Novo cão</button>');
+  });
+};
+VIEWS.caoForm=function(){
+  setTitulo('Novo cão'); setCrumb('Cães',esc(STATE.canil.nome),'Novo cão');
+  app('<div class="card">'+
+    '<label>Nome *</label><input id="d_nome" placeholder="Nome do cão">'+
+    '<label>Função *</label><select id="d_func">'+FUNCOES_CAO.map(function(f){return '<option>'+f+'</option>';}).join('')+'</select>'+
+    '<div class="two"><div><label>Raça</label><input id="d_raca"></div>'+
+    '<div><label>Sexo</label><select id="d_sexo"><option>Macho</option><option>Fêmea</option></select></div></div>'+
+    '<label>Data de nascimento</label><input id="d_nasc" type="date">'+
+    '<label>Observações</label><textarea id="d_obs"></textarea>'+
+    '<label>Foto</label><input id="d_foto" type="file" accept="image/*" capture="environment"><img id="d_prev" class="foto-prev">'+
+    '<button class="btn" onclick="salvarCao(this)">Salvar cão</button></div>');
+  bindFoto('d_foto','d_prev');
+};
+window.salvarCao=function(btn){
+  if(!val('d_nome')){toast('Informe o nome do cão');return;}
+  btn.disabled=true;btn.textContent='Enviando…';
+  server('apiCriarCao',{canilId:STATE.canil.id,nome:val('d_nome'),funcao:val('d_func'),
+    raca:val('d_raca'),sexo:val('d_sexo'),dataNascimento:val('d_nasc'),obs:val('d_obs'),foto:fotoData('d_foto')})
+  .then(function(){toast('Cão cadastrado ✔');voltar();})
+  .catch(function(){btn.disabled=false;btn.textContent='Salvar cão';});
+};
+window.abrirCao=function(id){
+  server('apiListarCaes',STATE.canil.id).then(function(l){
+    STATE.cao=l.filter(function(c){return c.id===id;})[0]; nav('caoDetail');
+  });
+};
+var TIPOS_SAUDE=['Vacina','Vermífugo','Antipulgas','Consulta','Exame','Medicação','Cirurgia','Outro'];
+VIEWS.caoDetail=function(){
+  var c=STATE.cao; setTitulo(c.nome); setCrumb('Cães',esc(STATE.canil.nome),esc(c.nome));
+  var ficha='<div class="card"><div class="row">'+
+    (c.fotoUrl?'<img class="thumb" src="'+esc(c.fotoUrl)+'" style="width:80px;height:80px">':'')+
+    '<div class="grow"><h3>'+esc(c.nome)+'</h3><div class="meta">'+
+    '<span class="pill">'+esc(c.funcao||'—')+'</span><br>'+esc(c.raca||'')+' · '+esc(c.sexo||'')+
+    (idade(c.dataNascimento)?'<br>Idade: '+idade(c.dataNascimento):'')+
+    (c.obs?'<br>'+esc(c.obs):'')+'</div></div></div></div>';
+  app(ficha+'<h3 style="margin:6px 4px">Saúde & Vacinas</h3><div id="saudeList" class="loading"><div class="spin"></div></div>');
+  server('apiListarSaude',c.id).then(function(l){
+    var html=l.length? l.map(function(s){
+      var pillCls = s.tipo==='Vacina'?'ok':(s.tipo==='Vermífugo'||s.tipo==='Antipulgas'?'':'gray');
+      var alerta = s.proximaData ? '<br><span class="pill warn">Próxima: '+fmtData(s.proximaData)+'</span>' : '';
+      return '<div class="card"><h3 style="font-size:15px"><span class="pill '+pillCls+'">'+esc(s.tipo)+'</span> '+esc(s.descricao||'')+'</h3>'+
+        '<div class="meta">'+fmtData(s.data)+alerta+(s.obs?'<br>'+esc(s.obs):'')+'</div></div>';
+    }).join('') : '<div class="empty">Nenhum registro de saúde.</div>';
+    document.getElementById('saudeList').outerHTML='<div id="saudeList">'+html+'</div>';
+    fab('<button class="btn" onclick="nav(\'saudeForm\')">＋ Registrar saúde/vacina</button>');
+  });
+};
+VIEWS.saudeForm=function(){
+  setTitulo('Saúde / Vacina'); setCrumb('Cães',esc(STATE.cao.nome),'Saúde');
+  app('<div class="card">'+
+    '<label>Tipo *</label><select id="s_tipo">'+TIPOS_SAUDE.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<label>Descrição</label><input id="s_desc" placeholder="Ex: V10, Raiva, Giárdia…">'+
+    '<div class="two"><div><label>Data</label><input id="s_data" type="date"></div>'+
+    '<div><label>Próxima dose/retorno</label><input id="s_prox" type="date"></div></div>'+
+    '<label>Observações</label><textarea id="s_obs"></textarea>'+
+    '<button class="btn" onclick="salvarSaude(this)">Salvar</button></div>');
+  document.getElementById('s_data').value=new Date().toISOString().split('T')[0];
+};
+window.salvarSaude=function(btn){
+  btn.disabled=true;btn.textContent='Salvando…';
+  server('apiRegistrarSaude',{caoId:STATE.cao.id,tipo:val('s_tipo'),descricao:val('s_desc'),
+    data:val('s_data'),proximaData:val('s_prox'),obs:val('s_obs')})
+  .then(function(){toast('Registro salvo ✔');voltar();})
+  .catch(function(){btn.disabled=false;btn.textContent='Salvar';});
+};
+
+/* ============================================================
+   ARMADILHA
+   ============================================================ */
+var TIPOS_ARM=['Jaula','Curral (corral trap)','Laço','Gaiola','Tombador','Outro'];
+VIEWS.armadilha=function(){
+  setTitulo('Armadilhas'); setCrumb('Manejo','Armadilha');
+  loadingBox();
+  server('apiListarArmadilhas',STATE.manejador.id).then(function(l){
+    var html=l.length? l.map(function(a){
+      var st = a.status==='Ativa'?'ok':(a.status==='Capturado'?'warn':'gray');
+      return '<div class="card"><div class="row"><div class="grow">'+
+        '<h3>🪤 '+esc(a.tipo)+'</h3><div class="meta"><span class="pill '+st+'">'+esc(a.status||'Ativa')+'</span> '+mapaLink(a.lat,a.lng)+
+        (a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+
+        '<button class="btn sm sec" onclick="ciclarStatus(\''+a.id+'\',\''+esc(a.status||'Ativa')+'\')">Status</button></div></div>';
+    }).join('') : '<div class="empty"><div class="big">🪤</div>Nenhuma armadilha cadastrada.</div>';
+    app(html);
+    fab('<button class="btn" onclick="nav(\'armForm\')">＋ Nova armadilha</button>');
+  });
+};
+window.ciclarStatus=function(id,atual){
+  var seq=['Ativa','Armada','Capturado','Desativada'];
+  var prox=seq[(seq.indexOf(atual)+1)%seq.length];
+  server('apiAtualizarStatusArmadilha',id,prox).then(function(){toast('Status: '+prox);render();});
+};
+VIEWS.armForm=function(){
+  setTitulo('Nova armadilha'); setCrumb('Armadilha','Nova');
+  app('<div class="card">'+
+    '<label>Tipo *</label><select id="r_tipo">'+TIPOS_ARM.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+    '<label>Status inicial</label><select id="r_status"><option>Ativa</option><option>Armada</option><option>Desativada</option></select>'+
+    '<div class="two"><div><label>Latitude</label><input id="r_lat" inputmode="decimal"></div>'+
+    '<div><label>Longitude</label><input id="r_lng" inputmode="decimal"></div></div>'+
+    gpsButton('r_lat','r_lng')+
+    '<label>Observações</label><textarea id="r_obs" placeholder="Iscagem, acesso, referências…"></textarea>'+
+    '<button class="btn" onclick="salvarArm(this)">Salvar armadilha</button></div>');
+};
+window.salvarArm=function(btn){
+  btn.disabled=true;btn.textContent='Salvando…';
+  server('apiCriarArmadilha',{manejadorId:STATE.manejador.id,tipo:val('r_tipo'),status:val('r_status'),
+    lat:val('r_lat'),lng:val('r_lng'),obs:val('r_obs')})
+  .then(function(){toast('Armadilha cadastrada ✔');voltar();})
+  .catch(function(){btn.disabled=false;btn.textContent='Salvar armadilha';});
+};
+
+/* ============================================================
+   INÍCIO
+   ============================================================ */
+server('apiBoot').then(function(b){
+  STATE.appNome=b.appNome||'Manejo de Javali';
+  setTitulo(STATE.appNome);
+  STATE.stack=['home'];
+  render();
+}).catch(function(){
+  app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>'+
+      'Verifique se a <b>API_URL</b> no topo do index.html é a sua URL <b>/exec</b> e se a implantação está como '+
+      '<b>“Qualquer pessoa”</b> (Executar como: você).</div>');
+});
+</script>
+</body>
+</html>
