@@ -93,20 +93,20 @@
         border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 10px}
   @keyframes sp{to{transform:rotate(360deg)}}
   /* ===== Animação de caça no carregamento ===== */
-  .hunt{position:relative;height:300px;max-width:620px;margin:24px auto 0;overflow:hidden;display:flex;align-items:center;justify-content:center}
-  .hunt-boar{position:absolute;top:50%;left:50%;width:210px;transform:translate(-50%,-50%);animation:huntBoar 3s ease-in-out infinite;filter:drop-shadow(0 5px 5px rgba(0,0,0,.28))}
-  .hunt-mira{position:absolute;top:50%;left:50%;width:150px;height:150px;transform:translate(-50%,-50%);animation:huntMira 3s ease-in-out infinite}
-  .hunt-flash{position:absolute;top:50%;left:50%;width:240px;height:240px;border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,#fff 0%,#ffb347 38%,rgba(255,140,0,0) 70%);animation:huntFlash 3s ease-in-out infinite}
+  .hunt{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:60;overflow:hidden;pointer-events:none}
+  .hunt-boar{position:absolute;top:50%;left:50%;width:min(80vw,860px);transform:translate(-50%,-50%);animation:huntBoar 3s ease-in-out infinite;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+  .hunt-mira{position:absolute;top:50%;left:50%;width:min(40vw,420px);height:min(40vw,420px);transform:translate(-50%,-50%);animation:huntMira 3s ease-in-out infinite}
+  .hunt-flash{position:absolute;top:50%;left:50%;width:min(62vw,660px);height:min(62vw,660px);border-radius:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;background:radial-gradient(circle,#fff 0%,#ffb347 38%,rgba(255,140,0,0) 70%);animation:huntFlash 3s ease-in-out infinite}
   @keyframes huntBoar{
-    0%{transform:translate(-50%,-50%) translateX(440px);opacity:1}
+    0%{transform:translate(-50%,-50%) translateX(75vw);opacity:1}
     30%{transform:translate(-50%,-50%) translateX(0);opacity:1}
     60%{transform:translate(-50%,-50%) translateX(0);opacity:1}
-    66%{transform:translate(-50%,-50%) translateX(18px) rotate(6deg);opacity:.92}
-    74%{transform:translate(-50%,-50%) translateX(48px) scale(.6) rotate(16deg);opacity:0}
-    100%{transform:translate(-50%,-50%) translateX(48px) scale(.6);opacity:0}
+    66%{transform:translate(-50%,-50%) translateX(2vw) rotate(5deg);opacity:.92}
+    74%{transform:translate(-50%,-50%) translateX(6vw) scale(.6) rotate(14deg);opacity:0}
+    100%{transform:translate(-50%,-50%) translateX(6vw) scale(.6);opacity:0}
   }
   @keyframes huntMira{
-    0%{transform:translate(-50%,-50%) translateX(-450px) scale(1.5);opacity:0}
+    0%{transform:translate(-50%,-50%) translateX(-75vw) scale(1.5);opacity:0}
     18%{opacity:.9}
     56%{transform:translate(-50%,-50%) translateX(0) scale(1);opacity:.95}
     63%{transform:translate(-50%,-50%) translateX(0) scale(.82);opacity:1}
@@ -119,7 +119,8 @@
     72%{opacity:0;transform:translate(-50%,-50%) scale(1.35)}
     100%{opacity:0}
   }
-  .hunt-txt{text-align:center;color:var(--txt2);margin-top:4px;font-size:14px}
+  .hunt-txt{position:absolute;bottom:8%;left:0;right:0;text-align:center;color:var(--txt2);font-size:15px}
+  @media(min-width:900px){ body.logged .hunt{left:250px} }
   a.mapa{font-size:12px;color:var(--terra);text-decoration:none}
   .dot{width:11px;height:11px;border-radius:50%;background:#9aa38c;flex:none;transition:.25s}
   .dot.on{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.30)}
@@ -384,7 +385,8 @@ function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; 
 function huntLoader(txt){ return '<div class="hunt">'+
   '<img class="hunt-boar" src="'+BOAR+'" alt="">'+
   '<svg class="hunt-mira" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#c0392b" stroke-width="4"/><circle cx="50" cy="50" r="3.5" fill="#c0392b"/><line x1="50" y1="2" x2="50" y2="26" stroke="#c0392b" stroke-width="4"/><line x1="50" y1="74" x2="50" y2="98" stroke="#c0392b" stroke-width="4"/><line x1="2" y1="50" x2="26" y2="50" stroke="#c0392b" stroke-width="4"/><line x1="74" y1="50" x2="98" y2="50" stroke="#c0392b" stroke-width="4"/></svg>'+
-  '<div class="hunt-flash"></div></div><div class="hunt-txt">'+(txt||'Carregando…')+'</div>'; }
+  '<div class="hunt-flash"></div>'+
+  '<div class="hunt-txt">'+(txt||'Carregando…')+'</div></div>'; }
 function loadingBox(txt){ app(huntLoader(txt)); }
 function fmtData(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T')[0].split('-');return d[2]+'/'+d[1]+'/'+d[0];} if(s.indexOf('-')===4){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];} return s; }
 function fmtDataHora(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T');var dd=d[0].split('-');var hh=(d[1]||'').substring(0,5);return dd[2]+'/'+dd[1]+'/'+dd[0]+' '+hh;} return fmtData(iso); }
