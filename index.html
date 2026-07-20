@@ -163,6 +163,23 @@
   .menu-card .ic{background:#efe3cc;border:1px solid #e0d4b6}
   .pill{border:1px solid rgba(0,0,0,.06)}
   .rustic-hero{background:linear-gradient(135deg,#f3ead2,#e7d9b8);border:1px solid #d8c79f}
+
+  /* ===== MAPA TELA CHEIA ===== */
+  #mapshell{position:fixed;left:0;right:0;bottom:0;top:56px;z-index:800;display:none}
+  body.map-mode #mapshell{display:block}
+  body.map-mode .wrap{display:none}
+  body.map-mode .fab{display:none!important}
+  #mapshell #map{width:100%;height:100%}
+  .map-bar{position:absolute;top:8px;left:8px;right:56px;z-index:820;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+  .map-bar>*{pointer-events:auto}
+  .map-bar .chip{background:rgba(255,255,255,.95);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .map-panel{position:absolute;top:8px;left:8px;z-index:830;width:min(320px,88%);max-height:78%;overflow:auto;
+             background:rgba(255,251,244,.97);border:1px solid var(--linha);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,.25);display:none}
+  .map-panel.open{display:block}
+  .map-panel h4{margin:8px 0 2px;font-size:12px;color:var(--txt2)}
+  .map-count{position:absolute;bottom:10px;left:8px;z-index:820;background:rgba(255,255,255,.92);border:1px solid var(--linha);
+             border-radius:20px;padding:5px 12px;font-size:12px;color:var(--txt2);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  @media(min-width:900px){ body.logged #mapshell{left:250px} }
 </style>
 </head>
 <body>
@@ -191,6 +208,13 @@
 
   <div class="fab" id="fab" style="display:none"></div>
   <div class="toast" id="toast"></div>
+
+  <div id="mapshell">
+    <div id="map"></div>
+    <div class="map-bar" id="mapBar"></div>
+    <div class="map-panel" id="mapPanel"></div>
+    <div class="map-count" id="mapCount"></div>
+  </div>
 
 <script>
 /* ============================================================
@@ -244,6 +268,7 @@ function nav(view, push){ if(push!==false) STATE.stack.push(view); render(); }
 function voltar(){ STATE.stack.pop(); render(); }
 function render(){
   if(CURRENTMAP){ try{ CURRENTMAP.remove(); }catch(e){} CURRENTMAP=null; }
+  document.body.classList.remove('map-mode');
   var padrao = AUTH.token ? 'inicio' : 'login';
   var view = STATE.stack[STATE.stack.length-1] || padrao;
   var noLogin = (view==='login' || view==='registrar');
@@ -815,33 +840,55 @@ function renderAgenda(){ var itens=AGENDA||[];
 }
 
 /* ============================================================
-   MAPA (todas as modalidades, com filtro)
+   MAPA (tela cheia, lado direito) com filtro e resumo
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
 var MAPFILTER={ ceva:true, armadilha:true, canil:true, 'Espera':true, 'Cães':true, 'Espreita':true, 'Armadilha':true };
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 
-VIEWS.mapaGeral=function(){ setTitulo('Mapa'); setCrumb('Manejo','Mapa'); loadingBox('Montando o mapa…');
-  server('apiMapaDados').then(function(d){ MAPDATA=d;
+VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
+  document.body.classList.add('map-mode'); posicionarMapShell();
+  document.getElementById('mapBar').innerHTML=''; document.getElementById('mapPanel').classList.remove('open'); document.getElementById('mapPanel').innerHTML=''; document.getElementById('mapCount').textContent='Carregando…';
+  server('apiMapaDados').then(function(d){
     d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
     d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
-    app('<div class="filtros" id="filtros"></div><div id="map"></div><div class="meta" id="mapinfo" style="text-align:center;margin-top:8px"></div>');
-    document.getElementById('filtros').innerHTML=chipsFiltro();
-    var map=L.map('map',{zoomControl:true}).setView([-15.78,-47.93],4);
+    MAPDATA=d;
+    if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
+    var map=L.map('map',{zoomControl:false}).setView([-15.78,-47.93],4);
+    L.control.zoom({position:'topright'}).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
     CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
-    setTimeout(function(){ map.invalidateSize(); desenharMapa(); },120);
-  }); };
+    buildMapBar(); buildMapPanel();
+    setTimeout(function(){ map.invalidateSize(); desenharMapa(); },160);
+  }).catch(function(){ document.getElementById('mapCount').textContent='Falha ao carregar'; }); };
+
+function posicionarMapShell(){ var h=document.querySelector('header'), s=document.getElementById('mapshell'); if(h&&s) s.style.top=h.offsetHeight+'px'; }
+window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
   var defs=[ ['ceva','🌽 Cevas',TIPO_COR.Espera], ['armadilha','🪤 Armadilhas','#b23b3b'], ['canil','🏠 Canis','#3b6ea5'],
-    ['Espera','🎯 Abate espera',TIPO_COR.Espera], ['Cães','🎯 Abate cães',TIPO_COR['Cães']],
-    ['Espreita','🎯 Abate espreita',TIPO_COR.Espreita], ['Armadilha','🎯 Abate armadilha',TIPO_COR.Armadilha] ];
+    ['Espera','🎯 Espera',TIPO_COR.Espera], ['Cães','🎯 Cães',TIPO_COR['Cães']],
+    ['Espreita','🎯 Busca',TIPO_COR.Espreita], ['Armadilha','🎯 Armadilha',TIPO_COR.Armadilha] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
-window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; document.getElementById('filtros').innerHTML=chipsFiltro(); desenharMapa(); };
+function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
+  b.innerHTML='<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>'+chipsFiltro(); }
+window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; buildMapBar(); desenharMapa(); };
+window.togglePainel=function(){ var p=document.getElementById('mapPanel'); if(p) p.classList.toggle('open'); };
+
+function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAPDATA) return; var d=MAPDATA, ab=d.abates;
+  var porTipo={}; ab.forEach(function(a){ porTipo[a.tipoManejo]=(porTipo[a.tipoManejo]||0)+1; });
+  var bars=TIPOS_MANEJO.map(function(t){ return {label:t.substring(0,4), value:porTipo[t]||0, color:TIPO_COR[t]}; });
+  var animais=ab.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||0);},0);
+  var comGps=ab.filter(function(a){return coord(a.lat)!=null&&coord(a.lng)!=null;}).length;
+  var leg=TIPOS_MANEJO.map(function(t){return '<span><i style="background:'+TIPO_COR[t]+'"></i>'+rotuloManejo(t)+'</span>';}).join('');
+  p.innerHTML='<div class="row"><h3 class="grow" style="margin:0">📊 Resumo dos abates</h3><button class="ib" onclick="togglePainel()">✕</button></div>'+
+    '<div class="dash" style="margin-top:8px"><div class="kpi"><b>'+ab.length+'</b><span>abates</span></div><div class="kpi"><b>'+animais+'</b><span>animais</span></div><div class="kpi"><b>'+comGps+'</b><span>no mapa</span></div></div>'+
+    '<h4>Por tipo de manejo</h4>'+barChart(bars,{w:280,h:100})+
+    '<h4>Por mês</h4>'+barChart(porMes(ab),{w:280,h:100,color:'#3f6b3f'})+
+    '<div class="legend" style="margin-top:8px">'+leg+'</div>'; }
 
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
@@ -863,7 +910,7 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return d._caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
     var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(a.fotoUrl)+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'</div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
-  var info=document.getElementById('mapinfo'); if(info) info.textContent = pts.length? (pts.length+' ponto(s) no mapa') : 'Nada para mostrar com esse filtro (verifique também se os itens têm coordenadas).';
+  var info=document.getElementById('mapCount'); if(info) info.textContent = pts.length? (pts.length+' ponto(s)') : 'Nada com esse filtro (ou sem coordenadas)';
   if(pts.length===1) CURRENTMAP.setView(pts[0],14);
   else if(pts.length>1) CURRENTMAP.fitBounds(pts,{padding:[40,40],maxZoom:15});
 }
