@@ -191,6 +191,11 @@
   #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:3000;display:none;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
   #lightbox.open{display:flex}
   #lightbox img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.6)}
+  #markModal{position:fixed;inset:0;background:rgba(20,14,6,.55);z-index:3100;display:none;align-items:center;justify-content:center;padding:16px}
+  #markModal.open{display:flex}
+  .mk-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:14px;padding:16px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
+  .emoji-mk{background:none;border:none}
+  .emoji-mk>div{font-size:26px;line-height:1;text-align:center;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
 </style>
 </head>
 <body>
@@ -221,6 +226,15 @@
   <div class="toast" id="toast"></div>
 
   <div id="lightbox" onclick="fecharFoto()"><img id="lightboxImg" alt=""></div>
+
+  <div id="markModal"><div class="mk-box">
+    <h3 style="margin:0 0 8px">📍 Marcar ponto</h3>
+    <label>Tipo</label><select id="mk_tipo"></select>
+    <label>Descrição / aviso</label><input id="mk_desc" placeholder="Ex: ponto de referência, atenção…">
+    <label>Foto (opcional)</label><input id="mk_foto" type="file" accept="image/*" capture="environment"><img id="mk_prev" class="foto-prev">
+    <button class="btn" onclick="salvarMarcacao(this)">Salvar ponto</button>
+    <button class="btn sec" onclick="fecharMark()" style="margin-top:8px">Cancelar</button>
+  </div></div>
 
   <div id="mapshell">
     <div id="map"></div>
@@ -284,6 +298,7 @@ function render(){
   if(CURRENTMAP){ try{ CURRENTMAP.remove(); }catch(e){} CURRENTMAP=null; }
   if(ROUTEMAP){ try{ ROUTEMAP.remove(); }catch(e){} ROUTEMAP=null; }
   if(GEOWATCH!=null){ try{ navigator.geolocation.clearWatch(GEOWATCH); }catch(e){} GEOWATCH=null; }
+  var _mm=document.getElementById('markModal'); if(_mm) _mm.classList.remove('open');
   document.body.classList.remove('map-mode');
   var padrao = AUTH.token ? 'inicio' : 'login';
   var view = STATE.stack[STATE.stack.length-1] || padrao;
@@ -644,6 +659,11 @@ function distMetros(a,b){ var R=6371000, r=Math.PI/180;
 function fmtDist(m){ m=m||0; return m<1000 ? Math.round(m)+' m' : (m/1000).toFixed(2)+' km'; }
 function fmtDur(ms){ var s=Math.floor(ms/1000), mm=Math.floor(s/60), ss=s%60, hh=Math.floor(mm/60); mm=mm%60;
   return (hh?hh+'h ':'')+mm+'min '+(ss<10?'0':'')+ss+'s'; }
+function simplificar(pts,max){ max=max||800; if(!pts||pts.length<=max) return pts||[]; var step=pts.length/max, out=[]; for(var i=0;i<pts.length;i+=step) out.push(pts[Math.floor(i)]); out.push(pts[pts.length-1]); return out; }
+function emojiIcon(emoji,size){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
+var TIPOS_MARCA=[ ['Abate','🐗'], ['Referência','📍'], ['Aviso','⚠️'], ['Rastro','🐾'], ['Água','💧'], ['Comida/isca','🌽'], ['Perigo','☠️'], ['Foto/registro','📷'], ['Outro','📌'] ];
+function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][0]===t) return TIPOS_MARCA[i][1]; return '📌'; }
+var LASTPOS=null, MARKCTX=null;
 
 VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Busca sem cães','Rotas'); loadingBox();
   server('apiListarRotas').then(function(l){ CACHE.rota=l;
@@ -659,36 +679,44 @@ VIEWS.rotaForm=function(){ setTitulo('Nova rota'); setCrumb('Rotas','Nova');
   app('<div class="card"><label>Nome da rota *</label><input id="ro_nome" placeholder="Ex: Contorno da mata">'+
     '<label>Propriedade</label><input id="ro_prop" placeholder="Nome da propriedade/fazenda">'+
     '<label>Tipo de transporte</label><select id="ro_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
-    '<div class="meta" style="margin-top:10px">Ao começar, mantenha o app aberto e o GPS ligado — ele registra sua posição enquanto você percorre o caminho.</div>'+
-    '<button class="btn" onclick="comecarGravacao(this)">▶️ Começar a gravar</button></div>'); };
+    '<div class="meta" style="margin:12px 0 4px"><b>Como criar a rota?</b></div>'+
+    '<button class="btn" onclick="comecarGravacao(this)">▶️ Gravar andando (GPS)</button>'+
+    '<div class="meta" style="margin:4px 0 8px;font-size:12px">Mantenha o app aberto e o GPS ligado — ele registra sua posição enquanto você percorre o caminho.</div>'+
+    '<button class="btn sec" onclick="comecarDesenho(this)">🗺️ Marcar no mapa (clicando)</button>'+
+    '<div class="meta" style="margin:4px 0 0;font-size:12px">Abra um mapa e toque/clique nos pontos para desenhar o trajeto — sem precisar estar no local.</div></div>'); };
 window.comecarGravacao=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
   if(!navigator.geolocation){ toast('GPS não suportado neste aparelho'); return; }
   ROTA_REC={ ativo:true, nome:nome, propriedade:val('ro_prop'), tipoTransporte:val('ro_tipo'), pontos:[], distancia:0, inicio:Date.now() };
   STATE.stack=['espreita','rotas','rotaGravar']; render(); };
 
 VIEWS.rotaGravar=function(){ if(!ROTA_REC.ativo){ STATE.stack=['espreita','rotas']; render(); return; }
+  if(!ROTA_REC.marcacoes) ROTA_REC.marcacoes=[];
   setTitulo('Gravando rota'); setCrumb('Rotas','Gravando');
   app('<div class="card"><h3 style="margin:0 0 6px">● Gravando: '+esc(ROTA_REC.nome)+'</h3>'+
     '<div class="dash"><div class="kpi"><b id="recDist">0 m</b><span>distância</span></div><div class="kpi"><b id="recPts">0</b><span>pontos</span></div><div class="kpi"><b id="recDur">0s</b><span>tempo</span></div></div>'+
     '<div class="meta" id="recPos" style="margin:6px 0">Aguardando GPS…</div>'+
-    '<div id="recMap" style="height:44vh;min-height:260px;border-radius:12px;border:1px solid var(--linha)"></div>'+
-    '<button class="btn" onclick="pararRota(this)" style="margin-top:14px">⏹️ Parar e salvar</button>'+
+    '<div id="recMap" style="height:42vh;min-height:250px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<button class="btn" onclick="abrirMark(\'rec\')" style="margin-top:12px;background:linear-gradient(#9a7b41,#7a5c2c)">📍 Marcar ponto aqui</button>'+
+    '<button class="btn" onclick="pararRota(this)" style="margin-top:10px">⏹️ Parar e salvar</button>'+
     '<button class="btn sec" onclick="cancelarRota()" style="margin-top:8px">Cancelar</button></div>');
   var map=L.map('recMap',{preferCanvas:true,zoomAnimation:false}).setView([-15.78,-47.93],4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
   ROUTEMAP=map;
   ROTA_REC._poly=L.polyline(ROTA_REC.pontos.map(function(p){return [p.lat,p.lng];}),{color:'#b23b3b',weight:5}).addTo(map);
-  ROTA_REC._me=null;
+  ROTA_REC._me=null; ROTA_REC._markLayer=L.featureGroup().addTo(map);
+  if(ROTA_REC.pontos.length) L.marker([ROTA_REC.pontos[0].lat,ROTA_REC.pontos[0].lng],{icon:emojiIcon('🚩')}).addTo(map);
+  (ROTA_REC.marcacoes||[]).forEach(function(m){ L.marker([m.lat,m.lng],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_REC._markLayer).bindPopup(marcaPopup(m)); });
   setTimeout(function(){ map.invalidateSize(); if(ROTA_REC.pontos.length){ map.setView([ROTA_REC.pontos[ROTA_REC.pontos.length-1].lat,ROTA_REC.pontos[ROTA_REC.pontos.length-1].lng],16); } },150);
   iniciarWatchGravacao(); atualizarRecUI(); };
 function iniciarWatchGravacao(){ if(GEOWATCH!=null) return;
   GEOWATCH=navigator.geolocation.watchPosition(function(pos){
     var p={ lat:+pos.coords.latitude.toFixed(6), lng:+pos.coords.longitude.toFixed(6), t:Date.now() };
+    LASTPOS={lat:pos.coords.latitude,lng:pos.coords.longitude};
     var last=ROTA_REC.pontos[ROTA_REC.pontos.length-1];
     if(last){ var dd=distMetros(last,p); if(dd<3) { atualizarRecUI(p); return; } ROTA_REC.distancia+=dd; }
     ROTA_REC.pontos.push(p);
     if(ROUTEMAP&&ROTA_REC._poly){ ROTA_REC._poly.addLatLng([p.lat,p.lng]); ROUTEMAP.setView([p.lat,p.lng],ROUTEMAP.getZoom()<14?16:ROUTEMAP.getZoom());
-      if(ROTA_REC._me) ROTA_REC._me.setLatLng([p.lat,p.lng]); else ROTA_REC._me=L.circleMarker([p.lat,p.lng],{radius:7,color:'#fff',fillColor:'#2f7d3a',fillOpacity:1,weight:2}).addTo(ROUTEMAP); }
+      if(ROTA_REC._me) ROTA_REC._me.setLatLng([p.lat,p.lng]); else ROTA_REC._me=L.marker([p.lat,p.lng],{icon:emojiIcon(iconeTransp(ROTA_REC.tipoTransporte),30)}).addTo(ROUTEMAP); }
     atualizarRecUI(p);
   }, function(err){ toast('GPS: '+err.message); }, {enableHighAccuracy:true,maximumAge:1000,timeout:20000}); }
 function atualizarRecUI(p){ var e;
@@ -699,8 +727,13 @@ function atualizarRecUI(p){ var e;
 window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota muito curta — ande um pouco mais'); return; }
   if(GEOWATCH!=null){ try{navigator.geolocation.clearWatch(GEOWATCH);}catch(e){} GEOWATCH=null; }
   btn.disabled=true; btn.textContent='Salvando…';
+  var pend=ROTA_REC.marcacoes||[];
   server('apiCriarRota',{ nome:ROTA_REC.nome, propriedade:ROTA_REC.propriedade, tipoTransporte:ROTA_REC.tipoTransporte,
-    pontos:ROTA_REC.pontos, distancia:Math.round(ROTA_REC.distancia||0) })
+    pontos:simplificar(ROTA_REC.pontos,800), distancia:Math.round(ROTA_REC.distancia||0) })
+  .then(function(rota){
+    if(!pend.length) return null;
+    return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
+  })
   .then(function(){ ROTA_REC={ativo:false,pontos:[]}; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
   .catch(function(){ btn.disabled=false; btn.textContent='⏹️ Parar e salvar'; iniciarWatchGravacao(); }); };
 window.cancelarRota=function(){ if(!confirm('Descartar esta gravação?'))return;
@@ -714,20 +747,23 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
     '<div class="dash"><div class="kpi"><b id="guiaDist">—</b><span>até a rota</span></div><div class="kpi"><b id="guiaRem">—</b><span>faltam</span></div></div>'+
     '<div class="meta" id="guiaMsg" style="margin:6px 0">Aguardando GPS…</div>'+
     '<div id="guiaMap" style="height:52vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
-    '<button class="btn sec" onclick="voltar()" style="margin-top:12px">Encerrar guia</button></div>');
+    '<button class="btn" onclick="abrirMark(\'guia\')" style="margin-top:12px;background:linear-gradient(#9a7b41,#7a5c2c)">📍 Marcar ponto aqui</button>'+
+    '<button class="btn sec" onclick="voltar()" style="margin-top:8px">Encerrar guia</button></div>');
   var pts=r.pontos.map(function(p){return [p.lat,p.lng];});
   var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(pts[0],15);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
   ROUTEMAP=map;
   L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
-  L.circleMarker(pts[0],{radius:8,color:'#1f5130',fillColor:'#2f7d3a',fillOpacity:1,weight:2}).addTo(map).bindPopup('Início');
-  L.circleMarker(pts[pts.length-1],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:1,weight:2}).addTo(map).bindPopup('Fim');
+  L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
+  L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada');
+  ROTA_GUIA._markLayer=L.featureGroup().addTo(map);
+  server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms; (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m)); }); }).catch(function(){});
   setTimeout(function(){ map.invalidateSize(); try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} },150);
   if(!navigator.geolocation){ toast('GPS não suportado'); return; }
   var me=null;
   GEOWATCH=navigator.geolocation.watchPosition(function(pos){
-    var cur={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    if(me) me.setLatLng([cur.lat,cur.lng]); else me=L.circleMarker([cur.lat,cur.lng],{radius:9,color:'#fff',fillColor:'#c8892b',fillOpacity:1,weight:3}).addTo(map);
+    var cur={lat:pos.coords.latitude,lng:pos.coords.longitude}; LASTPOS=cur;
+    if(me) me.setLatLng([cur.lat,cur.lng]); else me=L.marker([cur.lat,cur.lng],{icon:emojiIcon(iconeTransp(r.tipoTransporte),32),zIndexOffset:1000}).addTo(map);
     map.panTo([cur.lat,cur.lng]);
     var best=Infinity, idx=0;
     for(var i=0;i<r.pontos.length;i++){ var dd=distMetros(cur,r.pontos[i]); if(dd<best){best=dd; idx=i;} }
@@ -735,8 +771,75 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
     var e;
     if(e=document.getElementById('guiaDist')) e.textContent=fmtDist(best);
     if(e=document.getElementById('guiaRem')) e.textContent=fmtDist(rem);
-    if(e=document.getElementById('guiaMsg')) e.textContent = best>60 ? '⚠️ Você está a '+fmtDist(best)+' da rota — aproxime-se do traçado azul.' : '✅ Na rota. Siga o traçado azul até o fim.';
+    if(e=document.getElementById('guiaMsg')) e.textContent = best>60 ? '⚠️ Você está a '+fmtDist(best)+' da rota — aproxime-se do traçado azul.' : '✅ Na rota. Siga o traçado azul até a chegada 🏁.';
   }, function(err){ toast('GPS: '+err.message); }, {enableHighAccuracy:true,maximumAge:1000,timeout:20000}); };
+
+/* ----- Marcações de ponto (abate, referência, aviso… com foto) ----- */
+function marcaPopup(m){ return '<div class="pop"><h4>'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h4><div class="meta">'+(m.descricao?esc(m.descricao):'')+(m.dataHora?'<br>'+fmtDataHora(m.dataHora):'')+'</div>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px" onclick="verFoto(\''+esc(imgSrc(m.fotoUrl))+'\')">':'')+'</div>'; }
+window.abrirMark=function(ctx){ if(!LASTPOS){ toast('Aguardando posição do GPS…'); return; } MARKCTX=ctx;
+  var sel=document.getElementById('mk_tipo'); sel.innerHTML=TIPOS_MARCA.map(function(t){return '<option value="'+t[0]+'">'+t[1]+' '+t[0]+'</option>';}).join('');
+  document.getElementById('mk_desc').value=''; document.getElementById('mk_foto').value=''; var pv=document.getElementById('mk_prev'); pv.style.display='none'; pv.src='';
+  bindFoto('mk_foto','mk_prev'); document.getElementById('markModal').classList.add('open'); };
+window.fecharMark=function(){ document.getElementById('markModal').classList.remove('open'); };
+window.salvarMarcacao=function(btn){ if(!LASTPOS){ toast('Sem posição do GPS'); return; }
+  var tipo=val('mk_tipo'), desc=val('mk_desc'), foto=fotoData('mk_foto');
+  var pos={ lat:+LASTPOS.lat.toFixed(6), lng:+LASTPOS.lng.toFixed(6) };
+  if(MARKCTX==='rec'){
+    if(!ROTA_REC.marcacoes) ROTA_REC.marcacoes=[];
+    ROTA_REC.marcacoes.push({ tipo:tipo, descricao:desc, foto:foto, lat:pos.lat, lng:pos.lng });
+    if(ROUTEMAP&&ROTA_REC._markLayer) L.marker([pos.lat,pos.lng],{icon:emojiIcon(iconeMarca(tipo))}).addTo(ROTA_REC._markLayer).bindPopup(marcaPopup({tipo:tipo,descricao:desc}));
+    toast('Ponto marcado ✔ (salva junto com a rota)'); fecharMark(); return;
+  }
+  btn.disabled=true; btn.textContent='Salvando…';
+  var rotaId=(MARKCTX==='guia'&&ROTA_GUIA)?ROTA_GUIA.id:'';
+  server('apiCriarMarcacao',{ rotaId:rotaId, tipo:tipo, descricao:desc, lat:pos.lat, lng:pos.lng, foto:foto })
+  .then(function(m){ if(ROUTEMAP&&ROTA_GUIA&&ROTA_GUIA._markLayer) L.marker([coord(m.lat),coord(m.lng)],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m));
+    toast('Ponto salvo ✔'); fecharMark(); btn.disabled=false; btn.textContent='Salvar ponto'; })
+  .catch(function(){ btn.disabled=false; btn.textContent='Salvar ponto'; }); };
+
+/* ----- Rota desenhada manualmente (clicando no mapa) ----- */
+var DRAW=null;
+window.comecarDesenho=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
+  DRAW={ nome:nome, propriedade:val('ro_prop'), tipo:val('ro_tipo'), pontos:[] };
+  STATE.stack=['espreita','rotas','rotaDesenhar']; render(); };
+VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; render(); return; }
+  setTitulo('Marcar rota'); setCrumb('Rotas','Marcar no mapa');
+  app('<div class="card"><h3 style="margin:0 0 4px">🗺️ '+esc(DRAW.nome)+'</h3>'+
+    '<div class="meta" style="margin-bottom:6px">Toque/clique no mapa para adicionar pontos. A linha liga os pontos na ordem em que você clica.</div>'+
+    '<div class="dash"><div class="kpi"><b id="drawPts">0</b><span>pontos</span></div><div class="kpi"><b id="drawDist">0 m</b><span>distância</span></div></div>'+
+    '<div id="drawMap" style="height:52vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<div class="row" style="gap:8px;margin-top:10px"><button class="btn sec grow" onclick="desenhoDesfazer()">↶ Desfazer</button><button class="btn sec grow" onclick="desenhoLimpar()">🗑️ Limpar</button></div>'+
+    '<button class="btn" onclick="salvarDesenho(this)" style="margin-top:8px">💾 Salvar rota</button>'+
+    '<button class="btn sec" onclick="cancelarDesenho()" style="margin-top:8px">Cancelar</button></div>');
+  var map=L.map('drawMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
+  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
+  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,noWrap:true,attribution:'© OpenTopoMap'});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
+  ruas.addTo(map); L.control.layers({'Ruas':ruas,'Relevo':relevo,'Satélite':sat},null,{position:'topright'}).addTo(map);
+  ROUTEMAP=map; DRAW.layer=L.featureGroup().addTo(map);
+  map.on('click', function(e){ desenhoAdd(e.latlng.lat, e.latlng.lng); });
+  setTimeout(function(){ map.invalidateSize();
+    if(DRAW.pontos.length){ try{ map.fitBounds(DRAW.pontos.map(function(p){return [p.lat,p.lng];}),{padding:[40,40],maxZoom:16}); }catch(e){} }
+    else if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP===map) map.setView([pos.coords.latitude,pos.coords.longitude],15); }, function(){}, {enableHighAccuracy:true,timeout:8000}); }
+  },150);
+  redrawDesenho(); };
+function desenhoAdd(lat,lng){ if(!DRAW)return; DRAW.pontos.push({lat:+lat.toFixed(6),lng:+lng.toFixed(6)}); redrawDesenho(); }
+function redrawDesenho(){ if(!DRAW||!DRAW.layer) return; DRAW.layer.clearLayers();
+  var pts=DRAW.pontos.map(function(p){return [p.lat,p.lng];});
+  if(pts.length>1) L.polyline(pts,{color:'#b23b3b',weight:4}).addTo(DRAW.layer);
+  DRAW.pontos.forEach(function(p,i){ L.circleMarker([p.lat,p.lng],{radius:i===0?7:5,color:'#fff',fillColor:i===0?'#2f7d3a':'#b23b3b',fillOpacity:1,weight:2}).addTo(DRAW.layer); });
+  var dist=0; for(var i=0;i<DRAW.pontos.length-1;i++) dist+=distMetros(DRAW.pontos[i],DRAW.pontos[i+1]);
+  DRAW.distancia=dist; var e;
+  if(e=document.getElementById('drawPts')) e.textContent=DRAW.pontos.length;
+  if(e=document.getElementById('drawDist')) e.textContent=fmtDist(dist); }
+window.desenhoDesfazer=function(){ if(DRAW&&DRAW.pontos.length){ DRAW.pontos.pop(); redrawDesenho(); } };
+window.desenhoLimpar=function(){ if(DRAW){ DRAW.pontos=[]; redrawDesenho(); } };
+window.salvarDesenho=function(btn){ if(!DRAW||DRAW.pontos.length<2){ toast('Marque ao menos 2 pontos'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiCriarRota',{ nome:DRAW.nome, propriedade:DRAW.propriedade, tipoTransporte:DRAW.tipo, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
+  .then(function(){ DRAW=null; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
+  .catch(function(){ btn.disabled=false; btn.textContent='💾 Salvar rota'; }); };
+window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; DRAW=null; STATE.stack=['espreita','rotas']; render(); };
 
 /* ============================================================
    CÃES
