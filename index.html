@@ -862,7 +862,7 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
     MAPDATA=d;
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
-    var map=L.map('map',{zoomControl:false}).setView([-15.78,-47.93],4);
+    var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
     CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
@@ -874,7 +874,7 @@ function posicionarMapShell(){ var h=document.querySelector('header'), s=documen
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  var defs=[ ['ceva','🌽 Cevas',TIPO_COR.Espera], ['armadilha','🪤 Armadilhas','#b23b3b'], ['canil','🏠 Canis','#3b6ea5'],
+  var defs=[ ['ceva','🌽 Cevas','#b8863b'], ['armadilha','🪤 Armadilhas','#b23b3b'], ['canil','🏠 Canis','#3b6ea5'],
     ['Espera','🎯 Espera',TIPO_COR.Espera], ['Cães','🎯 Cães',TIPO_COR['Cães']],
     ['Espreita','🎯 Busca',TIPO_COR.Espreita], ['Armadilha','🎯 Armadilha',TIPO_COR.Armadilha] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
@@ -901,7 +901,7 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
   if(MAPFILTER.ceva) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(la==null||ln==null)return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
     var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(abs.length?barChart(porMes(abs),{color:TIPO_COR.Espera,w:220}):'')+'</div>';
-    add(L.circleMarker([la,ln],{radius:9,color:'#1f5130',fillColor:TIPO_COR.Espera,fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
+    add(L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop),la,ln); });
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(la==null||ln==null)return;
     var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
