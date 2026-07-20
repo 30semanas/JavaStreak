@@ -1202,7 +1202,7 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
   }
-  d.abates.forEach(function(a){ var fk={'Espera':'espera','Armadilha':'armadilha'}[a.tipoManejo]; if(!fk||!MAPFILTER[fk])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
+  d.abates.forEach(function(a){ var fk={'Armadilha':'armadilha'}[a.tipoManejo]; if(!fk||!MAPFILTER[fk])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
     if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
     else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
