@@ -389,9 +389,9 @@ function render(){
   buildSidebar();
 }
 function updateHeader(){
-  var logado = !!AUTH.token && (STATE.tipo==='empresa' ? !!STATE.empresa : !!STATE.manejador);
+  var logado = !!AUTH.token;
   var nome = (STATE.tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
-  document.getElementById('hSub').textContent = logado ? nome : STATE.appNome;
+  document.getElementById('hSub').textContent = (logado && nome) ? nome : STATE.appNome;
   document.body.classList.toggle('logged', logado);
   var bell=document.getElementById('hbell'); if(bell) bell.style.display = logado ? 'block':'none';
   if(!logado) closeMenu();
@@ -591,7 +591,7 @@ var RAMOS=['Loja de artigos de caça','Armaria','Munição/recarga','Óptica/mir
 
 VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadingBox('Carregando empresa…');
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
-    if(!e){ app('<div class="empty"><div class="big">🏪</div>Empresa não encontrada.</div>'); return; }
+    if(!e){ app('<div class="empty"><div class="big">🏪</div>Empresa não encontrada.<div style="max-width:280px;margin:18px auto 0"><button class="btn sec" onclick="logout()">Sair</button></div></div>'); return; }
     var st=String(e.status||'pendente');
     var banner = st==='aprovado' ? '<div class="card" style="border-left:5px solid var(--ok)"><div class="meta">✅ <b>Aprovada</b> — sua empresa aparece no mapa da rede.</div></div>'
       : st==='reprovado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">❌ <b>Cadastro reprovado</b> pelo administrador. Ajuste os dados e aguarde nova análise.</div></div>'
