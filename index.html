@@ -518,7 +518,7 @@ window.abrirMapaPicker=function(a,b){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
   setTimeout(function(){ if(PICKMAP){ PICKMAP.remove(); PICKMAP=null; }
     var la=coord(val(a)), ln=coord(val(b)); var ok=ptOk(la,ln); var center=ok?[la,ln]:[-15.78,-47.93], zoom=ok?15:4;
     PICKMAP=L.map('pickMap',{preferCanvas:true}).setView(center,zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(PICKMAP);
+    addBase(PICKMAP);
     var marker = ok ? L.marker([la,ln],{draggable:true}).addTo(PICKMAP) : null;
     if(ok){ PICK_LATLNG={lat:la,lng:ln}; marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); }
     PICKMAP.on('click',function(e){ PICK_LATLNG={lat:e.latlng.lat,lng:e.latlng.lng}; if(marker){ marker.setLatLng(e.latlng); } else { marker=L.marker(e.latlng,{draggable:true}).addTo(PICKMAP); marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); } setPickCoord(); });
@@ -736,7 +736,7 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
     (!d.visivel?'<div class="card" style="border-left:5px solid var(--alerta);margin-top:10px"><div class="meta">🔒 Você está <b>oculto</b>: só os lojistas aparecem. Ative sua visibilidade em <b>Configurar</b> para ver os outros manejadores.</div></div>':'')+
     '<div id="netList" style="margin-top:10px"></div>';
   var map=L.map('netMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
+  addBase(map);
   ROUTEMAP=map; var layer=L.featureGroup().addTo(map);
   (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).addTo(layer).bindPopup(netPopEmpresa(e)); });
   (d.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]);
@@ -1159,7 +1159,7 @@ VIEWS.rotaGravar=function(){ if(!ROTA_REC.ativo){ STATE.stack=['espreita','rotas
     '<button class="btn" onclick="pararRota(this)" style="margin-top:10px">⏹️ Parar e salvar</button>'+
     '<button class="btn sec" onclick="cancelarRota()" style="margin-top:8px">Cancelar</button></div>');
   var map=L.map('recMap',{preferCanvas:true,zoomAnimation:false}).setView([-15.78,-47.93],4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
+  addBase(map);
   ROUTEMAP=map;
   ROTA_REC._poly=L.polyline(ROTA_REC.pontos.map(function(p){return [p.lat,p.lng];}),{color:'#b23b3b',weight:5}).addTo(map);
   ROTA_REC._me=null; ROTA_REC._markLayer=L.featureGroup().addTo(map);
@@ -1210,7 +1210,7 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
     '<button class="btn sec" onclick="voltar()" style="margin-top:8px">Encerrar guia</button></div>');
   var pts=r.pontos.map(function(p){return [p.lat,p.lng];});
   var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(pts[0],15);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
+  addBase(map);
   ROUTEMAP=map;
   L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
   L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
@@ -1271,9 +1271,7 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
     '<div id="rdMap" style="height:44vh;min-height:260px;border-radius:12px;border:1px solid var(--linha)"></div>'+
     '<h3 style="margin:12px 4px 6px">📍 Pontos registrados</h3><div id="rdPontos"><div class="loading"><div class="spin"></div></div></div>');
   var map=L.map('rdMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView(pts.length?pts[0]:[-15.78,-47.93],pts.length?15:4);
-  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
-  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
-  ruas.addTo(map); L.control.layers({'Ruas':ruas,'Satélite':sat},null,{position:'topright'}).addTo(map);
+  addBase(map);
   ROUTEMAP=map;
   if(pts.length){ L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
     L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
@@ -1307,10 +1305,7 @@ VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; rend
     '<button class="btn" onclick="salvarDesenho(this)" style="margin-top:8px">💾 Salvar rota</button>'+
     '<button class="btn sec" onclick="cancelarDesenho()" style="margin-top:8px">Cancelar</button></div>');
   var map=L.map('drawMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
-  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
-  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,noWrap:true,attribution:'© OpenTopoMap'});
-  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
-  ruas.addTo(map); L.control.layers({'Ruas':ruas,'Relevo':relevo,'Satélite':sat},null,{position:'topright'}).addTo(map);
+  addBase(map);
   ROUTEMAP=map; DRAW.layer=L.featureGroup().addTo(map); DRAW._markLayer=L.featureGroup().addTo(map);
   map.on('click', function(e){ if(DRAW.modo==='ponto') abrirMark('draw',{lat:e.latlng.lat,lng:e.latlng.lng}); else desenhoAdd(e.latlng.lat, e.latlng.lng); });
   (DRAW.marcacoes||[]).forEach(function(m){ L.marker([m.lat,m.lng],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(DRAW._markLayer).bindPopup(marcaPopup(m)); });
@@ -1587,6 +1582,15 @@ function renderAgenda(){ var itens=AGENDA||[];
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
 var MAPFILTER={ espera:true, armadilha:true, busca:true };
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
+function addBase(map, def){
+  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap'});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'});
+  var layers={'🗺️ Ruas':ruas,'⛰️ Relevo':relevo,'🛰️ Satélite':sat};
+  ((def==='relevo'?relevo:(def==='sat'?sat:ruas))).addTo(map);
+  L.control.layers(layers,null,{position:'topright',collapsed:true}).addTo(map);
+  return layers;
+}
 function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=180&&!(la===0&&ln===0); }
 
 VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
@@ -1601,11 +1605,7 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
     var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
-    var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'});
-    var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{minZoom:3,maxZoom:17,noWrap:true,attribution:'© OpenTopoMap (CC-BY-SA)'});
-    var satelite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{minZoom:3,maxZoom:19,noWrap:true,attribution:'Imagery © Esri'});
-    ruas.addTo(map);
-    L.control.layers({'Ruas':ruas,'Relevo':relevo,'Satélite':satelite}, null, {position:'topright',collapsed:true}).addTo(map);
+    addBase(map);
     CURRENTMAP=map; MAPLAYER=L.featureGroup().addTo(map);
     buildMapBar(); buildMapPanel();
     map.whenReady(function(){ map.invalidateSize(); });
