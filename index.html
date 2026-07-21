@@ -193,6 +193,35 @@
   .pill{border:1px solid rgba(0,0,0,.06)}
   .rustic-hero{background:linear-gradient(135deg,#f3ead2,#e7d9b8);border:1px solid #d8c79f}
 
+  /* ===== POLIMENTO MODERNO (mantendo o rústico) ===== */
+  :root{ --sombra:0 4px 14px rgba(60,40,18,.10); }
+  .card{border-radius:16px;box-shadow:0 3px 10px rgba(60,40,18,.08),0 1px 2px rgba(60,40,18,.05);
+        transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease}
+  .card.click:hover,.menu-card.click:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(60,40,18,.15);border-color:#cbbf9e}
+  .card.click:active{transform:translateY(0) scale(.99)}
+  .menu-card{padding:16px}
+  .menu-card .ic{width:48px;height:48px;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04),0 3px 8px rgba(120,90,40,.16)}
+  .menu-card .chev{color:#c8892b;font-weight:700;transition:transform .14s}
+  .menu-card.click:hover .chev{transform:translateX(4px)}
+  .btn{border-radius:13px;box-shadow:0 4px 12px rgba(46,77,46,.24);transition:filter .14s,transform .06s,box-shadow .14s;font-weight:700;letter-spacing:.2px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:#fffdf8;color:var(--verde);border:1px solid #ddceac;box-shadow:0 2px 8px rgba(60,40,18,.08)}
+  .btn.sec:hover{filter:none;background:#f7f1e2}
+  input,select,textarea{border-radius:12px;border-color:#ddd4be;background:#fffdf8;transition:border-color .14s,box-shadow .14s}
+  input:focus,select:focus,textarea:focus{border-color:#c8892b;box-shadow:0 0 0 3px rgba(200,137,43,.18)}
+  .pill{border-radius:20px;font-weight:600}
+  header{box-shadow:0 5px 18px rgba(20,30,15,.20)}
+  .crumb b{color:#c8892b}
+  .card h3{letter-spacing:.2px}
+  .rustic-hero{background:linear-gradient(135deg,#f7f0de,#ece0c2);border:1px solid #ddceac;box-shadow:0 5px 16px rgba(90,60,25,.10)}
+  .kpi{border-radius:14px !important;box-shadow:0 2px 8px rgba(60,40,18,.07)}
+  .chip{border-radius:22px !important;box-shadow:0 2px 6px rgba(0,0,0,.10);transition:transform .1s}
+  .chip:active{transform:scale(.96)}
+  .fab .btn{box-shadow:0 8px 22px rgba(46,77,46,.35)}
+  .thumb{border-radius:12px}
+  ::selection{background:rgba(200,137,43,.28)}
+
   /* ===== MAPA TELA CHEIA ===== */
   #mapshell{position:fixed;left:0;right:0;bottom:0;top:56px;z-index:800;display:none}
   body.map-mode #mapshell{display:block}
@@ -349,8 +378,8 @@ function updateHeader(){
 var NAV=[
   {v:'inicio',    label:'Início',            emoji:'🏠'},
   {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
-  {v:'espreita',  label:'Busca sem cães',    icon:'espreita'},
-  {v:'caes',      label:'Manejo com cães',   icon:'caes'},
+  {v:'espreita',  label:'Rotas de manejo',    icon:'espreita'},
+  {v:'caes',      label:'Meu canil',   icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
   {v:'abates',    label:'Abate',             icon:'abate'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
@@ -521,8 +550,8 @@ function moduloCard(ic,t,d,ativo,onclick){ var dis=ativo!==true; var badge=ativo
 
 VIEWS.manejo=function(){ setTitulo('Manejo'); setCrumb('Módulos','Manejo');
   app(moduloCard('🌽','Espera (com ceva)','Cevas, alimento e nível',true,"nav('espera')")+
-      moduloCard('🥾','Busca sem cães','Sem cães · transportes',true,"nav('espreita')")+
-      moduloCard('🐕','Manejo com cães','Canil, cães e saúde',true,"nav('caes')")+
+      moduloCard('🥾','Rotas de manejo','Sem cães · transportes',true,"nav('espreita')")+
+      moduloCard('🐕','Meu canil','Canil, cães e saúde',true,"nav('caes')")+
       moduloCard('🪤','Armadilha (captura)','Tipos e localização',true,"nav('armadilha')")+
       moduloCard('🎯','Abates','Registrar e listar abates',true,"nav('abates')")+
       moduloCard('📅','Agenda de saúde','Cães e cavalos: vacinas e retornos',true,"nav('agenda')")+
@@ -601,10 +630,10 @@ window.salvarNivel=function(btn){ btn.disabled=true; btn.textContent='Salvando�
    ============================================================ */
 var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Cavalo','A pé','Bicicleta','Caminhonete','Outro'];
 function iconeTransp(t){ var m={'Carro':'🚗','Moto':'🏍️','Quadriciclo':'🛺','Cavalo':'🐎','A pé':'🚶','Bicicleta':'🚲','Caminhonete':'🛻'}; return m[t]||'🧭'; }
-VIEWS.espreita=function(){ setTitulo('Busca sem cães'); setCrumb('Busca sem cães');
+VIEWS.espreita=function(){ setTitulo('Rotas de manejo'); setCrumb('Rotas de manejo');
   app(moduloCard('🚗','Meio de transporte','Carros, motos, cavalos… saúde e manutenção',true,"nav('transportes')")+
       moduloCard('🧭','Rotas','Gravar trajetos por GPS e usar como guia',true,"nav('rotas')")); };
-VIEWS.transportes=function(){ setTitulo('Meio de transporte'); setCrumb('Busca sem cães','Transporte'); loadingBox();
+VIEWS.transportes=function(){ setTitulo('Meio de transporte'); setCrumb('Rotas de manejo','Transporte'); loadingBox();
   server('apiListarTransportes').then(function(l){ CACHE.transporte=l;
     var html=l.length? l.map(function(t){ return '<div class="card"><div class="row">'+
       (t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
@@ -613,7 +642,7 @@ VIEWS.transportes=function(){ setTitulo('Meio de transporte'); setCrumb('Busca s
 function isAnimalTransp(t){ return t==='Cavalo'; }
 window.abrirTransporte=function(id){ STATE.transporte=(CACHE.transporte||[]).filter(function(t){return t.id===id;})[0]; nav('transpDetail'); };
 var TIPOS_SAUDE_CAVALO=['Vacina','Vermífugo','Ferrageamento','Casqueamento','Consulta','Exame','Odontológico','Medicação','Outro'];
-VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb('Busca sem cães',esc(t.tipo));
+VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb('Rotas de manejo',esc(t.tipo));
   var ficha='<div class="card rustic-hero"><div class="row">'+(t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'" style="width:82px;height:82px">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:#efe3cc;display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
     '<div class="grow"><h2 style="margin:0 0 2px;font-size:19px">'+iconeTransp(t.tipo)+' '+esc(t.tipo)+'</h2><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div></div>'+
     '<button class="btn sm sec" style="margin-top:10px;width:auto" onclick="editItem(\'transporte\',\''+t.id+'\')">✏️ Editar / trocar foto</button></div>';
@@ -646,7 +675,7 @@ VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCru
   }
 };
 function isMecanico(t){ return ['Carro','Moto','Quadriciclo','Caminhonete'].indexOf(t)>=0; }
-VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('Busca sem cães',esc(STATE.transporte.tipo),'Saúde');
+VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('Rotas de manejo',esc(STATE.transporte.tipo),'Saúde');
   app('<div class="card"><label>Tipo *</label><select id="ts_tipo">'+TIPOS_SAUDE_CAVALO.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="ts_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: Influenza equina, casqueamento…">'+
     '<div class="two"><div><label>Data</label><input id="ts_data" type="date"></div><div><label>Próxima</label><input id="ts_prox" type="date"></div></div>'+
@@ -661,7 +690,7 @@ window.salvarSaudeTransp=function(btn){ btn.disabled=true; btn.textContent='Salv
 
 var MESES_OPT='<option value="">—</option>'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map(function(m,i){return '<option value="'+(i+1)+'">'+m+' ('+(i+1)+')</option>';}).join('');
 function _setData(id,v){ if(v){ var e=document.getElementById(id); if(e) e.value=String(v).substring(0,10); } }
-VIEWS.docVeiculo=function(){ var t=STATE.transporte; setTitulo('Documentação do veículo'); setCrumb('Busca sem cães',esc(t.tipo),'Documentação');
+VIEWS.docVeiculo=function(){ var t=STATE.transporte; setTitulo('Documentação do veículo'); setCrumb('Rotas de manejo',esc(t.tipo),'Documentação');
   app('<div class="card">'+
     '<div class="two"><div><label>Mês de licenciamento</label><select id="dv_lic">'+MESES_OPT+'</select></div><div><label>Mês de IPVA</label><select id="dv_ipva">'+MESES_OPT+'</select></div></div>'+
     '<label>KM atual</label><input id="dv_km" inputmode="numeric" value="'+esc(t.kmAtual||'')+'">'+
@@ -677,7 +706,7 @@ window.salvarDocVeiculo=function(btn){ btn.disabled=true; btn.textContent='Salva
   var d={ mesLicenciamento:val('dv_lic'), mesIpva:val('dv_ipva'), kmAtual:val('dv_km'), ultimaRevisao:val('dv_urev'), proximaRevisao:val('dv_prev'), proximaTrocaOleo:val('dv_oleo'), correiaDentada:val('dv_correia'), trocaPneus:val('dv_pneus'), obs:val('dv_obs') };
   server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Documentação salva ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
 
-VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'Novo transporte'); setCrumb('Busca sem cães',ed?'Editar':'Novo');
+VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'Novo transporte'); setCrumb('Rotas de manejo',ed?'Editar':'Novo');
   app('<div class="card"><label>Tipo *</label><select id="t_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Identificação / apelido</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="Ex: Cavalo Trovão / Placa">'+
     '<label>Observações</label><textarea id="t_obs">'+esc(pv('obs'))+'</textarea>'+
@@ -710,7 +739,7 @@ var TIPOS_MARCA=[ ['Abate','🐗'], ['Referência','📍'], ['Aviso','⚠️'], 
 function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][0]===t) return TIPOS_MARCA[i][1]; return '📌'; }
 var LASTPOS=null, MARKCTX=null, MARKPOS=null;
 
-VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Busca sem cães','Rotas'); loadingBox();
+VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Rotas de manejo','Rotas'); loadingBox();
   server('apiListarRotas').then(function(l){ CACHE.rota=l;
     l.sort(function(a,b){return String(b.dataCadastro).localeCompare(String(a.dataCadastro));});
     var banner = ROTA_REC.ativo ? '<div class="card" style="border-left:5px solid var(--danger)"><h3 style="margin:0 0 4px">● Gravação em andamento</h3><div class="meta">'+esc(ROTA_REC.nome||'')+' · '+((ROTA_REC.pontos||[]).length)+' pontos</div><button class="btn sm" style="margin-top:8px" onclick="nav(\'rotaGravar\')">Retomar gravação</button></div>' : '';
@@ -936,7 +965,7 @@ window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; D
 /* ============================================================
    CÃES
    ============================================================ */
-VIEWS.caes=function(){ setTitulo('Manejo com cães'); setCrumb('Manejo com cães'); loadingBox();
+VIEWS.caes=function(){ setTitulo('Meu canil'); setCrumb('Meu canil'); loadingBox();
   server('apiListarCanis').then(function(l){ CACHE.canil=l;
     var html=l.length? l.map(function(c){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirCanil(\''+c.id+'\')"><h3>🏠 '+esc(c.nome||'Canil')+'</h3><div class="meta">'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+acoes('canil',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum canil cadastrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'canilForm\')">＋ Novo canil</button>'); }); };
@@ -952,12 +981,12 @@ window.salvarCanil=function(btn){ if(!val('k_nome')){toast('Informe o nome');ret
 window.abrirCanil=function(id){ STATE.canil=(CACHE.canil||[]).filter(function(c){return c.id===id;})[0]; nav('canilDetail'); };
 
 var FUNCOES_CAO=['Rastreio','Busca','Agarro','Faro','Cerco','Misto','Outro'];
-VIEWS.canilDetail=function(){ var k=STATE.canil; setTitulo('Canil'); setCrumb('Manejo com cães',esc(k.nome||'Canil'));
+VIEWS.canilDetail=function(){ var k=STATE.canil; setTitulo('Canil'); setCrumb('Meu canil',esc(k.nome||'Canil'));
   app('<div class="card rustic-hero"><div class="row"><h2 class="grow" style="margin:0">🏠 '+esc(k.nome||'Canil')+'</h2><button class="ib" onclick="editItem(\'canil\',\''+k.id+'\')" title="Editar canil">✏️</button></div><div class="meta" style="margin-top:4px">Tela do canil'+(k.lat&&k.lng?' · '+mapaLink(k.lat,k.lng):'')+(k.obs?'<br>'+esc(k.obs):'')+'</div></div>'+
     '<div class="card menu-card click" onclick="nav(\'matilha\')"><img src="'+ICONS.caes+'" style="width:46px;height:46px;object-fit:cover;border-radius:10px"><div class="txt" style="margin-left:12px"><h3>🐕 Ver matilha</h3><p id="matCount">Carregando cães…</p></div><div class="chev">›</div></div>');
   server('apiListarCaes',k.id).then(function(l){ CACHE.cao=l; var el=document.getElementById('matCount'); if(el) el.textContent=(l.length||0)+' cão(es) neste canil'; }); };
 
-VIEWS.matilha=function(){ var k=STATE.canil; setTitulo('Matilha'); setCrumb('Manejo com cães',esc(k.nome||'Canil'),'Matilha'); loadingBox();
+VIEWS.matilha=function(){ var k=STATE.canil; setTitulo('Matilha'); setCrumb('Meu canil',esc(k.nome||'Canil'),'Matilha'); loadingBox();
   server('apiListarCaes',k.id).then(function(l){ CACHE.cao=l;
     var html='<div class="card"><div class="meta">🐕 Matilha do canil <b>'+esc(k.nome||'')+'</b> — '+(l.length||0)+' cão(es)</div></div>'+
       (l.length? l.map(function(c){ return '<div class="card"><div class="row">'+
@@ -1062,7 +1091,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
     bindFoto('ab_foto','ab_prev');
     renderAbateCtx();
   }); };
-function rotuloManejo(t){ return {'Espera':'Espera (com ceva)','Cães':'Manejo com cães','Espreita':'Busca sem cães','Armadilha':'Armadilha'}[t]||t; }
+function rotuloManejo(t){ return {'Espera':'Espera (com ceva)','Cães':'Meu canil','Espreita':'Rotas de manejo','Armadilha':'Armadilha'}[t]||t; }
 function renderAbateCtx(){ var t=val('ab_tipo'), el=document.getElementById('abateCtx'); if(!el) return; var h='';
   if(t==='Espera'){
     h='<label>Ceva *</label><select id="ab_ceva" onchange="carregarAlimentosCeva()"><option value="">Selecione…</option>'+
@@ -1203,7 +1232,7 @@ function posicionarMapShell(){ var h=document.querySelector('header'), s=documen
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Busca sem cães','#3b6ea5'] ];
+  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
