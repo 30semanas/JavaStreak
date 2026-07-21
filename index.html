@@ -186,6 +186,8 @@
   #promoPanel.open{display:flex}
   #salaPanel{position:fixed;inset:0;background:rgba(20,14,6,.5);z-index:3200;display:none;justify-content:center;align-items:flex-start;padding:16px}
   #salaPanel.open{display:flex}
+  #denModal{position:fixed;inset:0;background:rgba(20,14,6,.55);z-index:3400;display:none;justify-content:center;align-items:flex-start;padding:16px}
+  #denModal.open{display:flex}
   .emoji-me>div{filter:drop-shadow(0 0 3px #ee8a2e);transform:scale(1.15)}
   .mk-avwrap{background:transparent}
   .mk-av{width:100%;height:100%;border-radius:50%;background-size:cover;background-position:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -206,6 +208,7 @@
   .trof .tt{padding:6px 8px;font-size:12px;color:var(--txt2)}
   .trof .tv{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.58);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:11px}
   .trofdel{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9)}
+  .trofden{position:absolute;top:4px;left:4px;background:rgba(255,255,255,.9);z-index:3}
   .votbtn{display:block;width:calc(100% - 16px);margin:6px 8px 8px;border:1px solid var(--linha);background:#fff;border-radius:20px;padding:6px 12px;font-weight:700;cursor:pointer}
   .votbtn.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;border-color:transparent}
   .stars{display:inline-flex;gap:1px;vertical-align:middle}
@@ -336,6 +339,12 @@
 
   <div id="promoPanel" onclick="if(event.target===this)fecharPromos()"></div>
   <div id="salaPanel" onclick="if(event.target===this)fecharSala()"></div>
+  <div id="denModal" onclick="if(event.target===this)fecharDen()"><div class="promo-box">
+    <div class="row"><h3 class="grow" style="margin:0">🚩 Denunciar</h3><button class="ib" onclick="fecharDen()">✕</button></div>
+    <div class="meta" style="margin:6px 0">Denuncie conteúdo ofensivo (foto ou legenda). Após <b>2 denúncias</b>, o perfil é <b>bloqueado</b> e só volta após a análise do administrador.</div>
+    <label>Motivo</label><textarea id="denMotivo" placeholder="Descreva o que considera ofensivo"></textarea>
+    <button class="btn" style="background:#8a3a2c" onclick="enviarDenuncia(this)">Enviar denúncia</button>
+  </div></div>
   <div id="mapPicker"><div class="mp-box">
     <div class="mp-head"><b>Indicar no mapa</b><button class="ib" onclick="fecharMapaPicker()">✕</button></div>
     <div id="pickMap"></div>
@@ -662,11 +671,12 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
     if(!e){ app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏪 Complete o cadastro da sua empresa</h2><div class="meta">Preencha os dados da sua empresa para ativar sua presença na rede. Após salvar, passa por aprovação do administrador.</div></div><button class="btn" onclick="nav(\'empresaForm\')" style="margin-top:4px">Preencher dados da empresa</button>'); STATE.empresa=null; return; }
     var st=String(e.status||'pendente');
+    var bloqBanner = e.bloqueado==='Sim' ? '<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Sua empresa está bloqueada</b> por denúncias e está em análise pelo administrador. Enquanto isso, não aparece na rede nem lança promoções.</div></div>' : '';
     var banner = st==='aprovado' ? '<div class="card" style="border-left:5px solid var(--ok)"><div class="meta">✅ <b>Aprovada</b> — sua empresa aparece no mapa da rede.</div></div>'
       : st==='reprovado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">❌ <b>Cadastro reprovado</b> pelo administrador. Ajuste os dados e aguarde nova análise.</div></div>'
       : st==='desativado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">⛔ <b>Desativada</b> pelo administrador.</div></div>'
       : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">⏳ <b>Aguardando aprovação</b> do administrador. Você já pode ajustar seus dados; assim que for aprovada, aparece na rede.</div></div>';
-    app(banner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
+    app(bloqBanner+banner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
       '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+
       '<div class="meta" style="margin-top:6px">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
       (e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+
@@ -700,21 +710,28 @@ window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
 
 /* ===== ADMINISTRAÇÃO (aprovar empresas) ===== */
-VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'); loadingBox('Carregando empresas…');
-  server('apiAdminEmpresas').then(function(l){ CACHE.adminEmp=l||[];
+VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'); loadingBox('Carregando…');
+  Promise.all([server('apiAdminEmpresas'), server('apiAdminDenuncias').catch(function(){return [];})]).then(function(res){ var l=res[0]||[], dens=res[1]||[];
+    var denHtml = dens.length ? ('<h3 style="margin:4px 4px 8px">🚩 Denúncias</h3>'+dens.map(function(g){
+      var motivos = g.denuncias.map(function(x){ return '<div class="meta" style="border-left:3px solid #8a3a2c;padding-left:8px;margin:4px 0">'+(x.por?'<b>'+esc(x.por)+'</b>: ':'')+esc(x.motivo||'(sem motivo)')+' <span style="opacity:.7">['+esc(x.alvoTipo)+']</span></div>'; }).join('');
+      return '<div class="card" style="border-left:5px solid #8a3a2c"><div class="row"><div class="grow"><h3 style="font-size:15px">'+(g.donoTipo==='empresa'?'🏪':'🧑‍🌾')+' '+esc(g.nome||'')+' '+(g.bloqueado?'<span class="pill dan">bloqueado</span>':'<span class="pill warn">'+g.total+' denúncia(s)</span>')+'</h3></div></div>'+motivos+
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'liberar\')">✅ Liberar perfil</button><button class="btn sm sec grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'manter\')">⛔ Manter bloqueado</button></div></div>';
+    }).join('')+'<hr style="border:none;border-top:1px solid var(--linha);margin:16px 0">') : '';
+    CACHE.adminEmp=l;
     var ordem={pendente:0,aprovado:1,reprovado:2,desativado:3};
     l.sort(function(a,b){return (ordem[a.status]||9)-(ordem[b.status]||9);});
-    var html=l.length? l.map(function(e){ var st=String(e.status||'pendente');
+    var html=denHtml+'<h3 style="margin:4px 4px 8px">🏪 Empresas</h3>'+(l.length? l.map(function(e){ var st=String(e.status||'pendente');
       var cor=st==='aprovado'?'ok':(st==='pendente'?'warn':'dan');
       return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">🏪 '+esc(e.nome||'')+' <span class="pill '+cor+'">'+esc(st)+'</span></h3><div class="meta">'+(e.segmento?esc(e.segmento)+' · ':'')+esc(e.cidade||'')+(e.whatsapp?'<br>💬 '+esc(e.whatsapp):'')+'</div></div></div>'+
         '<div class="row" style="gap:6px;margin-top:8px">'+
         (st!=='aprovado'?'<button class="btn sm grow" onclick="aprovarEmp(\''+e.id+'\',\'aprovado\')">✅ Aprovar</button>':'')+
         (st!=='reprovado'?'<button class="btn sm sec grow" onclick="aprovarEmp(\''+e.id+'\',\'reprovado\')">❌ Reprovar</button>':'')+
         (st==='aprovado'?'<button class="btn sm sec grow" onclick="aprovarEmp(\''+e.id+'\',\'desativado\')">⛔ Desativar</button>':'')+
-        '</div></div>'; }).join('') : '<div class="empty">Nenhuma empresa cadastrada.</div>';
-    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🛡️ Aprovação de empresas</h2><div class="meta">Aprove, reprove ou desative os cadastros de empresas.</div></div>'+html);
+        '</div></div>'; }).join('') : '<div class="empty">Nenhuma empresa cadastrada.</div>');
+    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🛡️ Administração</h2><div class="meta">Analise denúncias e gerencie os cadastros de empresas.</div></div>'+html);
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 window.aprovarEmp=function(id,status){ server('apiAprovarEmpresa',id,status).then(function(){ toast('Atualizado ✔'); render(); }); };
+window.resolverDen=function(donoTipo,donoId,acao){ server('apiResolverDenuncia',donoTipo,donoId,acao).then(function(){ toast(acao==='liberar'?'Perfil liberado ✔':'Mantido bloqueado'); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
 VIEWS.network=function(){ setTitulo('Network'); setCrumb('Network'); loadingBox('Carregando rede…');
   server('apiNetworkMapa').then(function(d){ STATE.net=d; var vis=d.visivel; var ehManej=(STATE.tipo!=='empresa'); var ehEmp=(STATE.tipo==='empresa');
@@ -739,16 +756,22 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
   var itens=(d.empresas||[]).map(function(e){return netCard(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}),e.nome,e.segmento,e.cidade,e.whatsapp,e.telefone,e.email);})
     .concat((d.manejadores||[]).filter(function(m){return !m.eu;}).map(function(m){return netCard(avatarUrl(m),m.nome,'Manejador',m.cidade,m.whatsapp,m.telefone,'');}));
   var nl=document.getElementById('netList'); if(nl) nl.innerHTML = itens.length? ('<h3 style="margin:6px 4px">Contatos</h3>'+itens.join('')) : '<div class="empty">Nada por aqui ainda.</div>'; }
-function netPopEmpresa(e){ var w=waLink(e.whatsapp); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4><div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
-function netPopManej(m){ var w=waLink(m.whatsapp); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4><div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
+function netPopEmpresa(e){ var w=waLink(e.whatsapp); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4><div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<button class="btn sm" style="margin-top:6px;width:100%;background:#8a3a2c" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div>'; }
+function netPopManej(m){ var w=waLink(m.whatsapp); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4><div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<button class="btn sm" style="margin-top:6px;width:100%;background:#8a3a2c" onclick="denunciar(\'manejador\',\''+m.id+'\')">🚩 Denunciar</button></div>'; }
 window.verSalaDe=function(id){ var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
-  server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
+  server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
 window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
+var DEN_TARGET=null;
+window.denunciar=function(tipo,id){ DEN_TARGET={tipo:tipo,id:id}; var m=document.getElementById('denMotivo'); if(m) m.value=''; document.getElementById('denModal').classList.add('open'); };
+window.fecharDen=function(){ document.getElementById('denModal').classList.remove('open'); };
+window.enviarDenuncia=function(btn){ if(!DEN_TARGET)return; btn.disabled=true; btn.textContent='Enviando…';
+  server('apiDenunciar',DEN_TARGET.tipo,DEN_TARGET.id,val('denMotivo')).then(function(r){ btn.disabled=false; btn.textContent='Enviar denúncia'; fecharDen();
+    toast(r&&r.bloqueado?'Denúncia registrada. Perfil bloqueado até análise do administrador.':'Denúncia registrada. Obrigado.'); }).catch(function(e){ btn.disabled=false; btn.textContent='Enviar denúncia'; toast((e&&e.message)||'Erro ao denunciar'); }); };
 function netCard(av,nome,sub,cidade,wa,tel,email){ var w=waLink(wa); return '<div class="card"><div class="row" style="align-items:center"><img src="'+esc(av)+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;margin-right:10px;border:1px solid var(--linha)"><div class="grow"><h3 style="font-size:15px">'+esc(nome||'')+'</h3><div class="meta">'+(sub?esc(sub):'')+(cidade?(sub?' · ':'')+esc(cidade):'')+(tel?'<br>📞 '+esc(tel):'')+(email?'<br>✉️ '+esc(email):'')+'</div></div>'+(w?'<a class="btn sm sec" style="width:auto;margin:0;text-decoration:none" target="_blank" href="'+w+'">💬</a>':'')+'</div></div>'; }
 VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu perfil'); setCrumb('Perfil');
   var temCoord=!!((me.latNetwork||me.lat)&&(me.lngNetwork||me.lng));
-  app('<div class="card rustic-hero"><div class="row"><img src="'+esc(avatarUrl(me))+'" style="width:66px;height:66px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"><div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div></div></div></div>'+
+  app((me.bloqueado==='Sim'?'<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Seu perfil está bloqueado</b> por denúncias e está em análise pelo administrador. Enquanto isso, você não aparece na rede, no mapa nem no ranking.</div></div>':'')+'<div class="card rustic-hero"><div class="row"><img src="'+esc(avatarUrl(me))+'" style="width:66px;height:66px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"><div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div></div></div></div>'+
     '<div class="card"><label>Foto do perfil '+(me.fotoUrl?'(escolha para trocar)':'(sem foto, usamos um avatar padrão)')+'</label>'+(me.fotoUrl?'<img class="foto-prev" style="display:block;border-radius:50%;width:90px;height:90px;object-fit:cover" src="'+esc(imgSrc(me.fotoUrl))+'">':'')+'<input id="np_foto" type="file" accept="image/*"><img id="np_prev" class="foto-prev">'+
     '<label>Sexo (define seu avatar padrão)</label><select id="np_sexo"><option value="Masculino"'+(String(me.sexo||'').toLowerCase().indexOf('f')!==0?' selected':'')+'>Masculino</option><option value="Feminino"'+(String(me.sexo||'').toLowerCase().indexOf('f')===0?' selected':'')+'>Feminino</option></select>'+
     '<label>WhatsApp (contato)</label><input id="np_wa" value="'+esc(me.whatsapp||'')+'" placeholder="DDD+número">'+
@@ -789,7 +812,7 @@ window.toggleRecebe=function(chk){ server('apiSetRecebePromos', chk.checked).the
 function promoCard(p){ return '<div class="card">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
   '<h3 style="margin:0 0 2px">📣 '+esc(p.autorNome||'')+'</h3>'+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+
   '<div style="margin-top:6px">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
-  '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div></div>'; }
+  '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div><button class="btn sm" style="margin-top:8px;width:auto;background:#8a3a2c" onclick="denunciar(\'promocao\',\''+p.id+'\')">🚩 Denunciar</button></div>'; }
 function renderPromoPanel(){ var lista = (PROMOS.recebe===false) ? '<div class="empty">Notificações desativadas. Ative acima para receber promoções.</div>'
     : ((PROMOS.promos&&PROMOS.promos.length)? PROMOS.promos.map(promoCard).join('') : '<div class="empty"><div class="big">📣</div>Nenhuma promoção ativa na sua região agora.</div>');
   document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Promoções de parceiros</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
@@ -832,7 +855,7 @@ VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox(
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
       var estrelas = (pode && !t.ehMeu) ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>');
-      return '<div class="trof"><div class="rk">'+(i+1)+'º</div><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
+      return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
     var aviso = ehEmp ? '<div class="meta">Você pode ver o ranking; a avaliação é feita pelos manejadores.</div>'
       : (pode ? '<div class="meta">Toque nas estrelas para dar sua nota (1–5).</div>' : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Deixe sua sala visível (em Sala de troféu) para poder avaliar.</div></div>');
     app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏅 Ranking de troféus</h2><div class="meta">Os melhores das últimas 24 horas — o mais bem avaliado no topo. Cada troféu fica no ranking por 24h; depois sai daqui mas permanece na sala do dono.</div></div>'+aviso+'<div class="card">'+g+'</div>');
