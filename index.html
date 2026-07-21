@@ -174,6 +174,9 @@
   .sb-switch button{flex:1;border:none;background:transparent;color:#cdd6bf;font-size:12px;font-weight:700;padding:8px 4px;border-radius:9px;cursor:pointer;text-transform:uppercase;letter-spacing:.3px}
   .sb-switch button.on{background:linear-gradient(#ee8a2e,#d9761f);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
   .sb-cfg{margin-top:8px;border-top:1px solid rgba(255,255,255,.10);border-radius:0;padding-top:14px}
+  .segbar{display:flex;gap:8px;margin:8px 0 12px;background:#efe3cc;border:1px solid #e0d4b6;border-radius:14px;padding:5px}
+  .segbar button{flex:1;border:none;background:transparent;color:var(--txt2);font-size:14px;font-weight:700;padding:11px 6px;border-radius:10px;cursor:pointer}
+  .segbar button.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;box-shadow:0 2px 8px rgba(46,77,46,.3)}
   .sb-sair:active{background:rgba(255,255,255,.08)}
   .hamb{font-size:22px;background:transparent;border:none;color:#fff;cursor:pointer;width:32px;line-height:1;display:none}
   @media(max-width:899px){ body.logged .hamb{display:block} }
@@ -398,22 +401,19 @@ var NAV_LOJISTA=[
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
   var nav=document.getElementById('sbNav'); if(!nav) return;
-  var perfil=STATE.perfilAtivo||'manejador';
-  var root=STATE.stack[0]||'inicio';
-  var lista=(perfil==='lojista')?NAV_LOJISTA:NAV_MANEJADOR;
-  var sw='<div class="sb-switch">'+
-    '<button class="'+(perfil==='manejador'?'on':'')+'" onclick="trocarPerfil(\'manejador\')">🌿 Manejador</button>'+
-    '<button class="'+(perfil==='lojista'?'on':'')+'" onclick="trocarPerfil(\'lojista\')">🏪 Lojista</button></div>';
+  var tipo=STATE.tipo||'manejador';
+  var root=STATE.stack[0]||(tipo==='empresa'?'empresa':'inicio');
+  var lista=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR.slice();
+  if(tipo==='manejador' && STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',emoji:'🛡️'}]);
   var itens=lista.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
-  var cfgView=(perfil==='lojista')?'empresa':'perfilManejador';
+  var cfgView=(tipo==='empresa')?'empresa':'perfilManejador';
   var cfg='<div class="sb-item sb-cfg'+(root===cfgView?' active':'')+'" onclick="go(\''+cfgView+'\')"><span class="emoji">⚙️</span><span>Configurar perfil</span></div>';
-  nav.innerHTML=sw+itens+cfg;
-  var u=document.getElementById('sbUser'); if(u) u.textContent = STATE.manejador ? (STATE.manejador.nome) : '';
+  nav.innerHTML=itens+cfg;
+  var u=document.getElementById('sbUser'); if(u) u.textContent = (tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
 }
-window.trocarPerfil=function(p){ STATE.perfilAtivo=p; try{localStorage.setItem('perfilAtivo',p);}catch(e){} EDIT=null; STATE.stack=[p==='lojista'?'empresa':'inicio']; closeMenu(); render(); };
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
 window.openMenu=function(){ document.body.classList.add('menu-open'); };
 window.closeMenu=function(){ document.body.classList.remove('menu-open'); };
@@ -488,23 +488,29 @@ var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'A
    LOGIN / REGISTRO
    ============================================================ */
 var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
-VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
+VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
+  var t=STATE.loginTipo||'manejador';
   app('<div style="text-align:center;margin:10px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:290px"></div>'+
-    '<div class="card" style="margin-top:10px"><h3 style="margin-bottom:2px">Entrar</h3>'+
+    '<div class="segbar"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">🌿 Manejador</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">🏪 Empresa</button></div>'+
+    '<div class="card"><h3 style="margin-bottom:2px">Entrar '+(t==='empresa'?'como empresa':'como manejador')+'</h3>'+
     '<div class="meta" style="margin-bottom:6px">Acesse com seu login e senha.</div>'+
     '<label>Login</label><input id="l_login" autocomplete="username" placeholder="usuário ou e-mail">'+
     '<label>Senha</label><input id="l_senha" type="password" autocomplete="current-password" placeholder="••••••">'+
     '<button class="btn" onclick="fazerLogin(this)">Entrar</button></div>'+
-    '<div class="card click" onclick="nav(\'registrar\')" style="text-align:center"><div class="meta">Ainda não tem conta? <b style="color:var(--verde)">Criar conta</b></div></div>');
+    '<div class="card click" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')" style="text-align:center"><div class="meta">Ainda não tem conta? <b style="color:var(--verde)">Criar conta de '+(t==='empresa'?'empresa':'manejador')+'</b></div></div>');
   var s=document.getElementById('l_senha'); if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
 };
+window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
+function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
+  if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
+  else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
+  render(); }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
-  server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); AUTH.manejador=r.manejador; STATE.manejador=r.manejador; STATE.stack=['inicio']; render(); })
+  server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Entrar'; }); };
 
-VIEWS.registrar=function(){ setTitulo('Criar conta'); setCrumb('Criar conta');
-  var checks=PERFIS.map(function(p){ return '<label class="check" onclick="togglePerfil(this)"><input type="checkbox" value="'+p+'">'+p+'</label>'; }).join('');
+VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Criar conta');
   app('<div class="card"><h3>Dados de acesso</h3>'+
     '<label>Login *</label><input id="f_login" autocomplete="username" placeholder="usuário ou e-mail">'+
     '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div>'+
@@ -512,25 +518,52 @@ VIEWS.registrar=function(){ setTitulo('Criar conta'); setCrumb('Criar conta');
     '<div class="card"><h3>Dados do manejador</h3>'+
     '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
     '<div class="two"><div><label>Data de nascimento</label><input id="f_nasc" type="date"></div>'+
-    '<div><label>CPF *</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></div></div>'+
+    '<div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></div></div>'+
     '<div class="two"><div><label>CR</label><input id="f_cr"></div><div><label>Telefone</label><input id="f_tel" inputmode="tel"></div></div>'+
     '<label>E-mail</label><input id="f_email" type="email">'+
     '<label>Endereço</label><textarea id="f_end"></textarea>'+
     '<div class="two"><div><label>Latitude</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude</label><input id="f_lng" inputmode="decimal"></div></div>'+
     gpsButton('f_lat','f_lng')+
-    '<label>Perfis *</label><div class="checks">'+checks+'</div>'+
     '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button></div>'); };
-window.togglePerfil=function(l){ var c=l.querySelector('input'); c.checked=!c.checked; l.classList.toggle('on',c.checked); };
-window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome'),cpf=val('f_cpf');
-  var perfis=[].slice.call(document.querySelectorAll('.checks input:checked')).map(function(c){return c.value;});
+window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
   if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome');return;}
-  if(!cpf){toast('Informe o CPF');return;} if(!perfis.length){toast('Selecione 1 perfil');return;}
   btn.disabled=true; btn.textContent='Criando…';
-  server('apiRegistrar',{login:login,senha:senha,nome:nome,dataNascimento:val('f_nasc'),cpf:cpf,cr:val('f_cr'),telefone:val('f_tel'),email:val('f_email'),endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),perfis:perfis})
-  .then(function(r){ salvarToken(r.token); AUTH.manejador=r.manejador; STATE.manejador=r.manejador; toast('Conta criada ✔'); STATE.stack=['inicio']; render(); })
+  server('apiRegistrar',{tipo:'manejador',login:login,senha:senha,nome:nome,dataNascimento:val('f_nasc'),cpf:val('f_cpf'),cr:val('f_cr'),telefone:val('f_tel'),email:val('f_email'),endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng')})
+  .then(function(r){ salvarToken(r.token); toast('Conta criada ✔'); aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta e entrar'; }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); AUTH.manejador=null; STATE.manejador=null; STATE.stack=['login']; render(); };
+
+var SEGMENTOS=['Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
+VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb('Criar conta','Empresa');
+  app('<div class="card"><h3>Dados de acesso</h3>'+
+    '<label>Login *</label><input id="fe_login" autocomplete="username" placeholder="usuário ou e-mail">'+
+    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div></div>'+
+    '<div class="card"><h3>Dados da empresa</h3>'+
+    '<label>Nome da empresa *</label><input id="fe_nome">'+
+    '<label>Segmento *</label><select id="fe_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
+    '<label>Descrição</label><textarea id="fe_desc" placeholder="O que sua empresa oferece"></textarea>'+
+    '<div class="two"><div><label>Telefone</label><input id="fe_tel"></div><div><label>WhatsApp</label><input id="fe_wa" placeholder="DDD+número"></div></div>'+
+    '<label>E-mail</label><input id="fe_email" type="email">'+
+    '<label>Cidade</label><input id="fe_cidade">'+
+    '<label>Endereço / sede</label><input id="fe_end">'+
+    '<div class="two"><div><label>Latitude (sede) *</label><input id="fe_lat" inputmode="decimal"></div><div><label>Longitude (sede) *</label><input id="fe_lng" inputmode="decimal"></div></div>'+
+    gpsButton('fe_lat','fe_lng')+
+    '<label>Instagram</label><input id="fe_insta" placeholder="@seuperfil">'+
+    '<label>Facebook</label><input id="fe_face">'+
+    '<label>Site</label><input id="fe_site" placeholder="https://...">'+
+    '<label>Logo/foto</label><input id="fe_foto" type="file" accept="image/*"><img id="fe_prev" class="foto-prev">'+
+    '<div class="meta" style="margin-top:8px">⚠️ Seu cadastro passa por <b>aprovação do administrador</b> antes de aparecer na rede.</div>'+
+    '<button class="btn" onclick="salvarEmpresaConta(this)">Criar conta de empresa</button></div>');
+  bindFoto('fe_foto','fe_prev'); };
+window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
+  if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
+  if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome da empresa');return;}
+  if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede (lat/long)');return;}
+  btn.disabled=true; btn.textContent='Criando…';
+  server('apiRegistrar',{tipo:'empresa',login:login,senha:senha,nome:nome,segmento:val('fe_seg'),descricao:val('fe_desc'),telefone:val('fe_tel'),whatsapp:val('fe_wa'),email:val('fe_email'),cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto')})
+  .then(function(r){ salvarToken(r.token); toast('Conta criada ✔'); aplicarAuth(r); })
+  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; }); };
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
 
 /* ============================================================
    MINHA EMPRESA (LOJISTA) + NETWORK
@@ -540,39 +573,61 @@ var RAMOS=['Loja de artigos de caça','Armaria','Munição/recarga','Óptica/mir
 
 VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadingBox('Carregando empresa…');
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
-    if(!e){ app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏪 Cadastre sua empresa</h2><div class="meta">É lojista ou empresário do ramo? Cadastre sua empresa para aparecer no mapa da rede (Network) e receber contatos de manejadores.</div></div>');
-      fab('<button class="btn" onclick="nav(\'empresaForm\')">＋ Cadastrar empresa</button>'); return; }
-    app('<div class="card">'+(e.fotoUrl?'<img src="'+esc(imgSrc(e.fotoUrl))+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px">':'')+
+    if(!e){ app('<div class="empty"><div class="big">🏪</div>Empresa não encontrada.</div>'); return; }
+    var st=String(e.status||'pendente');
+    var banner = st==='aprovado' ? '<div class="card" style="border-left:5px solid var(--ok)"><div class="meta">✅ <b>Aprovada</b> — sua empresa aparece no mapa da rede.</div></div>'
+      : st==='reprovado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">❌ <b>Cadastro reprovado</b> pelo administrador. Ajuste os dados e aguarde nova análise.</div></div>'
+      : st==='desativado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">⛔ <b>Desativada</b> pelo administrador.</div></div>'
+      : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">⏳ <b>Aguardando aprovação</b> do administrador. Você já pode ajustar seus dados; assim que for aprovada, aparece na rede.</div></div>';
+    app(banner+'<div class="card">'+(e.fotoUrl?'<img src="'+esc(imgSrc(e.fotoUrl))+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px">':'')+
       '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+
-      '<div class="meta" style="margin-top:6px">'+(e.ramo?'<span class="pill">'+esc(e.ramo)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
+      '<div class="meta" style="margin-top:6px">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
       (e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+
-      (e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.whatsapp?'💬 '+esc(e.whatsapp)+'<br>':'')+(e.email?'✉️ '+esc(e.email):'')+'</div>'+
-      (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
-      '<div class="meta" style="margin-top:8px">Status: '+(String(e.ativo)==='Não'?'<b style="color:var(--danger)">Desativada pelo administrador</b>':'<b style="color:var(--ok)">Ativa · visível na rede</b>')+'</div></div>'+
-      '<button class="btn sec" onclick="excluirEmpresa()">🗑️ Excluir empresa</button>');
+      (e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.whatsapp?'💬 '+esc(e.whatsapp)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+
+      (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
+      (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+'</div>');
   }); };
-VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; var ed=!!STATE.empresa; setTitulo(ed?'Editar empresa':'Nova empresa'); setCrumb('Empresa',ed?'Editar':'Nova');
+VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa'); setCrumb('Empresa','Editar');
   app('<div class="card"><label>Nome da empresa *</label><input id="em_nome" value="'+esc(e.nome||'')+'">'+
-    '<label>Ramo</label><select id="em_ramo">'+RAMOS.map(function(r){return '<option>'+r+'</option>';}).join('')+'</select>'+
+    '<label>Segmento *</label><select id="em_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><textarea id="em_desc" placeholder="O que sua empresa oferece">'+esc(e.descricao||'')+'</textarea>'+
     '<div class="two"><div><label>Telefone</label><input id="em_tel" value="'+esc(e.telefone||'')+'"></div><div><label>WhatsApp</label><input id="em_wa" value="'+esc(e.whatsapp||'')+'" placeholder="DDD+número"></div></div>'+
     '<label>E-mail</label><input id="em_email" value="'+esc(e.email||'')+'">'+
     '<label>Cidade</label><input id="em_cidade" value="'+esc(e.cidade||'')+'">'+
-    '<label>Endereço</label><input id="em_end" value="'+esc(e.endereco||'')+'">'+
-    '<div class="two"><div><label>Latitude</label><input id="em_lat" inputmode="decimal" value="'+esc(e.lat||'')+'"></div><div><label>Longitude</label><input id="em_lng" inputmode="decimal" value="'+esc(e.lng||'')+'"></div></div>'+
+    '<label>Endereço / sede</label><input id="em_end" value="'+esc(e.endereco||'')+'">'+
+    '<div class="two"><div><label>Latitude (sede)</label><input id="em_lat" inputmode="decimal" value="'+esc(e.lat||'')+'"></div><div><label>Longitude (sede)</label><input id="em_lng" inputmode="decimal" value="'+esc(e.lng||'')+'"></div></div>'+
     gpsButton('em_lat','em_lng')+
-    '<label>Logo/foto '+(ed&&e.fotoUrl?'(escolha para trocar)':'')+'</label>'+(ed&&e.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(e.fotoUrl))+'">':'')+'<input id="em_foto" type="file" accept="image/*"><img id="em_prev" class="foto-prev">'+
-    '<button class="btn" onclick="salvarEmpresa(this)">'+(ed?'Salvar alterações':'Cadastrar empresa')+'</button></div>');
-  if(ed&&e.ramo) setVal('em_ramo',e.ramo); bindFoto('em_foto','em_prev'); };
+    '<label>Instagram</label><input id="em_insta" value="'+esc(e.instagram||'')+'" placeholder="@seuperfil">'+
+    '<label>Facebook</label><input id="em_face" value="'+esc(e.facebook||'')+'">'+
+    '<label>Site</label><input id="em_site" value="'+esc(e.site||'')+'" placeholder="https://...">'+
+    '<label>Logo/foto '+(e.fotoUrl?'(escolha para trocar)':'')+'</label>'+(e.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(e.fotoUrl))+'">':'')+'<input id="em_foto" type="file" accept="image/*"><img id="em_prev" class="foto-prev">'+
+    '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
+  if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
 window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('em_nome'),ramo:val('em_ramo'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),foto:fotoData('em_foto')};
-  server('apiSalvarEmpresa',d).then(function(){ toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(){ btn.disabled=false; btn.textContent=STATE.empresa?'Salvar alterações':'Cadastrar empresa'; }); };
-window.excluirEmpresa=function(){ if(!confirm('Excluir sua empresa da rede?'))return; server('apiExcluirEmpresa').then(function(){ STATE.empresa=null; toast('Empresa excluída'); STATE.stack=['empresa']; render(); }); };
+  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),foto:fotoData('em_foto')};
+  server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); };
+
+/* ===== ADMINISTRAÇÃO (aprovar empresas) ===== */
+VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'); loadingBox('Carregando empresas…');
+  server('apiAdminEmpresas').then(function(l){ CACHE.adminEmp=l||[];
+    var ordem={pendente:0,aprovado:1,reprovado:2,desativado:3};
+    l.sort(function(a,b){return (ordem[a.status]||9)-(ordem[b.status]||9);});
+    var html=l.length? l.map(function(e){ var st=String(e.status||'pendente');
+      var cor=st==='aprovado'?'ok':(st==='pendente'?'warn':'dan');
+      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">🏪 '+esc(e.nome||'')+' <span class="pill '+cor+'">'+esc(st)+'</span></h3><div class="meta">'+(e.segmento?esc(e.segmento)+' · ':'')+esc(e.cidade||'')+(e.whatsapp?'<br>💬 '+esc(e.whatsapp):'')+'</div></div></div>'+
+        '<div class="row" style="gap:6px;margin-top:8px">'+
+        (st!=='aprovado'?'<button class="btn sm grow" onclick="aprovarEmp(\''+e.id+'\',\'aprovado\')">✅ Aprovar</button>':'')+
+        (st!=='reprovado'?'<button class="btn sm sec grow" onclick="aprovarEmp(\''+e.id+'\',\'reprovado\')">❌ Reprovar</button>':'')+
+        (st==='aprovado'?'<button class="btn sm sec grow" onclick="aprovarEmp(\''+e.id+'\',\'desativado\')">⛔ Desativar</button>':'')+
+        '</div></div>'; }).join('') : '<div class="empty">Nenhuma empresa cadastrada.</div>';
+    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🛡️ Aprovação de empresas</h2><div class="meta">Aprove, reprove ou desative os cadastros de empresas.</div></div>'+html);
+  }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
+window.aprovarEmp=function(id,status){ server('apiAprovarEmpresa',id,status).then(function(){ toast('Atualizado ✔'); render(); }); };
 
 VIEWS.network=function(){ setTitulo('Network'); setCrumb('Network'); loadingBox('Carregando rede…');
-  server('apiNetworkMapa').then(function(d){ STATE.net=d; var vis=d.visivel;
-    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🌐 Rede de manejadores</h2><div class="meta">Ative sua visibilidade para aparecer no mapa e enxergar os outros manejadores. Se ficar oculto, você não aparece e também não vê os demais. <b>Lojistas aparecem sempre.</b></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meu perfil na rede</h3><div class="meta" style="margin-top:2px">'+(vis?'<span class="pill ok">Visível</span> você aparece e vê os demais':'<span class="pill gray">Oculto</span> você não aparece nem vê outros manejadores')+'</div></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'perfilManejador\')">Configurar</button></div></div>'+
+  server('apiNetworkMapa').then(function(d){ STATE.net=d; var vis=d.visivel; var ehManej=(STATE.tipo!=='empresa');
+    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🌐 Rede</h2><div class="meta">'+(ehManej?'Ative sua visibilidade para aparecer no mapa e enxergar os outros manejadores. Se ficar oculto, você não aparece e também não vê os demais. ':'')+'<b>Lojistas aprovados aparecem sempre.</b></div></div>'+
+      (ehManej?'<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meu perfil na rede</h3><div class="meta" style="margin-top:2px">'+(vis?'<span class="pill ok">Visível</span> você aparece e vê os demais':'<span class="pill gray">Oculto</span> você não aparece nem vê outros manejadores')+'</div></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'perfilManejador\')">Configurar</button></div></div>':'')+
       '<div id="netMapCard"></div>');
     montarNetMap(d);
   }); };
@@ -586,10 +641,10 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
   (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:emojiIcon('🏪')}).addTo(layer).bindPopup(netPopEmpresa(e)); });
   (d.manejadores||[]).forEach(function(m){ if(m.eu)return; var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:emojiIcon('🧑‍🌾')}).addTo(layer).bindPopup(netPopManej(m)); });
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:14}); }catch(e){} } },150);
-  var itens=(d.empresas||[]).map(function(e){return netCard('🏪',e.nome,e.ramo,e.cidade,e.whatsapp,e.telefone,e.email);})
+  var itens=(d.empresas||[]).map(function(e){return netCard('🏪',e.nome,e.segmento,e.cidade,e.whatsapp,e.telefone,e.email);})
     .concat((d.manejadores||[]).filter(function(m){return !m.eu;}).map(function(m){return netCard('🧑‍🌾',m.nome,'Manejador',m.cidade,m.whatsapp,m.telefone,'');}));
   var nl=document.getElementById('netList'); if(nl) nl.innerHTML = itens.length? ('<h3 style="margin:6px 4px">Contatos</h3>'+itens.join('')) : '<div class="empty">Nada por aqui ainda.</div>'; }
-function netPopEmpresa(e){ var w=waLink(e.whatsapp); return '<div class="pop"><h4>🏪 '+esc(e.nome||'')+'</h4><div class="meta">'+(e.ramo?esc(e.ramo)+'<br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email):'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
+function netPopEmpresa(e){ var w=waLink(e.whatsapp); return '<div class="pop"><h4>🏪 '+esc(e.nome||'')+'</h4>'+(e.fotoUrl?'<img src="'+esc(imgSrc(e.fotoUrl))+'" style="width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin:4px 0">':'')+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
 function netPopManej(m){ var w=waLink(m.whatsapp); return '<div class="pop"><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin:4px 0">':'')+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
 function netCard(ic,nome,sub,cidade,wa,tel,email){ var w=waLink(wa); return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(nome||'')+'</h3><div class="meta">'+(sub?esc(sub):'')+(cidade?(sub?' · ':'')+esc(cidade):'')+(tel?'<br>📞 '+esc(tel):'')+(email?'<br>✉️ '+esc(email):'')+'</div></div>'+(w?'<a class="btn sm sec" style="width:auto;margin:0;text-decoration:none" target="_blank" href="'+w+'">💬</a>':'')+'</div></div>'; }
 VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu perfil'); setCrumb('Perfil');
@@ -1453,7 +1508,10 @@ function renderCevaPanel(){
    ============================================================ */
 function iniciar(){ loadingBox('Conectando ao servidor…');
   server('apiPing').then(function(p){ STATE.appNome='JavaStreak'; setTitulo(STATE.appNome);
-    if(AUTH.token){ return server('apiBoot').then(function(b){ AUTH.manejador=b.manejador; STATE.manejador=b.manejador; STATE.stack=[STATE.perfilAtivo==='lojista'?'empresa':'inicio']; render(); })
+    if(AUTH.token){ return server('apiBoot').then(function(b){ STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin;
+        if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
+        else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
+        render(); })
       .catch(function(e){ if(!(e&&e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['login']; render(); } }); }
     STATE.stack=['login']; render();
   }).catch(function(){ app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>Confira a <b>API_URL</b> e se a implantação está como <b>“Qualquer pessoa”</b>.<div style="max-width:280px;margin:18px auto 0"><button class="btn" onclick="iniciar()">Tentar novamente</button></div></div>'); }); }
