@@ -453,7 +453,7 @@ var NAV_MANEJADOR=[
   {v:'network',   label:'Network',           icon:'network'}
 ];
 var NAV_LOJISTA=[
-  {v:'empresa',   label:'Minha empresa',     emoji:'🏪'},
+  {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
   {v:'network',   label:'Network',           icon:'network'}
 ];
@@ -695,9 +695,9 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<label>Logo/foto '+(e.fotoUrl?'(escolha para trocar)':'')+'</label>'+(e.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(e.fotoUrl))+'">':'')+'<input id="em_foto" type="file" accept="image/*"><img id="em_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
   if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
-window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} if(!val('em_lat')||!val('em_lng')){toast('Informe a localização (lat/long) da sede');return;} btn.disabled=true; btn.textContent='Salvando…';
+window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),foto:fotoData('em_foto')};
-  server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); };
+  server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
 
 /* ===== ADMINISTRAÇÃO (aprovar empresas) ===== */
 VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'); loadingBox('Carregando empresas…');
