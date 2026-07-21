@@ -177,6 +177,14 @@
   .segbar{display:flex;gap:8px;margin:8px 0 12px;background:#efe3cc;border:1px solid #e0d4b6;border-radius:14px;padding:5px}
   .segbar button{flex:1;border:none;background:transparent;color:var(--txt2);font-size:14px;font-weight:700;padding:11px 6px;border-radius:10px;cursor:pointer}
   .segbar button.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;box-shadow:0 2px 8px rgba(46,77,46,.3)}
+  .hbell{position:relative;background:transparent;border:none;color:#fff;font-size:19px;cursor:pointer;width:32px}
+  .hbadge{position:absolute;top:-4px;right:-2px;background:#ee2e2e;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;border-radius:9px;padding:0 3px;display:none}
+  .hbadge.on{display:block}
+  #promoPanel{position:fixed;inset:0;background:rgba(20,14,6,.5);z-index:3200;display:none;justify-content:center;align-items:flex-start;padding:16px}
+  #promoPanel.open{display:flex}
+  .promo-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:16px;width:100%;max-width:440px;max-height:88vh;overflow:auto;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);margin-top:40px}
+  .preco-old{text-decoration:line-through;color:var(--txt2)}
+  .preco-new{color:var(--danger);font-weight:800;font-size:18px}
   .sb-sair:active{background:rgba(255,255,255,.08)}
   .hamb{font-size:22px;background:transparent;border:none;color:#fff;cursor:pointer;width:32px;line-height:1;display:none}
   @media(max-width:899px){ body.logged .hamb{display:block} }
@@ -279,6 +287,7 @@
       <div class="titulo" id="hTitulo">JavaStreak</div>
       <span class="sub" id="hSub">Carregando…</span>
     </div>
+    <button class="hbell" id="hbell" onclick="abrirPromos()" title="Promoções" style="display:none">🔔<span class="hbadge" id="promoBadge"></span></button>
     <span class="dot" id="connDot" title="Status da conexão"></span>
   </header>
 
@@ -291,6 +300,8 @@
   <div class="toast" id="toast"></div>
 
   <div id="lightbox" onclick="fecharFoto()"><img id="lightboxImg" alt=""></div>
+
+  <div id="promoPanel" onclick="if(event.target===this)fecharPromos()"></div>
 
   <div id="markModal"><div class="mk-box">
     <h3 style="margin:0 0 8px">📍 Marcar ponto</h3>
@@ -378,9 +389,11 @@ function render(){
   buildSidebar();
 }
 function updateHeader(){
-  var logado = !!AUTH.token && !!STATE.manejador;
-  document.getElementById('hSub').textContent = logado ? ('Manejador: '+STATE.manejador.nome) : STATE.appNome;
+  var logado = !!AUTH.token && (STATE.tipo==='empresa' ? !!STATE.empresa : !!STATE.manejador);
+  var nome = (STATE.tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+  document.getElementById('hSub').textContent = logado ? nome : STATE.appNome;
   document.body.classList.toggle('logged', logado);
+  var bell=document.getElementById('hbell'); if(bell) bell.style.display = logado ? 'block':'none';
   if(!logado) closeMenu();
 }
 var NAV_MANEJADOR=[
@@ -442,7 +455,10 @@ function idade(n){ if(!n)return''; var d=new Date(n); if(isNaN(d))return''; var 
 function nowLocal(){ var d=new Date(); var p=function(x){return(x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
 function gpsButton(a,b){ return '<button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Usar minha localização atual</button>'; }
 function pegarGps(a,b,btn){ if(!navigator.geolocation){toast('GPS não suportado');return;} var t=btn.textContent; btn.textContent='📡 Localizando…'; btn.disabled=true;
-  navigator.geolocation.getCurrentPosition(function(p){ document.getElementById(a).value=p.coords.latitude.toFixed(6); document.getElementById(b).value=p.coords.longitude.toFixed(6); btn.textContent=t; btn.disabled=false; toast('Localização capturada ✔'); },
+  navigator.geolocation.getCurrentPosition(function(p){ var ea=document.getElementById(a), eb=document.getElementById(b);
+    ea.value=p.coords.latitude.toFixed(6); eb.value=p.coords.longitude.toFixed(6);
+    try{ ea.dispatchEvent(new Event('input',{bubbles:true})); eb.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){}
+    btn.textContent=t; btn.disabled=false; toast('Localização capturada ✔'); },
   function(e){ btn.textContent=t; btn.disabled=false; toast('Falha no GPS: '+e.message); }, {enableHighAccuracy:true,timeout:12000}); }
 function mapaLink(lat,lng){ if(!lat||!lng)return''; return '<a class="mapa" target="_blank" href="https://www.google.com/maps?q='+lat+','+lng+'">🗺️ '+lat+', '+lng+'</a>'; }
 function val(id){ var e=document.getElementById(id); return e?String(e.value).trim():''; }
@@ -504,7 +520,9 @@ window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
 function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
-  render(); }
+  render(); iniciarPromoPoll(); }
+var PROMO_TIMER=null;
+function iniciarPromoPoll(){ carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
   server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
@@ -625,11 +643,15 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
 window.aprovarEmp=function(id,status){ server('apiAprovarEmpresa',id,status).then(function(){ toast('Atualizado ✔'); render(); }); };
 
 VIEWS.network=function(){ setTitulo('Network'); setCrumb('Network'); loadingBox('Carregando rede…');
-  server('apiNetworkMapa').then(function(d){ STATE.net=d; var vis=d.visivel; var ehManej=(STATE.tipo!=='empresa');
+  server('apiNetworkMapa').then(function(d){ STATE.net=d; var vis=d.visivel; var ehManej=(STATE.tipo!=='empresa'); var ehEmp=(STATE.tipo==='empresa');
     app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🌐 Rede</h2><div class="meta">'+(ehManej?'Ative sua visibilidade para aparecer no mapa e enxergar os outros manejadores. Se ficar oculto, você não aparece e também não vê os demais. ':'')+'<b>Lojistas aprovados aparecem sempre.</b></div></div>'+
       (ehManej?'<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meu perfil na rede</h3><div class="meta" style="margin-top:2px">'+(vis?'<span class="pill ok">Visível</span> você aparece e vê os demais':'<span class="pill gray">Oculto</span> você não aparece nem vê outros manejadores')+'</div></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'perfilManejador\')">Configurar</button></div></div>':'')+
+      (ehEmp?'<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'promoForm\')">Lançar</button></div><div id="minhasPromos" style="margin-top:10px"></div></div>':'')+
       '<div id="netMapCard"></div>');
     montarNetMap(d);
+    if(ehEmp) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
+      el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
+    });
   }); };
 function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!card) return; var pts=[];
   card.innerHTML='<div id="netMap" style="height:52vh;min-height:320px;border-radius:12px;border:1px solid var(--linha)"></div>'+
@@ -658,13 +680,13 @@ VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu per
     '<label>Sua localização no mapa *</label><div class="two"><div><input id="np_lat" inputmode="decimal" placeholder="Latitude" value="'+esc(me.latNetwork||'')+'"></div><div><input id="np_lng" inputmode="decimal" placeholder="Longitude" value="'+esc(me.lngNetwork||'')+'"></div></div>'+
     gpsButton('np_lat','np_lng')+
     '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;margin-top:14px"><input type="checkbox" id="np_vis" style="width:auto" '+(me.visivelNetwork==='Sim'?'checked':'')+'> Aparecer no mapa da rede (visível)</label>'+
-    '<div class="meta" style="margin:6px 0 0">⚠️ Só é possível ficar visível com a <b>localização (lat/long) preenchida</b>. Se ficar oculto, você não aparece e também não vê os outros manejadores. Lojistas você vê sempre.</div>'+
+    '<div class="meta" id="np_hint" style="margin:6px 0 0">⚠️ Só é possível ficar visível com a <b>localização (lat/long) preenchida</b>. Se ficar oculto, você não aparece e também não vê os outros manejadores. Lojistas você vê sempre.</div>'+
     '<button class="btn" onclick="salvarNetwork(this)" style="margin-top:14px">Salvar perfil</button></div>');
   bindFoto('np_foto','np_prev');
   var chk=document.getElementById('np_vis');
-  function sync(){ var ok=!!(val('np_lat')&&val('np_lng')); if(!ok){ chk.checked=false; chk.disabled=true; } else { chk.disabled=false; } }
+  function sync(){ var ok=!!(val('np_lat')&&val('np_lng')); chk.disabled=false; if(!ok) chk.checked=false; var h=document.getElementById('np_hint'); if(h) h.style.display=ok?'none':'block'; }
   ['np_lat','np_lng'].forEach(function(id){ document.getElementById(id).addEventListener('input',sync); });
-  sync(); if(temCoord && me.visivelNetwork==='Sim') chk.checked=true; };
+  var h0=document.getElementById('np_hint'); if(h0) h0.style.display=temCoord?'none':'block'; };
 window.salvarNetwork=function(btn){ 
   var vis=document.getElementById('np_vis').checked;
   if(vis && !(val('np_lat')&&val('np_lng'))){ toast('Preencha a localização (lat/long) para ficar visível'); return; }
@@ -674,6 +696,41 @@ window.salvarNetwork=function(btn){
     me.visivelNetwork=(r&&r.visivel)?'Sim':'Não'; me.whatsapp=d.whatsapp; me.telefone=d.telefone; me.cidade=d.cidade; me.bioNetwork=d.bio; me.latNetwork=d.lat; me.lngNetwork=d.lng;
     if(r&&r.fotoUrl) me.fotoUrl=r.fotoUrl;
     toast(r&&r.bloqueado?'Salvo. Para ficar visível, preencha a localização.':'Perfil salvo ✔'); STATE.stack=['perfilManejador']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar perfil'; }); };
+
+/* ============================================================
+   PROMOÇÕES
+   ============================================================ */
+var PROMOS={ recebe:true, promos:[] };
+var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
+function fmtRestante(iso){ var ms=new Date(iso)-new Date(); if(ms<=0) return 'expirada'; var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return (h?h+'h ':'')+m+'min'; }
+function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; atualizarBadge(); }).catch(function(){}); }
+function atualizarBadge(){ var b=document.getElementById('promoBadge'); if(!b) return; var n=(PROMOS.promos||[]).length; b.textContent=n; b.classList.toggle('on', n>0 && PROMOS.recebe!==false); }
+window.abrirPromos=function(){ renderPromoPanel(); document.getElementById('promoPanel').classList.add('open'); };
+window.fecharPromos=function(){ document.getElementById('promoPanel').classList.remove('open'); };
+window.toggleRecebe=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(r){ PROMOS.recebe=r.recebe; if(!r.recebe) PROMOS.promos=[]; atualizarBadge(); if(r.recebe) carregarPromos(); renderPromoPanel(); }); };
+function promoCard(p){ return '<div class="card">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
+  '<h3 style="margin:0 0 2px">📣 '+esc(p.autorNome||'')+'</h3>'+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+
+  '<div style="margin-top:6px">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
+  '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div></div>'; }
+function renderPromoPanel(){ var lista = (PROMOS.recebe===false) ? '<div class="empty">Notificações desativadas. Ative acima para receber promoções.</div>'
+    : ((PROMOS.promos&&PROMOS.promos.length)? PROMOS.promos.map(promoCard).join('') : '<div class="empty"><div class="big">📣</div>Nenhuma promoção ativa na sua região agora.</div>');
+  document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Promoções de parceiros</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
+    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:10px 0"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebe(this)"> Receber notificações de promoções</label>'+lista+'</div>'; }
+
+VIEWS.promoForm=function(){ setTitulo('Lançar promoção'); setCrumb('Network','Promoção');
+  app('<div class="card"><label>Foto do produto/serviço</label><input id="pr_foto" type="file" accept="image/*"><img id="pr_prev" class="foto-prev">'+
+    '<label>Descrição do produto/serviço *</label><textarea id="pr_desc" placeholder="Ex: Ração para cães 20kg, entrega grátis"></textarea>'+
+    '<div class="two"><div><label>Preço atual (R$)</label><input id="pr_pa" inputmode="decimal" placeholder="Ex: 150"></div><div><label>Preço promocional (R$) *</label><input id="pr_pp" inputmode="decimal" placeholder="Ex: 119"></div></div>'+
+    '<label>Quem deve ver (público-alvo)</label><select id="pr_alvo">'+ALVOS.map(function(a){return '<option>'+a+'</option>';}).join('')+'</select>'+
+    '<label>Raio de alcance (km)</label><input id="pr_raio" inputmode="numeric" placeholder="Ex: 50 (deixe vazio p/ sem limite)">'+
+    '<div class="meta" style="margin-top:6px">A promoção usa a localização da sua sede e fica ativa por <b>12 horas</b>.</div>'+
+    '<button class="btn" onclick="salvarPromo(this)">📣 Publicar promoção</button></div>');
+  bindFoto('pr_foto','pr_prev'); };
+window.salvarPromo=function(btn){ if(!val('pr_desc')){toast('Descreva o produto/serviço');return;} if(!val('pr_pp')){toast('Informe o preço promocional');return;}
+  btn.disabled=true; btn.textContent='Publicando…';
+  server('apiCriarPromocao',{descricao:val('pr_desc'),precoAtual:val('pr_pa'),precoPromo:val('pr_pp'),alvoPerfil:val('pr_alvo'),raioKm:val('pr_raio'),foto:fotoData('pr_foto')})
+  .then(function(){ toast('Promoção publicada ✔'); STATE.stack=['network']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='📣 Publicar promoção'; }); };
+window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))return; server('apiExcluirPromocao',id).then(function(){ toast('Promoção encerrada'); render(); }); };
 
 /* ============================================================
    INÍCIO / MÓDULOS
@@ -1511,7 +1568,7 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
     if(AUTH.token){ return server('apiBoot').then(function(b){ STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin;
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
-        render(); })
+        render(); iniciarPromoPoll(); })
       .catch(function(e){ if(!(e&&e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['login']; render(); } }); }
     STATE.stack=['login']; render();
   }).catch(function(){ app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>Confira a <b>API_URL</b> e se a implantação está como <b>“Qualquer pessoa”</b>.<div style="max-width:280px;margin:18px auto 0"><button class="btn" onclick="iniciar()">Tentar novamente</button></div></div>'); }); }
