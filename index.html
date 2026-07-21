@@ -669,7 +669,7 @@ var RAMOS=['Loja de artigos de caça','Armaria','Munição/recarga','Óptica/mir
 
 VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadingBox('Carregando empresa…');
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
-    if(!e){ app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏪 Complete o cadastro da sua empresa</h2><div class="meta">Preencha os dados da sua empresa para ativar sua presença na rede.</div></div><button class="btn" onclick="nav(\'empresaForm\')" style="margin-top:4px">Preencher dados da empresa</button>'); STATE.empresa=null; return; }
+    if(!e){ app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏪 Complete o cadastro da sua empresa</h2><div class="meta">Preencha os dados da sua empresa para ativar sua presença na rede.</div></div><button class="btn" onclick="nav(\'empresaForm\')" style="margin-top:4px">Preencher dados da empresa</button><div style="text-align:center;margin-top:12px"><button class="btn sec" style="width:auto" onclick="diagEmpresa()">🔧 Diagnóstico</button></div>'); STATE.empresa=null; return; }
     var bloq = e.bloqueado==='Sim';
     var bloqBanner = bloq ? '<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Sua empresa está bloqueada</b> por denúncias e está em análise pelo administrador. Enquanto isso, não aparece na rede nem lança promoções.</div></div>' : '';
     app(bloqBanner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
@@ -704,6 +704,11 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
 window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),foto:fotoData('em_foto')};
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
+window.diagEmpresa=function(){ server('apiDiagEmpresa').then(function(r){
+  var msg='Login: '+r.login+'\nTipo: '+r.tipo+'\nusuarioId: '+r.usuarioId+'\nEmpresas c/ meu usuário: '+r.empresasComMeuUsuario+' (total '+r.totalEmpresas+')\nColunas alinhadas: '+(r.alinhado?'SIM ✅':'NÃO ⚠️');
+  if(!r.alinhado){ msg+='\n\nPlanilha: '+r.headersPlanilha.join(', ')+'\n\nEsperado: '+r.headersEsperado.join(', '); }
+  alert(msg);
+}).catch(function(e){ alert('Erro no diagnóstico: '+((e&&e.message)||'republique o Code.gs (Nova versão)')); }); };
 
 /* ===== ADMINISTRAÇÃO (aprovar empresas) ===== */
 VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'); loadingBox('Carregando…');
