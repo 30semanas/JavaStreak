@@ -182,6 +182,9 @@
   .hbadge.on{display:block}
   #promoPanel{position:fixed;inset:0;background:rgba(20,14,6,.5);z-index:3200;display:none;justify-content:center;align-items:flex-start;padding:16px}
   #promoPanel.open{display:flex}
+  #salaPanel{position:fixed;inset:0;background:rgba(20,14,6,.5);z-index:3200;display:none;justify-content:center;align-items:flex-start;padding:16px}
+  #salaPanel.open{display:flex}
+  .emoji-me>div{filter:drop-shadow(0 0 3px #ee8a2e);transform:scale(1.15)}
   .promo-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:16px;width:100%;max-width:440px;max-height:88vh;overflow:auto;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);margin-top:40px}
   .preco-old{text-decoration:line-through;color:var(--txt2)}
   .preco-new{color:var(--danger);font-weight:800;font-size:18px}
@@ -199,6 +202,16 @@
   .trofdel{position:absolute;top:4px;right:4px;background:rgba(255,255,255,.9)}
   .votbtn{display:block;width:calc(100% - 16px);margin:6px 8px 8px;border:1px solid var(--linha);background:#fff;border-radius:20px;padding:6px 12px;font-weight:700;cursor:pointer}
   .votbtn.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;border-color:transparent}
+  .stars{display:inline-flex;gap:1px;vertical-align:middle}
+  .stars .star{color:#d3c19a;line-height:1}
+  .stars.ro{font-size:15px}
+  .stars.ro .star.on{color:#f0a92e}
+  .stars.vote{margin:6px 8px 8px;font-size:26px;gap:3px}
+  .stars.vote .star{cursor:pointer;color:#cbb78a;transition:transform .08s}
+  .stars.vote .star:hover{transform:scale(1.15)}
+  .stars.vote .star.on{color:#f0a92e}
+  .vc{color:var(--txt2);font-size:11px}
+  .trof .rk{position:absolute;top:6px;right:6px;background:#2e4d2e;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;z-index:2}
   .sb-sair:active{background:rgba(255,255,255,.08)}
   .hamb{font-size:22px;background:transparent;border:none;color:#fff;cursor:pointer;width:32px;line-height:1;display:none}
   @media(max-width:899px){ body.logged .hamb{display:block} }
@@ -316,6 +329,7 @@
   <div id="lightbox" onclick="fecharFoto()"><img id="lightboxImg" alt=""></div>
 
   <div id="promoPanel" onclick="if(event.target===this)fecharPromos()"></div>
+  <div id="salaPanel" onclick="if(event.target===this)fecharSala()"></div>
   <div id="mapPicker"><div class="mp-box">
     <div class="mp-head"><b>Indicar no mapa</b><button class="ib" onclick="fecharMapaPicker()">✕</button></div>
     <div id="pickMap"></div>
@@ -579,12 +593,13 @@ VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Cri
     '<div class="two"><div><label>CR</label><input id="f_cr"></div><div><label>Telefone</label><input id="f_tel" inputmode="tel"></div></div>'+
     '<label>E-mail</label><input id="f_email" type="email">'+
     '<label>Endereço</label><textarea id="f_end"></textarea>'+
-    '<div class="two"><div><label>Latitude</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude</label><input id="f_lng" inputmode="decimal"></div></div>'+
+    '<div class="two"><div><label>Latitude *</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude *</label><input id="f_lng" inputmode="decimal"></div></div>'+
     gpsButton('f_lat','f_lng')+
     '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button></div>'); };
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
   if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome');return;}
+  if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização (lat/long) — use o GPS ou o mapa');return;}
   btn.disabled=true; btn.textContent='Criando…';
   server('apiRegistrar',{tipo:'manejador',login:login,senha:senha,nome:nome,dataNascimento:val('f_nasc'),cpf:val('f_cpf'),cr:val('f_cr'),telefone:val('f_tel'),email:val('f_email'),endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng')})
   .then(function(r){ salvarToken(r.token); toast('Conta criada ✔'); aplicarAuth(r); })
@@ -630,7 +645,7 @@ var RAMOS=['Loja de artigos de caça','Armaria','Munição/recarga','Óptica/mir
 
 VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadingBox('Carregando empresa…');
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
-    if(!e){ app('<div class="empty"><div class="big">🏪</div>Empresa não encontrada.<div style="max-width:280px;margin:18px auto 0"><button class="btn sec" onclick="logout()">Sair</button></div></div>'); return; }
+    if(!e){ app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏪 Complete o cadastro da sua empresa</h2><div class="meta">Preencha os dados da sua empresa para ativar sua presença na rede. Após salvar, passa por aprovação do administrador.</div></div><button class="btn" onclick="nav(\'empresaForm\')" style="margin-top:4px">Preencher dados da empresa</button><div style="margin-top:14px;text-align:center"><button class="btn sec" style="width:auto" onclick="logout()">Sair</button></div>'); STATE.empresa=null; return; }
     var st=String(e.status||'pendente');
     var banner = st==='aprovado' ? '<div class="card" style="border-left:5px solid var(--ok)"><div class="meta">✅ <b>Aprovada</b> — sua empresa aparece no mapa da rede.</div></div>'
       : st==='reprovado' ? '<div class="card" style="border-left:5px solid var(--danger)"><div class="meta">❌ <b>Cadastro reprovado</b> pelo administrador. Ajuste os dados e aguarde nova análise.</div></div>'
@@ -665,7 +680,7 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<label>Logo/foto '+(e.fotoUrl?'(escolha para trocar)':'')+'</label>'+(e.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(e.fotoUrl))+'">':'')+'<input id="em_foto" type="file" accept="image/*"><img id="em_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
   if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
-window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
+window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} if(!val('em_lat')||!val('em_lng')){toast('Informe a localização (lat/long) da sede');return;} btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),foto:fotoData('em_foto')};
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); };
 
@@ -701,23 +716,30 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,noWrap:true,attribution:'© OpenStreetMap'}).addTo(map);
   ROUTEMAP=map; var layer=L.featureGroup().addTo(map);
   (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:emojiIcon('🏪')}).addTo(layer).bindPopup(netPopEmpresa(e)); });
-  (d.manejadores||[]).forEach(function(m){ if(m.eu)return; var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:emojiIcon('🧑‍🌾')}).addTo(layer).bindPopup(netPopManej(m)); });
+  (d.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]);
+    if(m.eu){ L.marker([la,ln],{icon:emojiIcon('📍',38,true)}).addTo(layer).bindPopup('<div class="pop"><h4>📍 Você está aqui</h4></div>'); }
+    else { L.marker([la,ln],{icon:emojiIcon('🧑‍🌾')}).addTo(layer).bindPopup(netPopManej(m)); } });
+  if(STATE.tipo==='empresa' && STATE.empresa){ var ela=coord(STATE.empresa.lat), eln=coord(STATE.empresa.lng); if(ptOk(ela,eln)){ pts.push([ela,eln]); L.marker([ela,eln],{icon:emojiIcon('📍',38,true)}).addTo(layer).bindPopup('<div class="pop"><h4>📍 Sua empresa</h4></div>'); } }
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:14}); }catch(e){} } },150);
   var itens=(d.empresas||[]).map(function(e){return netCard('🏪',e.nome,e.segmento,e.cidade,e.whatsapp,e.telefone,e.email);})
     .concat((d.manejadores||[]).filter(function(m){return !m.eu;}).map(function(m){return netCard('🧑‍🌾',m.nome,'Manejador',m.cidade,m.whatsapp,m.telefone,'');}));
   var nl=document.getElementById('netList'); if(nl) nl.innerHTML = itens.length? ('<h3 style="margin:6px 4px">Contatos</h3>'+itens.join('')) : '<div class="empty">Nada por aqui ainda.</div>'; }
 function netPopEmpresa(e){ var w=waLink(e.whatsapp); return '<div class="pop"><h4>🏪 '+esc(e.nome||'')+'</h4>'+(e.fotoUrl?'<img src="'+esc(imgSrc(e.fotoUrl))+'" style="width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin:4px 0">':'')+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
-function netPopManej(m){ var w=waLink(m.whatsapp); return '<div class="pop"><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin:4px 0">':'')+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
+function netPopManej(m){ var w=waLink(m.whatsapp); return '<div class="pop"><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin:4px 0">':'')+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'</div>'; }
+window.verSalaDe=function(id){ var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
+  server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div></div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
+    p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div><div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
+window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
 function netCard(ic,nome,sub,cidade,wa,tel,email){ var w=waLink(wa); return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(nome||'')+'</h3><div class="meta">'+(sub?esc(sub):'')+(cidade?(sub?' · ':'')+esc(cidade):'')+(tel?'<br>📞 '+esc(tel):'')+(email?'<br>✉️ '+esc(email):'')+'</div></div>'+(w?'<a class="btn sm sec" style="width:auto;margin:0;text-decoration:none" target="_blank" href="'+w+'">💬</a>':'')+'</div></div>'; }
 VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu perfil'); setCrumb('Perfil');
-  var temCoord=!!(me.latNetwork&&me.lngNetwork);
+  var temCoord=!!((me.latNetwork||me.lat)&&(me.lngNetwork||me.lng));
   app('<div class="card rustic-hero"><div class="row">'+(me.fotoUrl?'<img src="'+esc(imgSrc(me.fotoUrl))+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">':'<div style="width:64px;height:64px;border-radius:50%;background:#efe3cc;display:flex;align-items:center;justify-content:center;font-size:30px">🧑‍🌾</div>')+'<div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div></div></div></div>'+
     '<div class="card"><label>Foto do perfil '+(me.fotoUrl?'(escolha para trocar)':'')+'</label>'+(me.fotoUrl?'<img class="foto-prev" style="display:block;border-radius:50%;width:90px;height:90px;object-fit:cover" src="'+esc(imgSrc(me.fotoUrl))+'">':'')+'<input id="np_foto" type="file" accept="image/*"><img id="np_prev" class="foto-prev">'+
     '<label>WhatsApp (contato)</label><input id="np_wa" value="'+esc(me.whatsapp||'')+'" placeholder="DDD+número">'+
     '<label>Telefone</label><input id="np_tel" value="'+esc(me.telefone||'')+'">'+
     '<label>Cidade / região</label><input id="np_cidade" value="'+esc(me.cidade||'')+'">'+
     '<label>Sobre você</label><textarea id="np_bio" placeholder="Ex: manejo com cães, aberto a parcerias">'+esc(me.bioNetwork||'')+'</textarea>'+
-    '<label>Sua localização no mapa *</label><div class="two"><div><input id="np_lat" inputmode="decimal" placeholder="Latitude" value="'+esc(me.latNetwork||'')+'"></div><div><input id="np_lng" inputmode="decimal" placeholder="Longitude" value="'+esc(me.lngNetwork||'')+'"></div></div>'+
+    '<label>Sua localização no mapa *</label><div class="two"><div><input id="np_lat" inputmode="decimal" placeholder="Latitude" value="'+esc(me.latNetwork||me.lat||'')+'"></div><div><input id="np_lng" inputmode="decimal" placeholder="Longitude" value="'+esc(me.lngNetwork||me.lng||'')+'"></div></div>'+
     gpsButton('np_lat','np_lng')+
     '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;margin-top:14px"><input type="checkbox" id="np_vis" style="width:auto" '+(me.visivelNetwork==='Sim'?'checked':'')+'> Aparecer no mapa da rede (visível)</label>'+
     '<div class="meta" id="np_hint" style="margin:6px 0 0">⚠️ Só é possível ficar visível com a <b>localização (lat/long) preenchida</b>. Se ficar oculto, você não aparece e também não vê os outros manejadores. Lojistas você vê sempre.</div>'+
@@ -785,14 +807,14 @@ window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))retur
    ============================================================ */
 VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de troféu'); loadingBox('Carregando sala…');
   server('apiMinhaSala').then(function(m){ var vis=m.visivel;
-    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')">'+(t.titulo?'<div class="tt">'+esc(t.titulo)+'</div>':'')+'<div class="tv">🏆 '+t.votos+'</div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
+    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
     app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">🏆 Minha sala de troféu</h2><div class="meta">Exponha suas melhores fotos. Deixe a sala visível para outros manejadores votarem — se ficar invisível, você também não vê nem vota nas salas dos outros.</div></div>'+
       '<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" id="sala_vis" style="width:auto" '+(vis?'checked':'')+' onchange="toggleSala(this)"> Deixar minha sala visível (permitir votos)</label></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus troféus</h3></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'trofeuForm\')">＋ Adicionar</button></div><div style="margin-top:10px">'+mine+'</div></div>'+
       '<div id="salasOutras"><div class="loading"><div class="spin"></div></div></div>');
     if(vis){ server('apiSalasTrofeu').then(function(r){ var el=document.getElementById('salasOutras'); if(!el)return;
-      var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'</div><button class="votbtn'+(t.jaVotei?' on':'')+'" onclick="votarTrofeu(\''+t.id+'\',this)">🏆 <span>'+t.votos+'</span></button></div>'; }).join('')+'</div>' : '<div class="empty">Nenhuma sala de outros manejadores por enquanto.</div>';
-      el.innerHTML='<div class="card"><h3 style="margin:0 0 8px">Salas de outros manejadores — vote nas melhores</h3>'+g+'</div>'; }); }
+      var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){ return '<div class="trof"><div class="rk">#'+(i+1)+'</div><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estrelasVoto(t.id,t.minhaNota)+'</div>'; }).join('')+'</div>' : '<div class="empty">Nenhum troféu no ranking agora.</div>';
+      el.innerHTML='<div class="card"><h3 style="margin:0 0 2px">🏅 Ranking</h3><div class="meta" style="margin-bottom:8px">Troféus dos últimos 24h. Toque nas estrelas para dar sua nota (1–5). O mais bem avaliado fica no topo.</div>'+g+'</div>'; }); }
     else { document.getElementById('salasOutras').innerHTML='<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">🔒 Sua sala está <b>invisível</b>: você não vê nem vota nas salas dos outros. Ative acima para participar.</div></div>'; }
   }); };
 VIEWS.trofeuForm=function(){ setTitulo('Adicionar troféu'); setCrumb('Sala de troféu','Novo');
@@ -803,7 +825,12 @@ window.salvarTrofeu=function(btn){ if(!fotoData('tf_foto')){toast('Escolha uma f
   server('apiAddTrofeu',{foto:fotoData('tf_foto'),titulo:val('tf_tit')}).then(function(){ toast('Troféu adicionado ✔'); STATE.stack=['trofeus']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Adicionar à sala'; }); };
 window.excluirTrofeu=function(id){ if(!confirm('Remover este troféu?'))return; server('apiExcluirTrofeu',id).then(function(){ toast('Removido'); render(); }); };
 window.toggleSala=function(chk){ server('apiSetSalaVisivel',chk.checked).then(function(){ render(); }); };
-window.votarTrofeu=function(id,btn){ btn.disabled=true; server('apiVotarTrofeu',id).then(function(r){ btn.disabled=false; btn.classList.toggle('on',r.jaVotei); var s=btn.querySelector('span'); if(s) s.textContent=r.votos; }).catch(function(e){ btn.disabled=false; toast((e&&e.message)||'Erro ao votar'); }); };
+function estrelasRO(media){ media=parseFloat(media)||0; var full=Math.round(media); var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=full?' on':'')+'">★</span>'; return '<span class="stars ro" title="'+media.toFixed(1)+'">'+s+'</span>'; }
+function estrelasVoto(id,minha){ minha=parseInt(minha,10)||0; var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=minha?' on':'')+'" onclick="avaliarTrofeu(\''+id+'\','+i+',this)">★</span>'; return '<div class="stars vote">'+s+'</div>'; }
+window.avaliarTrofeu=function(id,nota,el){ var cont=el.parentNode; var stars=cont.querySelectorAll('.star');
+  server('apiAvaliarTrofeu',id,nota).then(function(r){ stars.forEach(function(st,i){ st.classList.toggle('on',(i+1)<=r.minhaNota); });
+    var trof=cont.parentNode; if(trof){ var ro=trof.querySelector('.stars.ro'); if(ro){ var full=Math.round(r.media); ro.querySelectorAll('.star').forEach(function(st,i){ st.classList.toggle('on',(i+1)<=full); }); } var vc=trof.querySelector('.vc'); if(vc) vc.textContent='('+r.votos+')'; }
+    toast('Nota: '+r.minhaNota+'★'); }).catch(function(e){ toast((e&&e.message)||'Erro ao avaliar'); }); };
 
 /* ============================================================
    INÍCIO / MÓDULOS
@@ -813,7 +840,7 @@ VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crum
   app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">Bem-vindo, '+esc(nome)+'</h2>'+
     '<div class="meta">Use o menu lateral para navegar: espera, busca, cães, armadilhas, abates, agenda e mapa.</div></div>'+
     '<div id="inicioAlerta"></div>'+
-    '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px"><div class="txt" style="margin-left:12px"><h3>Agenda de saúde</h3><p>Vacinas e retornos de cães e cavalos</p></div><div class="chev">›</div></div>'+
+    '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
     '<div class="card menu-card click" onclick="go(\'mapaGeral\')"><img src="'+ICONS.mapa+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px"><div class="txt" style="margin-left:12px"><h3>Mapa</h3><p>Cevas, abates, armadilhas e canis</p></div><div class="chev">›</div></div>');
   server('apiAgenda').then(function(itens){ var h=diaHoje();
     var atr=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)<h;}).length;
@@ -846,7 +873,7 @@ VIEWS.manejo=function(){ setTitulo('Manejo'); setCrumb('Módulos','Manejo');
       moduloCard('🐕','Meu canil','Canil, cães e saúde',true,"nav('caes')")+
       moduloCard('🪤','Armadilha (captura)','Tipos e localização',true,"nav('armadilha')")+
       moduloCard('🎯','Abates','Registrar e listar abates',true,"nav('abates')")+
-      moduloCard('📅','Agenda de saúde','Cães e cavalos: vacinas e retornos',true,"nav('agenda')")+
+      moduloCard('📅','Agenda','Saúde e manutenção de veículos',true,"nav('agenda')")+
       moduloCard('🗺️','Mapa','Cevas, abates, armadilhas e canis · com filtro',true,"nav('mapaGeral')")); };
 
 /* ============================================================
@@ -1026,7 +1053,7 @@ function fmtDist(m){ m=m||0; return m<1000 ? Math.round(m)+' m' : (m/1000).toFix
 function fmtDur(ms){ var s=Math.floor(ms/1000), mm=Math.floor(s/60), ss=s%60, hh=Math.floor(mm/60); mm=mm%60;
   return (hh?hh+'h ':'')+mm+'min '+(ss<10?'0':'')+ss+'s'; }
 function simplificar(pts,max){ max=max||800; if(!pts||pts.length<=max) return pts||[]; var step=pts.length/max, out=[]; for(var i=0;i<pts.length;i+=step) out.push(pts[Math.floor(i)]); out.push(pts[pts.length-1]); return out; }
-function emojiIcon(emoji,size){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
+function emojiIcon(emoji,size,destaque){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk'+(destaque?' emoji-me':''), iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
 var TIPOS_MARCA=[ ['Abate','🐗'], ['Referência','📍'], ['Aviso','⚠️'], ['Rastro','🐾'], ['Água','💧'], ['Comida/isca','🌽'], ['Perigo','☠️'], ['Foto/registro','📷'], ['Outro','📌'] ];
 function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][0]===t) return TIPOS_MARCA[i][1]; return '📌'; }
 var LASTPOS=null, MARKCTX=null, MARKPOS=null;
