@@ -665,8 +665,8 @@ VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCru
       docLinha('🔧 Última revisão', t.ultimaRevisao?fmtData(t.ultimaRevisao):'')+
       docLinha('🔧 Próxima revisão', t.proximaRevisao?fmtData(t.proximaRevisao):'', atrasadaRev)+
       docLinha('🛢️ Próxima troca de óleo', t.proximaTrocaOleo?fmtData(t.proximaTrocaOleo):'', atrasadaOleo)+
-      docLinha('⚙️ Correia dentada (últ. troca)', t.correiaDentada?fmtData(t.correiaDentada):'')+
-      docLinha('🛞 Troca de pneus (últ.)', t.trocaPneus?fmtData(t.trocaPneus):'')+
+      docLinha('⚙️ Correia dentada', t.correiaDentada?fmtData(t.correiaDentada):'', t.correiaDentada&&String(t.correiaDentada).substring(0,10)<h)+
+      docLinha('🛞 Troca de pneus', t.trocaPneus?fmtData(t.trocaPneus):'', t.trocaPneus&&String(t.trocaPneus).substring(0,10)<h)+
       (t.obs?'<div class="meta" style="margin-top:8px">'+esc(t.obs)+'</div>':'')+'</div>';
     app(ficha+docHtml);
     fab('<button class="btn" onclick="nav(\'docVeiculo\')">✏️ Editar documentação</button>');
