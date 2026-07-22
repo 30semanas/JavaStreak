@@ -447,9 +447,13 @@
   .wrap > h3, .wrap > .meta{color:#f2eee6;text-shadow:0 1px 6px rgba(0,0,0,.5)}
   .crumb{color:#e9e3d7!important}
   .crumb b, .crumb span{color:var(--laranja-claro)}
-  .card, .promo-box, .mp-box{color:var(--txt)}
-  .card .meta, .promo-box .meta{color:var(--txt2);text-shadow:none}
-  .empty{color:#ece7dd;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .card, .promo-box, .mp-box, .cal, .trof, #salaPanel, #denModal{color:var(--txt)}
+  .card .meta, .promo-box .meta, .cal .meta{color:var(--txt2);text-shadow:none}
+  .cal .cwd{color:var(--txt2)}
+  .cday, .cday.empty{color:var(--txt);text-shadow:none}
+  .cday.sel{color:#fff}
+  .wrap > .empty, .card > .empty{color:#ece7dd;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .card > .empty{color:var(--txt2);text-shadow:none}
   .empty .big{opacity:.9}
   .tb-tit{color:#f2eee6;text-shadow:0 1px 6px rgba(0,0,0,.5)}
   .tb-hamb,.tb-back{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22);color:#f2eee6}
@@ -1134,8 +1138,8 @@ VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crum
   var nome=(STATE.manejador&&STATE.manejador.nome)?STATE.manejador.nome.split(' ')[0]:'';
   app(heroFoto('inicio','Bem-vindo, '+nome,'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.','JavaStreak')+
     '<div id="inicioAlerta"></div>'+
-    '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:#1e2a1e;padding:5px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
-    '<div class="card menu-card click" onclick="go(\'mapaGeral\')"><img src="'+ICONS.mapa+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:#1e2a1e;padding:5px"><div class="txt" style="margin-left:12px"><h3>Mapa</h3><p>Cevas, abates, armadilhas e canis</p></div><div class="chev">›</div></div>');
+    '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
+    '<div class="card menu-card click" onclick="go(\'mapaGeral\')"><img src="'+ICONS.mapa+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Mapa</h3><p>Cevas, abates, armadilhas e canis</p></div><div class="chev">›</div></div>');
   server('apiAgenda').then(function(itens){ var h=diaHoje();
     var atr=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)<h;}).length;
     var prox=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)>=h&&(new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=7;}).length;
@@ -1607,7 +1611,7 @@ window.abrirCanil=function(id){ STATE.canil=(CACHE.canil||[]).filter(function(c)
 var FUNCOES_CAO=['Rastreio','Busca','Agarro','Faro','Cerco','Misto','Outro'];
 VIEWS.canilDetail=function(){ var k=STATE.canil; setTitulo('Canil'); setCrumb('Meu canil',esc(k.nome||'Canil'));
   app('<div class="card rustic-hero"><div class="row"><h2 class="grow" style="margin:0">🏠 '+esc(k.nome||'Canil')+'</h2><button class="ib" onclick="editItem(\'canil\',\''+k.id+'\')" title="Editar canil">✏️</button></div><div class="meta" style="margin-top:4px">Tela do canil'+(k.lat&&k.lng?' · '+mapaLink(k.lat,k.lng):'')+(k.obs?'<br>'+esc(k.obs):'')+'</div></div>'+
-    '<div class="card menu-card click" onclick="nav(\'matilha\')"><img src="'+ICONS.caes+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:#1e2a1e;padding:5px"><div class="txt" style="margin-left:12px"><h3>🐕 Ver matilha</h3><p id="matCount">Carregando cães…</p></div><div class="chev">›</div></div>');
+    '<div class="card menu-card click" onclick="nav(\'matilha\')"><img src="'+ICONS.caes+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>🐕 Ver matilha</h3><p id="matCount">Carregando cães…</p></div><div class="chev">›</div></div>');
   server('apiListarCaes',k.id).then(function(l){ CACHE.cao=l; var el=document.getElementById('matCount'); if(el) el.textContent=(l.length||0)+' cão(es) neste canil'; }); };
 
 VIEWS.matilha=function(){ var k=STATE.canil; setTitulo(k.nome||'Canil'); setCrumb('Meu canil',esc(k.nome||'Canil')); loadingBox();
