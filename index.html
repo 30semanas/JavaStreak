@@ -461,6 +461,19 @@
   #topnav{background:linear-gradient(180deg,rgba(18,26,18,.92),rgba(12,18,12,.92));backdrop-filter:blur(3px)}
   label{color:var(--txt)}
   /* engrenagem ao lado do nome no menu */
+  .sb-camp{display:none;margin:0 12px 12px;padding:12px;border-radius:14px;
+    background:linear-gradient(150deg,rgba(232,85,43,.28),rgba(232,85,43,.08));border:1px solid var(--laranja);
+    box-shadow:0 6px 18px rgba(232,85,43,.22)}
+  .sb-camp.on{display:block}
+  .sb-camp .cp-tag{display:inline-block;background:var(--laranja);color:#fff;font-size:9.5px;font-weight:800;
+    letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:20px;margin-bottom:6px}
+  .sb-camp h4{margin:0 0 4px;font-size:13.5px;color:#fff;line-height:1.25}
+  .sb-camp p{margin:0;font-size:11.5px;color:#f0e4da;line-height:1.4}
+  .sb-camp .cp-premio{display:block;margin-top:6px;font-size:12px;font-weight:800;color:#ffd9c6}
+  .sb-camp .cp-time{display:block;margin-top:6px;font-size:11px;font-weight:800;color:#fff;
+    background:rgba(0,0,0,.28);border-radius:8px;padding:4px 7px;text-align:center}
+  .sb-camp.off{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.10);box-shadow:none}
+  .sb-camp.off h4,.sb-camp.off p{color:rgba(255,255,255,.45)}
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
@@ -473,6 +486,7 @@
     <div class="sb-user" id="sbUser"></div>
     <nav id="sbNav"></nav>
     <button class="sb-sair" onclick="logout()">Sair</button>
+    <div class="sb-camp" id="sbCamp"></div>
     <div class="sb-ver" id="sbVer"></div>
   </aside>
 
@@ -538,7 +552,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-resumo';
+var APP_VER = 'v22.07-campanha';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -655,6 +669,7 @@ function buildSidebar(){
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
   var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
+  pintarCampanha();
   var u=document.getElementById('sbUser');
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
     u.innerHTML = (tipo==='empresa') ? esc(nome) : ('<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>'+esc(nome)); }
@@ -814,7 +829,7 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
-function iniciarPromoPoll(){ carregarAvisos(); setInterval(carregarAvisos,300000); carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
+function iniciarPromoPoll(){ carregarAvisos(); setInterval(carregarAvisos,300000); carregarCampanha(); setInterval(carregarCampanha,300000); carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
   server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
@@ -948,8 +963,15 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<div class="two"><div><label>Para</label><select id="av_pub"><option>Todos</option><option>Manejadores</option><option>Empresas</option></select></div>'+
       '<div><label>Dias vis\u00edvel</label><input id="av_dias" inputmode="numeric" value="7"></div></div>'+
       '<button class="btn" onclick="enviarAviso(this)">Enviar aviso</button><div id="avList" style="margin-top:12px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udfc6 Campanha de premia\u00e7\u00e3o</h3><div class="meta" style="margin-bottom:8px">Fica em destaque no menu de todos os usu\u00e1rios enquanto estiver ativa.</div>'+
+      '<label>T\u00edtulo *</label><input id="cp_tit" placeholder="Ex: Pr\u00eamio do m\u00eas — 1\u00ba lugar do ranking">'+
+      '<div class="two"><div><label>Patrocinador</label><input id="cp_pat" placeholder="Nome da loja"></div>'+
+      '<div><label>Pr\u00eamio</label><input id="cp_pre" placeholder="Ex: R$ 500 em produtos"></div></div>'+
+      '<label>Descri\u00e7\u00e3o</label><textarea id="cp_desc" placeholder="Ex: quem estiver em 1\u00ba lugar \u00e0s 22h do dia 30 leva o pr\u00eamio"></textarea>'+
+      '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
+      '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div></div>'+
       '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
-    carregarAvisosAdmin();
+    carregarAvisosAdmin(); carregarCampanhasAdmin();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 function carregarAvisosAdmin(){ server('apiListarAvisosAdmin').then(function(l){ var el=document.getElementById('avList'); if(!el)return;
   el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div>'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
@@ -962,6 +984,18 @@ window.enviarAviso=function(btn){ if(!val('av_tit')||!val('av_msg')){ toast('Pre
     var dd=document.getElementById('av_dias'); if(dd) dd.value='7';
     var tt=document.getElementById('av_tit'); if(tt) tt.focus();
     carregarAvisosAdmin(); }).catch(function(e){ btn.disabled=false; btn.textContent='Enviar aviso'; toast((e&&e.message)||'Erro'); }); };
+function carregarCampanhasAdmin(){ server('apiListarCampanhas').then(function(l){ var el=document.getElementById('cpList'); if(!el)return;
+  el.innerHTML = (l&&l.length)? l.map(function(c){ var ativa=String(c.ativo)==='Sim' && (!c.encerraEm || new Date(c.encerraEm)>new Date());
+    return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(c.titulo)+'</b> <span class="pill '+(ativa?'ok':'gray')+'">'+(ativa?'ativa':'encerrada')+'</span><div class="meta">'+(c.patrocinador?esc(c.patrocinador)+' · ':'')+(c.premio?esc(c.premio):'')+(c.encerraEm?'<br>até '+fmtDataHora(c.encerraEm):'')+'</div></div>'+(ativa?'<button class="btn sm sec" style="width:auto;margin:0" onclick="encerrarCampanha(\''+c.id+'\')">Encerrar</button>':'')+'</div>'; }).join('')
+    : '<div class="meta">Nenhuma campanha criada ainda.</div>'; }).catch(function(){}); }
+window.criarCampanha=function(btn){ if(!val('cp_tit')){ toast('Informe o título da campanha'); return; }
+  btn.disabled=true; btn.textContent='Ativando…';
+  server('apiCriarCampanha',{titulo:val('cp_tit'),patrocinador:val('cp_pat'),premio:val('cp_pre'),descricao:val('cp_desc'),encerraEm:val('cp_fim')})
+  .then(function(){ toast('Campanha ativada ✔'); btn.disabled=false; btn.textContent='Ativar campanha';
+    ['cp_tit','cp_pat','cp_pre','cp_desc','cp_fim'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+    carregarCampanha(); carregarCampanhasAdmin(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Ativar campanha'; toast((e&&e.message)||'Erro'); }); };
+window.encerrarCampanha=function(id){ if(!confirm('Encerrar esta campanha?'))return; server('apiEncerrarCampanha',id).then(function(){ toast('Campanha encerrada'); carregarCampanha(); carregarCampanhasAdmin(); }); };
 window.excluirAviso=function(id){ if(!confirm('Remover este aviso?'))return; server('apiExcluirAviso',id).then(function(){ carregarAvisosAdmin(); }); };
 window.resolverDen=function(donoTipo,donoId,acao){ server('apiResolverDenuncia',donoTipo,donoId,acao).then(function(){ toast(acao==='liberar'?'Perfil liberado ✔':'Mantido bloqueado'); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
@@ -1054,6 +1088,18 @@ var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','
 function fmtRestante(iso){ var ms=new Date(iso)-new Date(); if(ms<=0) return 'expirada'; var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return (h?h+'h ':'')+m+'min'; }
 function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; }).catch(function(){}); }
 var AVISOS=[];
+var CAMPANHA=null;
+function carregarCampanha(){ if(!AUTH.token) return; server('apiCampanhaAtiva').then(function(c){ CAMPANHA=c||null; pintarCampanha(); }).catch(function(){ CAMPANHA=null; pintarCampanha(); }); }
+function pintarCampanha(){ var el=document.getElementById('sbCamp'); if(!el) return;
+  if(!CAMPANHA){ el.className='sb-camp'; el.innerHTML=''; return; }
+  var c=CAMPANHA;
+  el.className='sb-camp on';
+  el.innerHTML='<span class="cp-tag">🏆 Campanha</span>'+
+    '<h4>'+esc(c.titulo||'')+'</h4>'+
+    (c.descricao?'<p>'+esc(c.descricao)+'</p>':'')+
+    (c.patrocinador?'<p style="margin-top:4px">por <b>'+esc(c.patrocinador)+'</b></p>':'')+
+    (c.premio?'<span class="cp-premio">🎁 '+esc(c.premio)+'</span>':'')+
+    (c.encerraEm?'<span class="cp-time">⏳ encerra em '+fmtRestante(c.encerraEm)+'</span>':''); }
 var AVISO_LIDOS=(function(){ try{ return JSON.parse(localStorage.getItem('avisoLidos')||'[]'); }catch(e){ return []; } })();
 function salvarAvisoLidos(){ try{ localStorage.setItem('avisoLidos', JSON.stringify(AVISO_LIDOS)); }catch(e){} }
 function avisoLido(id){ return AVISO_LIDOS.indexOf(id)>=0; }
@@ -1081,18 +1127,28 @@ function promoCard(p,lida){ var readBtn = lida ? '<button class="lnk-den" style=
   '<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">'+(p.autorId?'<button class="btn sm sec" style="width:auto;margin:0" onclick="verLoja(\''+p.autorId+'\')">🏪 Ver loja</button>':'')+readBtn+'<div class="grow"></div><button class="lnk-den" onclick="denunciar(\'promocao\',\''+p.id+'\')">🚩 Denunciar</button></div></div>'; }
 VIEWS.promocoes=function(){ setTitulo('Promoções'); setCrumb('Promoções'); loadingBox('Carregando promoções…');
   var ehEmp=(STATE.tipo==='empresa');
-  Promise.all([ server('apiPromocoes'), ehEmp?server('apiPodeLancarPromo'):Promise.resolve(null), ehEmp?Promise.resolve(null):server('apiMeusInteressesPromo').catch(function(){return {interesses:[]};}) ])
-  .then(function(res){ PROMOS=res[0]||{recebe:true,promos:[]}; var pode=res[1]; if(res[2]) INTERESSES=res[2].interesses||[];
+  Promise.all([ server('apiPromocoes'), ehEmp?server('apiPodeLancarPromo'):Promise.resolve(null), ehEmp?Promise.resolve(null):server('apiMeusInteressesPromo').catch(function(){return {interesses:[]};}), ehEmp?server('apiMinhasPromocoes').catch(function(){return [];}):Promise.resolve([]) ])
+  .then(function(res){ PROMOS=res[0]||{recebe:true,promos:[]}; var pode=res[1]; if(res[2]) INTERESSES=res[2].interesses||[]; var minhas=res[3]||[];
     var ativos=(PROMOS.promos||[]).slice().sort(function(a,b){ return String(b.criadoEm).localeCompare(String(a.criadoEm)); });
     var hero=heroFoto('promocoes','Promoções relâmpago','Ofertas com validade de <b>4 horas</b>. Cada loja pode lançar <b>1 por dia</b>.','Relâmpago');
     var acao='';
+    var minhaHtml='';
+    if(ehEmp && minhas.length){ minhaHtml = minhas.map(function(p){
+      return '<div class="card" style="border-left:5px solid var(--laranja)">'+
+        '<div class="row" style="align-items:flex-start">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:74px;height:74px;object-fit:cover;border-radius:12px;margin-right:12px;flex:none" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
+        '<div class="grow"><span class="hf-tag" style="background:var(--laranja);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:800;letter-spacing:.5px">No ar</span>'+
+        '<h3 style="margin:6px 0 2px">'+esc(p.descricao||'Promoção')+'</h3>'+
+        '<div>'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
+        '<div class="meta" style="margin-top:4px">🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+'</div>'+
+        '<div style="margin-top:8px;display:inline-block;background:linear-gradient(135deg,var(--laranja),#d8481f);color:#fff;font-weight:800;font-size:14px;padding:7px 14px;border-radius:20px">⏳ expira em '+fmtRestante(p.expiraEm)+'</div>'+
+        '</div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join(''); }
     if(ehEmp){ acao = (pode&&pode.pode) ? '<button class="btn" onclick="nav(\'promoForm\')">⚡ Lançar promoção de hoje</button>'
       : '<div class="card" style="border-left:5px solid var(--laranja)"><div class="meta">⏳ '+esc((pode&&pode.motivo)||'Indisponível')+'. Você poderá lançar outra amanhã.</div></div>'; }
     var ctrl = ehEmp ? '' : ('<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebePromo(this)"> Receber promoções</label>'+
       '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">🏬 Tipos de loja que quero receber</summary><div style="margin-top:8px">'+SEGMENTOS.map(function(s){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin:4px 0"><input type="checkbox" style="width:auto" value="'+esc(s)+'" '+(INTERESSES.indexOf(s)>=0?'checked':'')+' onchange="toggleInteresse()"> '+esc(s)+'</label>'; }).join('')+'<div class="meta" style="margin-top:4px">Deixe tudo desmarcado para receber de todos.</div></div></details></div>');
     var tl = ativos.length ? ('<div class="timeline">'+ativos.map(function(p){ return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-time">'+fmtHora(p.criadoEm)+'</div>'+promoCard(p,isLida(p.id))+'</div>'; }).join('')+'</div>')
       : '<div class="empty"><div class="big">⚡</div>Nenhuma promoção ativa agora.<br>Elas duram 4 horas — volte mais tarde.</div>';
-    app(hero+acao+ctrl+tl);
+    app(hero+minhaHtml+acao+ctrl+tl);
   }); };
 function fmtHora(iso){ try{ var d=new Date(iso); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }catch(e){ return ''; } }
 window.toggleRecebePromo=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(){ render(); }); };
