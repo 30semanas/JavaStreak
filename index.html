@@ -233,7 +233,7 @@
   @media(max-width:899px){ body.logged .hamb{display:block} }
   @media(min-width:900px){
     body.logged #sidebar{transform:translateX(0)}
-    body.logged header, body.logged .wrap, body.logged #topnav{margin-left:250px}
+    body.logged header, body.logged .wrap, body.logged #topnav, body.logged #topbarLine{margin-left:250px}
     body.logged .fab{left:calc(50% + 125px)}
     #overlay{display:none}
   }
@@ -424,6 +424,23 @@
   .tn-item .emoji{font-size:22px;line-height:1}
   .tn-item span.lbl{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;text-align:center;line-height:1.15}
   @media(max-width:520px){ .tn-item{min-width:78px;padding:8px 5px} .tn-item span.lbl{font-size:9.5px} .tn-item img{width:26px;height:26px} }
+  /* faixa do cabeçalho removida — barra fina só com menu/voltar/título */
+  body.logged header{display:none}
+  #topbarLine{display:none;align-items:center;gap:8px;padding:8px 14px 0;background:transparent}
+  body.logged #topbarLine{display:flex}
+  .tb-hamb,.tb-back{background:rgba(20,30,20,.06);border:1px solid var(--linha);color:var(--txt);font-size:17px;
+    width:34px;height:34px;border-radius:10px;cursor:pointer;line-height:1;flex:none}
+  .tb-hamb:hover,.tb-back:hover{background:rgba(232,85,43,.12);border-color:var(--laranja)}
+  .tb-tit{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--txt)}
+  @media(min-width:900px){ body.logged .tb-hamb{display:none} }
+  /* sino dentro da barra superior */
+  .tn-bell{position:relative}
+  .tn-bell .hbadge{position:absolute;top:4px;right:10px;min-width:17px;height:17px;border-radius:9px;background:var(--laranja);
+    color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center;display:none;padding:0 4px}
+  .tn-bell .hbadge.on{display:block}
+  /* engrenagem ao lado do nome no menu */
+  .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
+  .sbcfg:hover{opacity:1;transform:rotate(35deg)}
 </style>
 </head>
 <body>
@@ -442,9 +459,14 @@
       <div class="titulo" id="hTitulo">JavaStreak</div>
       <span class="sub" id="hSub">Carregando…</span><button class="hcfg" id="hcfg" onclick="go('perfilManejador')" title="Configurar perfil" style="display:none">⚙️</button>
     </div>
-    <button class="hbell" id="hbell" onclick="abrirPromos()" title="Avisos" style="display:none">🔔<span class="hbadge" id="promoBadge"></span></button>
+    <button class="hbell" id="hbell" onclick="abrirPromos()" title="Avisos" style="display:none">🔔</button>
     <span class="dot" id="connDot" title="Status da conexão"></span>
   </header>
+  <div id="topbarLine">
+    <button class="tb-hamb" onclick="openMenu()">☰</button>
+    <button class="tb-back" id="tbBack" onclick="voltar()" style="display:none">‹</button>
+    <div class="tb-tit" id="tbTitulo">JavaStreak</div>
+  </div>
   <nav id="topnav"></nav>
 
   <div class="wrap">
@@ -557,7 +579,9 @@ function render(){
   var padrao = AUTH.token ? 'inicio' : 'login';
   var view = STATE.stack[STATE.stack.length-1] || padrao;
   var noLogin = (view==='login' || view==='registrar');
-  document.getElementById('btnBack').style.display = (STATE.stack.length>1 && !noLogin) ? 'block':'none';
+  var mostrarVoltar = (STATE.stack.length>1 && !noLogin);
+  document.getElementById('btnBack').style.display = mostrarVoltar ? 'block':'none';
+  var tb=document.getElementById('tbBack'); if(tb) tb.style.display = mostrarVoltar ? 'block':'none';
   var f=document.getElementById('fab'); f.style.display='none'; f.innerHTML='';
   (VIEWS[view]||VIEWS.login)();
   updateHeader();
@@ -569,7 +593,7 @@ function updateHeader(){
   document.getElementById('hSub').textContent = (logado && nome) ? nome : STATE.appNome;
   document.body.classList.toggle('logged', logado);
   var bell=document.getElementById('hbell'); if(bell) bell.style.display = logado ? 'block':'none';
-  var cfg=document.getElementById('hcfg'); if(cfg) cfg.style.display = (logado && STATE.tipo!=='empresa') ? 'inline-block':'none';
+  var cfg=document.getElementById('hcfg'); if(cfg) cfg.style.display='none';
   if(!logado) closeMenu();
 }
 var NAV_MANEJADOR=[
@@ -591,39 +615,52 @@ var NAV_LOJISTA=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
-var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, admin:1};
+var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, mapaGeral:1};
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
   var nav=document.getElementById('sbNav'); if(!nav) return;
   var tipo=STATE.tipo||'manejador';
   var root=STATE.stack[0]||(tipo==='empresa'?'empresa':'inicio');
-  var lista=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR.slice();
-  var itens=lista.filter(function(n){ return !TOP_KEYS[n.v]; }).map(function(n){
+  var lista=(tipo==='empresa')?NAV_LOJISTA.slice():NAV_MANEJADOR.slice();
+  lista=lista.filter(function(n){ return !TOP_KEYS[n.v]; });
+  if(STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
+  nav.innerHTML=lista.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
-  nav.innerHTML=itens;
-  var u=document.getElementById('sbUser'); if(u) u.textContent = (tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+  var u=document.getElementById('sbUser');
+  if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+    u.innerHTML = (tipo==='empresa') ? esc(nome) : ('<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>'+esc(nome)); }
   buildTopNav(root, tipo);
 }
 function buildTopNav(root, tipo){
   var tn=document.getElementById('topnav'); if(!tn) return;
   var base=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR;
-  var lista=base.filter(function(n){ return TOP_KEYS[n.v]; });
-  if(STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
-  tn.innerHTML=lista.map(function(n){
+  var ordem=['trofeus','ranking','promocoes'];
+  var itens=ordem.map(function(k){ return base.filter(function(n){return n.v===k;})[0]; }).filter(function(x){return x;});
+  var html=itens.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
   }).join('');
+  html += '<div class="tn-item tn-bell" onclick="abrirPromos()" title="Avisos"><span class="emoji">🔔</span><span class="lbl">Avisos</span><span class="hbadge" id="promoBadge"></span></div>';
+  html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">Rede</span></div>';
+  tn.innerHTML=html;
+  atualizarBadge();
   setTimeout(posicionarMapShell,0);
 }
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
 window.openMenu=function(){ document.body.classList.add('menu-open'); };
 window.closeMenu=function(){ document.body.classList.remove('menu-open'); };
-function setTitulo(t){ document.getElementById('hTitulo').textContent=t; }
+function setTitulo(t){ var a=document.getElementById('hTitulo'); if(a) a.textContent=t; var b=document.getElementById('tbTitulo'); if(b) b.textContent=t; }
 function setCrumb(){ var p=[]; for(var i=0;i<arguments.length;i++) p.push(arguments[i]);
   document.getElementById('crumb').innerHTML=p.map(function(x,i){return i===p.length-1?'<b>'+x+'</b>':x;}).join(' › '); }
 function app(html){ document.getElementById('app').innerHTML=html; }
+function aplicarFundo(){ try{
+  document.body.style.backgroundImage='linear-gradient(rgba(246,242,236,.93),rgba(246,242,236,.955)), url('+BG2+')';
+  document.body.style.backgroundSize='cover';
+  document.body.style.backgroundPosition='center';
+  document.body.style.backgroundAttachment='fixed';
+}catch(e){} }
 var BGS=[BG1,BG2,BG3];
 function bgPara(chave){ var s=0; chave=String(chave||''); for(var i=0;i<chave.length;i++) s=(s*31+chave.charCodeAt(i))%997; return BGS[s%BGS.length]; }
 function heroFoto(chave,titulo,texto,tag){
@@ -736,7 +773,7 @@ window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
 function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
-  render(); iniciarPromoPoll(); }
+  aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
 function iniciarPromoPoll(){ carregarAvisos(); setInterval(carregarAvisos,300000); carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
@@ -1806,8 +1843,12 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     setTimeout(function(){ if(CURRENTMAP===map){ try{map.invalidateSize();}catch(e){} } },600);
   }).catch(function(){ document.getElementById('mapCount').textContent='Falha ao carregar'; }); };
 
-function posicionarMapShell(){ var h=document.querySelector('header'), t=document.getElementById('topnav'), s=document.getElementById('mapshell');
-  if(h&&s){ var tn=(t&&getComputedStyle(t).display!=='none')?t.offsetHeight:0; s.style.top=(h.offsetHeight+tn)+'px'; } }
+function posicionarMapShell(){ var s=document.getElementById('mapshell'), t=document.getElementById('topnav');
+  if(!s) return;
+  var topo=0;
+  if(t && getComputedStyle(t).display!=='none'){ var r=t.getBoundingClientRect(); topo=r.bottom + (window.scrollY||0); }
+  else { var h=document.querySelector('header'); topo=h?h.offsetHeight:56; }
+  s.style.top=Math.max(0,Math.round(topo))+'px'; }
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
@@ -1960,7 +2001,7 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
     if(AUTH.token){ return server('apiBoot').then(function(b){ STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin;
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
-        render(); iniciarPromoPoll(); })
+        aplicarFundo(); render(); iniciarPromoPoll(); })
       .catch(function(e){ if(!(e&&e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['login']; render(); } }); }
     STATE.stack=['login']; render();
   }).catch(function(){ app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>Confira a <b>API_URL</b> e se a implantação está como <b>“Qualquer pessoa”</b>.<div style="max-width:280px;margin:18px auto 0"><button class="btn" onclick="iniciar()">Tentar novamente</button></div></div>'); }); }
