@@ -461,6 +461,7 @@
   #topnav{background:linear-gradient(180deg,rgba(18,26,18,.92),rgba(12,18,12,.92));backdrop-filter:blur(3px)}
   label{color:var(--txt)}
   /* engrenagem ao lado do nome no menu */
+  .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
 </style>
@@ -472,6 +473,7 @@
     <div class="sb-user" id="sbUser"></div>
     <nav id="sbNav"></nav>
     <button class="sb-sair" onclick="logout()">Sair</button>
+    <div class="sb-ver" id="sbVer"></div>
   </aside>
 
   <header>
@@ -536,6 +538,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
+var APP_VER = 'v22.07-resumo';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -651,6 +654,7 @@ function buildSidebar(){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
+  var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
   var u=document.getElementById('sbUser');
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
     u.innerHTML = (tipo==='empresa') ? esc(nome) : ('<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>'+esc(nome)); }
@@ -816,6 +820,8 @@ window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha');
   server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Entrar'; }); };
 
+window.sairCadastro=function(){ STATE.stack=['login']; render(); };
+window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo; STATE.stack=[tipo==='empresa'?'registrarEmpresa':'registrar']; render(); };
 VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Criar conta');
   app('<div class="card"><h3>Dados de acesso</h3>'+
     '<label>Login *</label><input id="f_login" autocomplete="username" placeholder="usuário ou e-mail">'+
@@ -832,7 +838,9 @@ VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Cri
     '<label>Endereço</label><textarea id="f_end"></textarea>'+
     '<div class="two"><div><label>Latitude *</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude *</label><input id="f_lng" inputmode="decimal"></div></div>'+
     gpsButton('f_lat','f_lng')+
-    '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button></div>'); };
+    '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button>'+
+    '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
+    '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Quero criar conta de empresa</button></div></div>'); };
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
   if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome');return;}
@@ -862,7 +870,9 @@ VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb
     '<label>Site</label><input id="fe_site" placeholder="https://...">'+
     '<label>Logo/foto</label><input id="fe_foto" type="file" accept="image/*"><img id="fe_prev" class="foto-prev">'+
     '<div class="meta" style="margin-top:8px">Sua empresa já aparece na rede após o cadastro. Regras de conduta: conteúdo ofensivo pode ser denunciado por outros usuários.</div>'+
-    '<button class="btn" onclick="salvarEmpresaConta(this)">Criar conta de empresa</button></div>');
+    '<button class="btn" onclick="salvarEmpresaConta(this)">Criar conta de empresa</button>'+
+    '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
+    '<button class="btn sec" onclick="trocarCadastro(\'manejador\')">🌿 Quero criar conta de manejador</button></div></div>');
   bindFoto('fe_foto','fe_prev'); };
 window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
   if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
@@ -1932,7 +1942,7 @@ function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAP
   var comGps=ab.filter(function(a){return coord(a.lat)!=null&&coord(a.lng)!=null;}).length;
   var leg=TIPOS_MANEJO.map(function(t){return '<span><i style="background:'+TIPO_COR[t]+'"></i>'+rotuloManejo(t)+'</span>';}).join('');
   p.innerHTML='<div class="row"><h3 class="grow" style="margin:0">📊 Resumo dos abates</h3><button class="ib" onclick="togglePainel()">✕</button></div>'+
-    '<div class="dash" style="margin-top:8px"><div class="kpi"><b>'+ab.length+'</b><span>abates</span></div><div class="kpi"><b>'+animais+'</b><span>animais</span></div><div class="kpi"><b>'+comGps+'</b><span>no mapa</span></div></div>'+
+    '<div class="dash" style="margin-top:8px"><div class="kpi"><b>'+animais+'</b><span>animais abatidos</span></div><div class="kpi"><b>'+comGps+'</b><span>no mapa</span></div></div>'+
     '<h4>Por tipo de manejo</h4>'+barChart(bars,{w:280,h:100})+
     '<h4>Por mês</h4>'+barChart(porMes(ab),{w:280,h:100,color:'#3f6b3f'})+
     '<div class="legend" style="margin-top:8px">'+leg+'</div>'; }
@@ -2018,7 +2028,8 @@ function resumoCevaHtml(abs,d){
   var dims=['Atrativo','Sexo','Período','Horário'];
   var btns=dims.map(function(x){ return '<button class="chip'+(CEVATL.dim===x?' on':'')+'" onclick="cevaDim(\''+x+'\')">'+x+'</button>'; }).join(' ');
   var pairs=agruparCeva(abs,d,CEVATL.dim);
-  return '<div class="dash"><div class="kpi"><b>'+abs.length+'</b><span>abates</span></div><div class="kpi"><b>'+animais+'</b><span>animais</span></div></div>'+
+  var ult=abs.slice().sort(function(a,b){return String(b.dataHora).localeCompare(String(a.dataHora));})[0];
+  return '<div class="dash"><div class="kpi"><b>'+animais+'</b><span>animais abatidos</span></div><div class="kpi"><b>'+(ult?fmtData(ult.dataHora):'—')+'</b><span>último abate</span></div></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+btns+'</div>'+
     '<h4 style="margin:4px 0 2px;font-size:12px;color:var(--txt2)">Abates por '+CEVATL.dim.toLowerCase()+'</h4>'+
     barChart(pairs,{w:330,h:130,color:TIPO_COR.Espera});
