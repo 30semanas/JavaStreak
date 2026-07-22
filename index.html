@@ -226,13 +226,14 @@
   .stars.vote .star:hover{transform:scale(1.15)}
   .stars.vote .star.on{color:#f0a92e}
   .vc{color:var(--txt2);font-size:11px}
+  .sai{display:inline-block;margin-top:3px;font-size:11px;font-weight:700;color:var(--laranja-esc)}
   .trof .rk{position:absolute;top:6px;right:6px;background:#2e4d2e;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;z-index:2}
   .sb-sair:active{background:rgba(255,255,255,.08)}
   .hamb{font-size:22px;background:transparent;border:none;color:#fff;cursor:pointer;width:32px;line-height:1;display:none}
   @media(max-width:899px){ body.logged .hamb{display:block} }
   @media(min-width:900px){
     body.logged #sidebar{transform:translateX(0)}
-    body.logged header, body.logged .wrap{margin-left:250px}
+    body.logged header, body.logged .wrap, body.logged #topnav{margin-left:250px}
     body.logged .fab{left:calc(50% + 125px)}
     #overlay{display:none}
   }
@@ -282,6 +283,7 @@
   /* ===== MAPA TELA CHEIA ===== */
   #mapshell{position:fixed;left:0;right:0;bottom:0;top:56px;z-index:800;display:none}
   body.map-mode #mapshell{display:block}
+  body.map-mode #topnav{position:sticky;top:0}
   body.map-mode .wrap{display:none}
   body.map-mode .fab{display:none!important}
   #mapshell #map{width:100%;height:100%}
@@ -402,6 +404,26 @@
   .bres:hover{background:#faf5ee}
   .bres img{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none}
   .bres b{font-size:13px} .bres span{font-size:11px;color:var(--txt2)}
+  /* engrenagem ao lado do nome */
+  .hcfg{background:none;border:none;color:#e5dfd2;font-size:15px;cursor:pointer;padding:0 0 0 7px;opacity:.8;vertical-align:middle}
+  .hcfg:hover{opacity:1;transform:rotate(35deg)}
+  /* barra superior de atalhos principais */
+  #topnav{position:relative;z-index:1050;display:none;gap:8px;padding:10px 14px;
+    background:linear-gradient(180deg,#182318,#121a12);border-bottom:1px solid rgba(255,255,255,.07);
+    overflow-x:auto;-webkit-overflow-scrolling:touch}
+  body.logged #topnav{display:flex}
+  .tn-item{flex:1 1 0;min-width:104px;display:flex;flex-direction:column;align-items:center;gap:5px;
+    padding:9px 8px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);color:#e8e4da;transition:background .14s,border-color .14s,transform .14s}
+  .tn-item:hover{background:rgba(232,85,43,.15);border-color:rgba(232,85,43,.5);transform:translateY(-2px)}
+  .tn-item.active{background:linear-gradient(180deg,rgba(232,85,43,.28),rgba(232,85,43,.08));
+    border-color:var(--laranja);color:#fff;box-shadow:0 4px 14px rgba(232,85,43,.28)}
+  .tn-item img{width:30px;height:30px;object-fit:contain;
+    filter:brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(1200%) hue-rotate(330deg) brightness(95%);opacity:.92}
+  .tn-item.active img{opacity:1}
+  .tn-item .emoji{font-size:22px;line-height:1}
+  .tn-item span.lbl{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;text-align:center;line-height:1.15}
+  @media(max-width:520px){ .tn-item{min-width:78px;padding:8px 5px} .tn-item span.lbl{font-size:9.5px} .tn-item img{width:26px;height:26px} }
 </style>
 </head>
 <body>
@@ -418,11 +440,12 @@
     <div class="back" id="btnBack" onclick="voltar()" style="display:none">‹</div>
     <div class="grow">
       <div class="titulo" id="hTitulo">JavaStreak</div>
-      <span class="sub" id="hSub">Carregando…</span>
+      <span class="sub" id="hSub">Carregando…</span><button class="hcfg" id="hcfg" onclick="go('perfilManejador')" title="Configurar perfil" style="display:none">⚙️</button>
     </div>
-    <button class="hbell" id="hbell" onclick="abrirPromos()" title="Promoções" style="display:none">🔔<span class="hbadge" id="promoBadge"></span></button>
+    <button class="hbell" id="hbell" onclick="abrirPromos()" title="Avisos" style="display:none">🔔<span class="hbadge" id="promoBadge"></span></button>
     <span class="dot" id="connDot" title="Status da conexão"></span>
   </header>
+  <nav id="topnav"></nav>
 
   <div class="wrap">
     <div class="crumb" id="crumb"></div>
@@ -546,6 +569,7 @@ function updateHeader(){
   document.getElementById('hSub').textContent = (logado && nome) ? nome : STATE.appNome;
   document.body.classList.toggle('logged', logado);
   var bell=document.getElementById('hbell'); if(bell) bell.style.display = logado ? 'block':'none';
+  var cfg=document.getElementById('hcfg'); if(cfg) cfg.style.display = (logado && STATE.tipo!=='empresa') ? 'inline-block':'none';
   if(!logado) closeMenu();
 }
 var NAV_MANEJADOR=[
@@ -567,20 +591,31 @@ var NAV_LOJISTA=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
+var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, admin:1};
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
   var nav=document.getElementById('sbNav'); if(!nav) return;
   var tipo=STATE.tipo||'manejador';
   var root=STATE.stack[0]||(tipo==='empresa'?'empresa':'inicio');
   var lista=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR.slice();
-  if(tipo==='manejador' && STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
-  var itens=lista.map(function(n){
+  var itens=lista.filter(function(n){ return !TOP_KEYS[n.v]; }).map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
-  var cfg = (tipo==='empresa') ? '' : '<div class="sb-item sb-cfg'+(root==='perfilManejador'?' active':'')+'" onclick="go(\'perfilManejador\')"><span class="emoji">⚙️</span><span>Configurar perfil</span></div>';
-  nav.innerHTML=itens+cfg;
+  nav.innerHTML=itens;
   var u=document.getElementById('sbUser'); if(u) u.textContent = (tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+  buildTopNav(root, tipo);
+}
+function buildTopNav(root, tipo){
+  var tn=document.getElementById('topnav'); if(!tn) return;
+  var base=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR;
+  var lista=base.filter(function(n){ return TOP_KEYS[n.v]; });
+  if(STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
+  tn.innerHTML=lista.map(function(n){
+    var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
+    return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
+  }).join('');
+  setTimeout(posicionarMapShell,0);
 }
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
 window.openMenu=function(){ document.body.classList.add('menu-open'); };
@@ -1014,7 +1049,7 @@ VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox(
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
       var estrelas = (pode && !t.ehMeu) ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>');
-      return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
+      return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span>'+(t.saiEm?'<br><span class="sai">⏳ sai em '+fmtRestante(t.saiEm)+'</span>':'')+'</div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
     var aviso = ehEmp ? '<div class="meta">Você pode ver o ranking; a avaliação é feita pelos manejadores.</div>'
       : (pode ? '<div class="meta">Toque nas estrelas para dar sua nota (1–5).</div>' : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Deixe sua sala visível (em Sala de troféu) para poder avaliar.</div></div>');
     app(heroFoto('ranking','Ranking de troféus','Os melhores das últimas 24 horas — o mais bem avaliado no topo.','Ranking')+aviso+'<div class="card">'+g+'</div>');
@@ -1771,7 +1806,8 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     setTimeout(function(){ if(CURRENTMAP===map){ try{map.invalidateSize();}catch(e){} } },600);
   }).catch(function(){ document.getElementById('mapCount').textContent='Falha ao carregar'; }); };
 
-function posicionarMapShell(){ var h=document.querySelector('header'), s=document.getElementById('mapshell'); if(h&&s) s.style.top=h.offsetHeight+'px'; }
+function posicionarMapShell(){ var h=document.querySelector('header'), t=document.getElementById('topnav'), s=document.getElementById('mapshell');
+  if(h&&s){ var tn=(t&&getComputedStyle(t).display!=='none')?t.offsetHeight:0; s.style.top=(h.offsetHeight+tn)+'px'; } }
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
