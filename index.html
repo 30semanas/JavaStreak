@@ -433,11 +433,29 @@
   .tb-hamb:hover,.tb-back:hover{background:rgba(232,85,43,.12);border-color:var(--laranja)}
   .tb-tit{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--txt)}
   @media(min-width:900px){ body.logged .tb-hamb{display:none} }
-  /* sino dentro da barra superior */
-  .tn-bell{position:relative}
-  .tn-bell .hbadge{position:absolute;top:4px;right:10px;min-width:17px;height:17px;border-radius:9px;background:var(--laranja);
+  /* sino simples na ponta direita da barra */
+  .tn-sino{position:relative;flex:none;margin-left:6px;background:none;border:none;cursor:pointer;
+    font-size:24px;line-height:1;padding:6px 8px;opacity:.9}
+  .tn-sino:hover{opacity:1;transform:scale(1.08)}
+  .tn-sino .hbadge{position:absolute;top:0;right:0;min-width:17px;height:17px;border-radius:9px;background:var(--laranja);
     color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center;display:none;padding:0 4px}
-  .tn-bell .hbadge.on{display:block}
+  .tn-sino .hbadge.on{display:block}
+  /* ícones dos cards da tela Início */
+  .menu-card img{filter:brightness(0) saturate(100%) invert(58%) sepia(64%) saturate(2600%) hue-rotate(345deg) brightness(98%)}
+  /* legibilidade sobre o fundo fotográfico */
+  .wrap{color:#f2eee6}
+  .wrap > h3, .wrap > .meta{color:#f2eee6;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .crumb{color:#e9e3d7!important}
+  .crumb b, .crumb span{color:var(--laranja-claro)}
+  .card, .promo-box, .mp-box{color:var(--txt)}
+  .card .meta, .promo-box .meta{color:var(--txt2);text-shadow:none}
+  .empty{color:#ece7dd;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .empty .big{opacity:.9}
+  .tb-tit{color:#f2eee6;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .tb-hamb,.tb-back{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22);color:#f2eee6}
+  .tb-hamb:hover,.tb-back:hover{background:rgba(232,85,43,.3);border-color:var(--laranja)}
+  #topnav{background:linear-gradient(180deg,rgba(18,26,18,.92),rgba(12,18,12,.92));backdrop-filter:blur(3px)}
+  label{color:var(--txt)}
   /* engrenagem ao lado do nome no menu */
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
@@ -584,6 +602,7 @@ function render(){
   var tb=document.getElementById('tbBack'); if(tb) tb.style.display = mostrarVoltar ? 'block':'none';
   var f=document.getElementById('fab'); f.style.display='none'; f.innerHTML='';
   (VIEWS[view]||VIEWS.login)();
+  aplicarFundo(view);
   updateHeader();
   buildSidebar();
 }
@@ -642,8 +661,8 @@ function buildTopNav(root, tipo){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
   }).join('');
-  html += '<div class="tn-item tn-bell" onclick="abrirPromos()" title="Avisos"><span class="emoji">🔔</span><span class="lbl">Avisos</span><span class="hbadge" id="promoBadge"></span></div>';
   html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">Rede</span></div>';
+  html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
   setTimeout(posicionarMapShell,0);
@@ -655,11 +674,13 @@ function setTitulo(t){ var a=document.getElementById('hTitulo'); if(a) a.textCon
 function setCrumb(){ var p=[]; for(var i=0;i<arguments.length;i++) p.push(arguments[i]);
   document.getElementById('crumb').innerHTML=p.map(function(x,i){return i===p.length-1?'<b>'+x+'</b>':x;}).join(' › '); }
 function app(html){ document.getElementById('app').innerHTML=html; }
-function aplicarFundo(){ try{
-  document.body.style.backgroundImage='linear-gradient(rgba(246,242,236,.93),rgba(246,242,236,.955)), url('+BG2+')';
+function aplicarFundo(chave){ try{
+  var img = bgPara(chave || (STATE.stack[STATE.stack.length-1]||'inicio'));
+  document.body.style.backgroundImage='linear-gradient(rgba(28,36,26,.62),rgba(20,28,18,.72)), url('+img+')';
   document.body.style.backgroundSize='cover';
   document.body.style.backgroundPosition='center';
   document.body.style.backgroundAttachment='fixed';
+  document.body.style.backgroundRepeat='no-repeat';
 }catch(e){} }
 var BGS=[BG1,BG2,BG3];
 function bgPara(chave){ var s=0; chave=String(chave||''); for(var i=0;i<chave.length;i++) s=(s*31+chave.charCodeAt(i))%997; return BGS[s%BGS.length]; }
@@ -1042,7 +1063,7 @@ VIEWS.promocoes=function(){ setTitulo('Promoções'); setCrumb('Promoções'); l
       '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">🏬 Tipos de loja que quero receber</summary><div style="margin-top:8px">'+SEGMENTOS.map(function(s){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin:4px 0"><input type="checkbox" style="width:auto" value="'+esc(s)+'" '+(INTERESSES.indexOf(s)>=0?'checked':'')+' onchange="toggleInteresse()"> '+esc(s)+'</label>'; }).join('')+'<div class="meta" style="margin-top:4px">Deixe tudo desmarcado para receber de todos.</div></div></details></div>');
     var tl = ativos.length ? ('<div class="timeline">'+ativos.map(function(p){ return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-time">'+fmtHora(p.criadoEm)+'</div>'+promoCard(p,isLida(p.id))+'</div>'; }).join('')+'</div>')
       : '<div class="empty"><div class="big">⚡</div>Nenhuma promoção ativa agora.<br>Elas duram 4 horas — volte mais tarde.</div>';
-    app(hero+acao+ctrl+'<h3 style="margin:18px 4px 10px">🕒 Linha do tempo</h3>'+tl);
+    app(hero+acao+ctrl+tl);
   }); };
 function fmtHora(iso){ try{ var d=new Date(iso); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }catch(e){ return ''; } }
 window.toggleRecebePromo=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(){ render(); }); };
