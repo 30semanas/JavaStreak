@@ -313,6 +313,52 @@
   .mk-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:14px;padding:16px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
   .emoji-mk{background:none;border:none}
   .emoji-mk>div{font-size:26px;line-height:1;text-align:center;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
+  /* ===== IDENTIDADE VISUAL — WILDLIFE ===== */
+  :root{
+    --laranja:#e8552b; --laranja-esc:#c8431f; --laranja-claro:#ff7a4d;
+    --escuro:#141b14; --escuro2:#1e2a1e;
+    --areia:#f6f2ec; --card:#ffffff; --linha:#e6e0d6;
+    --txt:#1a231a; --txt2:#6b7568;
+  }
+  body{background:#f6f2ec;background-image:none;color:var(--txt);
+       font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  header{background:linear-gradient(180deg,#1c2a1c,#131c13);border-bottom:3px solid var(--laranja)}
+  header .titulo,.card h3,.empty,h1,h2,h3{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+       font-weight:800;letter-spacing:-.02em;line-height:1.12}
+  h2{font-size:26px}
+  .sb-brand{font-family:inherit}
+  .card{border-radius:14px;border-color:var(--linha);box-shadow:0 2px 10px rgba(20,30,20,.06)}
+  .card.click:hover,.menu-card.click:hover{box-shadow:0 12px 26px rgba(20,30,20,.12);border-color:#d8d1c4}
+  .btn{background:var(--laranja);color:#fff;border-radius:10px;font-weight:700;letter-spacing:.2px;
+       box-shadow:0 3px 10px rgba(232,85,43,.28)}
+  .btn:hover{background:var(--laranja-esc)}
+  .btn.sec{background:#fff;color:var(--txt);border:1.5px solid var(--linha);box-shadow:none}
+  .btn.sec:hover{border-color:var(--laranja);color:var(--laranja-esc)}
+  .btn.gps{background:linear-gradient(#2f4a2f,#233823);box-shadow:none}
+  .fab .btn{box-shadow:0 8px 22px rgba(232,85,43,.4)}
+  a{color:var(--laranja-esc)}
+  .pill{border-radius:20px;font-weight:700;font-size:11px;letter-spacing:.3px;text-transform:uppercase}
+  .preco-new{color:#2e8b3d}
+  .preco-old{color:var(--laranja-esc)}
+  /* bloco laranja de destaque (hero) */
+  .hero-bloco{background:linear-gradient(135deg,var(--laranja),#d8481f);color:#fff;border-radius:16px;
+       padding:22px 20px;margin-bottom:14px;box-shadow:0 8px 24px rgba(232,85,43,.28);position:relative;overflow:hidden}
+  .hero-bloco:after{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.10)}
+  .hero-bloco h2{margin:0 0 6px;font-size:24px;color:#fff}
+  .hero-bloco p{margin:0;font-size:14px;opacity:.94;line-height:1.5}
+  .hero-bloco .btn{background:#fff;color:var(--laranja-esc);box-shadow:none;margin-top:12px}
+  /* mantém o hero antigo alinhado ao novo estilo */
+  .rustic-hero{background:linear-gradient(135deg,#1f2c1f,#162116);border:none;color:#f2ede4}
+  .rustic-hero h2,.rustic-hero h3{color:#fff}
+  .rustic-hero .meta{color:#c9d2c4}
+  /* linha do tempo das promoções */
+  .timeline{position:relative;padding-left:26px}
+  .timeline:before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:3px;border-radius:3px;
+       background:linear-gradient(180deg,var(--laranja),rgba(232,85,43,.15))}
+  .tl-item{position:relative;margin-bottom:16px}
+  .tl-dot{position:absolute;left:-23px;top:16px;width:13px;height:13px;border-radius:50%;background:var(--laranja);
+       border:3px solid #f6f2ec;box-shadow:0 0 0 2px rgba(232,85,43,.28)}
+  .tl-time{font-size:12px;font-weight:800;color:var(--laranja-esc);letter-spacing:.4px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -467,10 +513,12 @@ var NAV_MANEJADOR=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'trofeus',   label:'Sala de troféu',    icon:'trofeus'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
+  {v:'promocoes', label:'Promoções',         emoji:'⚡'},
   {v:'network',   label:'Network',           icon:'network'}
 ];
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
+  {v:'promocoes', label:'Promoções',         emoji:'⚡'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
   {v:'network',   label:'Network',           icon:'network'}
 ];
@@ -605,7 +653,7 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
-function iniciarPromoPoll(){ carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
+function iniciarPromoPoll(){ carregarAvisos(); setInterval(carregarAvisos,300000); carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
   server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
@@ -688,7 +736,7 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       '<button class="btn sec" style="margin-top:10px" onclick="nav(\'empresaForm\')">✏️ Editar dados da empresa</button></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+(bloq?'':'<button class="btn sm" style="width:auto;margin:0" onclick="nav(\'promoForm\')">Lançar</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>')+'</div>');
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+(bloq?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>')+'</div>');
     if(!bloq) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
@@ -726,8 +774,23 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       return '<div class="card" style="border-left:5px solid #8a3a2c"><div class="row"><div class="grow"><h3 style="font-size:15px">'+(g.donoTipo==='empresa'?'\ud83c\udfea':'\ud83e\uddd1\u200d\ud83c\udf3e')+' '+esc(g.nome||'')+' '+(g.bloqueado?'<span class="pill dan">bloqueado</span>':'<span class="pill warn">'+g.total+' den\u00fancia(s)</span>')+'</h3></div></div>'+motivos+
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'liberar\')">\u2705 Liberar perfil</button><button class="btn sm sec grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'manter\')">\u26d4 Manter bloqueado</button></div></div>';
     }).join('') : '<div class="empty"><div class="big">\ud83d\udea9</div>Nenhuma den\u00fancia no momento.</div>';
-    app('<div class="card rustic-hero"><h2 style="margin:0 0 4px">\ud83d\udee1\ufe0f Administra\u00e7\u00e3o</h2><div class="meta">Analise as den\u00fancias dos usu\u00e1rios. Perfis com 2 den\u00fancias ficam bloqueados at\u00e9 sua an\u00e1lise.</div></div>'+denHtml);
+    app('<div class="hero-bloco"><h2>\ud83d\udee1\ufe0f Administra\u00e7\u00e3o</h2><p>Envie avisos aos usu\u00e1rios e analise as den\u00fancias.</p></div>'+
+      '<div class="card"><h3 style="margin:0 0 8px">\ud83d\udce2 Enviar aviso</h3>'+
+      '<label>T\u00edtulo *</label><input id="av_tit" placeholder="Ex: Nova fun\u00e7\u00e3o dispon\u00edvel">'+
+      '<label>Mensagem *</label><textarea id="av_msg" placeholder="Escreva o comunicado"></textarea>'+
+      '<div class="two"><div><label>Para</label><select id="av_pub"><option>Todos</option><option>Manejadores</option><option>Empresas</option></select></div>'+
+      '<div><label>Dias vis\u00edvel</label><input id="av_dias" inputmode="numeric" value="7"></div></div>'+
+      '<button class="btn" onclick="enviarAviso(this)">Enviar aviso</button><div id="avList" style="margin-top:12px"></div></div>'+
+      '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
+    carregarAvisosAdmin();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
+function carregarAvisosAdmin(){ server('apiListarAvisosAdmin').then(function(l){ var el=document.getElementById('avList'); if(!el)return;
+  el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div>'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
+    return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.titulo)+'</b> <span class="pill '+(ativo?'ok':'gray')+'">'+(ativo?'ativo':'expirado')+'</span><div class="meta">'+esc(a.publico||'Todos')+' \u00b7 '+fmtData(a.criadoEm)+'</div></div><button class="ib" onclick="excluirAviso(\''+a.id+'\')">\ud83d\uddd1\ufe0f</button></div>'; }).join('')) : '<div class="meta">Nenhum aviso enviado ainda.</div>'; }).catch(function(){}); }
+window.enviarAviso=function(btn){ if(!val('av_tit')||!val('av_msg')){ toast('Preencha t\u00edtulo e mensagem'); return; }
+  btn.disabled=true; btn.textContent='Enviando\u2026';
+  server('apiCriarAviso',{titulo:val('av_tit'),mensagem:val('av_msg'),publico:val('av_pub'),dias:val('av_dias')}).then(function(){ toast('Aviso enviado \u2714'); btn.disabled=false; btn.textContent='Enviar aviso'; setVal('av_tit',''); setVal('av_msg',''); carregarAvisosAdmin(); }).catch(function(e){ btn.disabled=false; btn.textContent='Enviar aviso'; toast((e&&e.message)||'Erro'); }); };
+window.excluirAviso=function(id){ if(!confirm('Remover este aviso?'))return; server('apiExcluirAviso',id).then(function(){ carregarAvisosAdmin(); }); };
 window.resolverDen=function(donoTipo,donoId,acao){ server('apiResolverDenuncia',donoTipo,donoId,acao).then(function(){ toast(acao==='liberar'?'Perfil liberado ✔':'Mantido bloqueado'); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
 VIEWS.network=function(){ setTitulo('Network'); setCrumb('Network'); loadingBox('Carregando rede…');
@@ -812,36 +875,59 @@ var PROMOS={ recebe:true, promos:[] };
 var PROMO_LIDAS=(function(){ try{ return JSON.parse(localStorage.getItem('promoLidas')||'[]'); }catch(e){ return []; } })();
 function salvarLidas(){ try{ localStorage.setItem('promoLidas', JSON.stringify(PROMO_LIDAS)); }catch(e){} }
 function isLida(id){ return PROMO_LIDAS.indexOf(id)>=0; }
-window.marcarLida=function(id){ if(!isLida(id)){ PROMO_LIDAS.push(id); salvarLidas(); } atualizarBadge(); renderPromoPanel(); };
-window.desmarcarLida=function(id){ var i=PROMO_LIDAS.indexOf(id); if(i>=0){ PROMO_LIDAS.splice(i,1); salvarLidas(); } atualizarBadge(); renderPromoPanel(); };
+window.marcarLida=function(id){ if(!isLida(id)){ PROMO_LIDAS.push(id); salvarLidas(); } render(); };
+window.desmarcarLida=function(id){ var i=PROMO_LIDAS.indexOf(id); if(i>=0){ PROMO_LIDAS.splice(i,1); salvarLidas(); } render(); };
 var INTERESSES=[];
 var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
 function fmtRestante(iso){ var ms=new Date(iso)-new Date(); if(ms<=0) return 'expirada'; var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return (h?h+'h ':'')+m+'min'; }
-function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; atualizarBadge(); }).catch(function(){}); }
-function atualizarBadge(){ var b=document.getElementById('promoBadge'); if(!b) return; var n=(PROMOS.promos||[]).filter(function(p){return !isLida(p.id);}).length; b.textContent=n; b.classList.toggle('on', n>0 && PROMOS.recebe!==false); }
-window.abrirPromos=function(){ document.getElementById('promoPanel').classList.add('open'); renderPromoPanel();
-  if(STATE.tipo!=='empresa'){ server('apiMeusInteressesPromo').then(function(r){ INTERESSES=(r&&r.interesses)||[]; renderPromoPanel(); }).catch(function(){}); } };
+function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; }).catch(function(){}); }
+var AVISOS=[];
+var AVISO_LIDOS=(function(){ try{ return JSON.parse(localStorage.getItem('avisoLidos')||'[]'); }catch(e){ return []; } })();
+function salvarAvisoLidos(){ try{ localStorage.setItem('avisoLidos', JSON.stringify(AVISO_LIDOS)); }catch(e){} }
+function avisoLido(id){ return AVISO_LIDOS.indexOf(id)>=0; }
+window.marcarAvisoLido=function(id){ if(!avisoLido(id)){ AVISO_LIDOS.push(id); salvarAvisoLidos(); } atualizarBadge(); renderPromoPanel(); };
+window.desmarcarAvisoLido=function(id){ var i=AVISO_LIDOS.indexOf(id); if(i>=0){ AVISO_LIDOS.splice(i,1); salvarAvisoLidos(); } atualizarBadge(); renderPromoPanel(); };
+function carregarAvisos(){ if(!AUTH.token) return; server('apiAvisos').then(function(l){ AVISOS=l||[]; atualizarBadge(); }).catch(function(){}); }
+function atualizarBadge(){ var b=document.getElementById('promoBadge'); if(!b) return; var n=AVISOS.filter(function(a){return !avisoLido(a.id);}).length; b.textContent=n; b.classList.toggle('on', n>0); }
+window.abrirPromos=function(){ document.getElementById('promoPanel').classList.add('open'); renderPromoPanel(); carregarAvisos(); };
 window.fecharPromos=function(){ document.getElementById('promoPanel').classList.remove('open'); };
-window.toggleRecebe=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(r){ PROMOS.recebe=r.recebe; if(!r.recebe) PROMOS.promos=[]; atualizarBadge(); if(r.recebe) carregarPromos(); renderPromoPanel(); }); };
+window.toggleRecebe=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(r){ PROMOS.recebe=r.recebe; if(!r.recebe) PROMOS.promos=[]; if(r.recebe) carregarPromos(); }); };
+function avisoCard(a,lido){ var btn = lido ? '<button class="lnk-den" style="color:#6f9a5f;text-decoration:none" onclick="desmarcarAvisoLido(\''+a.id+'\')">↩️ Não lido</button>' : '<button class="btn sm" style="width:auto;margin:0;background:var(--laranja)" onclick="marcarAvisoLido(\''+a.id+'\')">✓ Marcar como lido</button>';
+  return '<div class="card"'+(lido?' style="opacity:.7"':'')+'><h3 style="margin:0 0 4px">📢 '+esc(a.titulo||'Aviso')+'</h3><div class="meta" style="white-space:pre-wrap">'+esc(a.mensagem||'')+'</div><div class="meta" style="margin-top:6px;opacity:.75">'+fmtData(a.criadoEm)+' · Administração</div><div class="row" style="margin-top:8px">'+btn+'</div></div>'; }
+function renderPromoPanel(){
+  var naoLidos=AVISOS.filter(function(a){return !avisoLido(a.id);});
+  var lidos=AVISOS.filter(function(a){return avisoLido(a.id);});
+  var lista = naoLidos.length? naoLidos.map(function(a){return avisoCard(a,false);}).join('') : '<div class="empty"><div class="big">📭</div>Nenhum aviso novo.</div>';
+  var lidosHtml = lidos.length ? ('<details style="margin-top:12px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">📁 Lidos ('+lidos.length+')</summary><div style="margin-top:8px">'+lidos.map(function(a){return avisoCard(a,true);}).join('')+'</div></details>') : '';
+  document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Avisos</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
+    '<div class="meta" style="margin:6px 0 10px">Comunicados da administração. As promoções relâmpago ficam na aba <b>Promoções</b>.</div>'+lista+lidosHtml+'</div>'; }
 function promoCard(p,lida){ var readBtn = lida ? '<button class="lnk-den" style="color:#6f9a5f;text-decoration:none" onclick="desmarcarLida(\''+p.id+'\')">↩️ Não lido</button>' : '<button class="btn sm" style="width:auto;margin:0;background:#3a5a34" onclick="marcarLida(\''+p.id+'\')">✓ Marcar como lido</button>';
   return '<div class="card"'+(lida?' style="opacity:.72"':'')+'>'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
   '<h3 style="margin:0 0 2px">📣 '+esc(p.autorNome||'')+'</h3>'+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+
   '<div style="margin-top:6px">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
   '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div>'+
   '<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">'+(p.autorId?'<button class="btn sm sec" style="width:auto;margin:0" onclick="verLoja(\''+p.autorId+'\')">🏪 Ver loja</button>':'')+readBtn+'<div class="grow"></div><button class="lnk-den" onclick="denunciar(\'promocao\',\''+p.id+'\')">🚩 Denunciar</button></div></div>'; }
-function renderPromoPanel(){ var ativos=(PROMOS.promos||[]);
-  var naoLidas=ativos.filter(function(p){return !isLida(p.id);});
-  var lidas=ativos.filter(function(p){return isLida(p.id);});
-  var lista = (PROMOS.recebe===false) ? '<div class="empty">Notificações desativadas. Ative acima para receber promoções.</div>'
-    : (naoLidas.length? naoLidas.map(function(p){return promoCard(p,false);}).join('') : '<div class="empty"><div class="big">📣</div>Nenhuma promoção nova por aqui.'+(lidas.length?'<br>As que você já leu (e ainda ativas) ficam em <b>Lidas</b>.':'')+'</div>');
-  var lidasHtml = (PROMOS.recebe!==false && lidas.length) ? ('<details style="margin-top:12px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">📁 Lidas ('+lidas.length+') — ainda ativas</summary><div style="margin-top:8px">'+lidas.map(function(p){return promoCard(p,true);}).join('')+'</div></details>') : '';
-  var interesses = (STATE.tipo!=='empresa' && PROMOS.recebe!==false) ? ('<details style="margin:4px 0 10px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">🏬 Tipos de loja que quero receber</summary><div style="margin-top:8px">'+SEGMENTOS.map(function(s){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin:4px 0"><input type="checkbox" style="width:auto" value="'+esc(s)+'" '+(INTERESSES.indexOf(s)>=0?'checked':'')+' onchange="toggleInteresse()"> '+esc(s)+'</label>'; }).join('')+'<div class="meta" style="margin-top:4px">Deixe tudo desmarcado para receber de todos os tipos.</div></div></details>') : '';
-  document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Promoções de parceiros</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
-    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:10px 0"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebe(this)"> Receber notificações de promoções</label>'+interesses+lista+lidasHtml+'</div>'; }
-window.toggleInteresse=function(){ var sel=[]; document.querySelectorAll('#promoPanel input[type=checkbox][value]').forEach(function(c){ if(c.checked) sel.push(c.value); });
-  INTERESSES=sel; server('apiSetInteressesPromo',sel).then(function(){ carregarPromos(); setTimeout(function(){ if(document.getElementById('promoPanel').classList.contains('open')) renderPromoPanel(); },400); }); };
+VIEWS.promocoes=function(){ setTitulo('Promoções'); setCrumb('Promoções'); loadingBox('Carregando promoções…');
+  var ehEmp=(STATE.tipo==='empresa');
+  Promise.all([ server('apiPromocoes'), ehEmp?server('apiPodeLancarPromo'):Promise.resolve(null), ehEmp?Promise.resolve(null):server('apiMeusInteressesPromo').catch(function(){return {interesses:[]};}) ])
+  .then(function(res){ PROMOS=res[0]||{recebe:true,promos:[]}; var pode=res[1]; if(res[2]) INTERESSES=res[2].interesses||[];
+    var ativos=(PROMOS.promos||[]).slice().sort(function(a,b){ return String(b.criadoEm).localeCompare(String(a.criadoEm)); });
+    var hero='<div class="hero-bloco"><h2>⚡ Promoções relâmpago</h2><p>Ofertas com validade de <b>4 horas</b>. Cada loja pode lançar <b>1 por dia</b>.</p></div>';
+    var acao='';
+    if(ehEmp){ acao = (pode&&pode.pode) ? '<button class="btn" onclick="nav(\'promoForm\')">⚡ Lançar promoção de hoje</button>'
+      : '<div class="card" style="border-left:5px solid var(--laranja)"><div class="meta">⏳ '+esc((pode&&pode.motivo)||'Indisponível')+'. Você poderá lançar outra amanhã.</div></div>'; }
+    var ctrl = ehEmp ? '' : ('<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebePromo(this)"> Receber promoções</label>'+
+      '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">🏬 Tipos de loja que quero receber</summary><div style="margin-top:8px">'+SEGMENTOS.map(function(s){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin:4px 0"><input type="checkbox" style="width:auto" value="'+esc(s)+'" '+(INTERESSES.indexOf(s)>=0?'checked':'')+' onchange="toggleInteresse()"> '+esc(s)+'</label>'; }).join('')+'<div class="meta" style="margin-top:4px">Deixe tudo desmarcado para receber de todos.</div></div></details></div>');
+    var tl = ativos.length ? ('<div class="timeline">'+ativos.map(function(p){ return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-time">'+fmtHora(p.criadoEm)+'</div>'+promoCard(p,isLida(p.id))+'</div>'; }).join('')+'</div>')
+      : '<div class="empty"><div class="big">⚡</div>Nenhuma promoção ativa agora.<br>Elas duram 4 horas — volte mais tarde.</div>';
+    app(hero+acao+ctrl+'<h3 style="margin:18px 4px 10px">🕒 Linha do tempo</h3>'+tl);
+  }); };
+function fmtHora(iso){ try{ var d=new Date(iso); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }catch(e){ return ''; } }
+window.toggleRecebePromo=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(){ render(); }); };
+window.toggleInteresse=function(){ var sel=[]; document.querySelectorAll('input[type=checkbox][value]').forEach(function(c){ if(c.checked) sel.push(c.value); });
+  INTERESSES=sel; server('apiSetInteressesPromo',sel).then(function(){ toast('Preferências salvas'); }); };
 
-VIEWS.promoForm=function(){ setTitulo('Lançar promoção'); setCrumb('Empresa','Promoção');
+VIEWS.promoForm=function(){ setTitulo('Lançar promoção'); setCrumb('Promoções','Nova');
   app('<div class="card"><label>Foto do produto/serviço</label><input id="pr_foto" type="file" accept="image/*"><img id="pr_prev" class="foto-prev">'+
     '<label>Descrição do produto/serviço *</label><textarea id="pr_desc" placeholder="Ex: Ração para cães 20kg"></textarea>'+
     '<div class="two"><div><label>Preço atual (R$) *</label><input id="pr_pa" inputmode="decimal" placeholder="Ex: 150" oninput="calcPromo()"></div><div><label>Desconto (%)</label><input id="pr_pct" inputmode="numeric" placeholder="Ex: 20" oninput="calcPromo()"></div></div>'+
@@ -849,7 +935,7 @@ VIEWS.promoForm=function(){ setTitulo('Lançar promoção'); setCrumb('Empresa',
     '<div class="card" style="background:#f3ead2;border:1px solid #e0d4b6;margin-top:8px"><div class="row"><div class="grow">Preço com desconto</div><b id="pr_final" class="preco-new" style="font-size:20px">—</b></div></div>'+
     '<label>Quem deve ver (público-alvo)</label><select id="pr_alvo">'+ALVOS.map(function(a){return '<option>'+a+'</option>';}).join('')+'</select>'+
     '<label style="margin-top:8px">Raio de alcance: <b id="pr_raio_lbl">Sem limite</b></label><input id="pr_raio" type="range" min="0" max="200" step="5" value="0" oninput="raioLbl()" style="width:100%">'+
-    '<div class="meta" style="margin-top:6px">Usa a localização da sua sede e fica ativa por <b>12 horas</b>.</div>'+
+    '<div class="meta" style="margin-top:6px">Usa a localização da sua sede. A promoção fica ativa por <b>4 horas</b> e você pode lançar <b>1 por dia</b>.</div>'+
     '<button class="btn" onclick="salvarPromo(this)">📣 Publicar promoção</button></div>');
   bindFoto('pr_foto','pr_prev'); calcPromo(); raioLbl(); };
 function precoDe(id){ return parseFloat((val(id)||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; }
@@ -861,7 +947,7 @@ window.salvarPromo=function(btn){ if(!val('pr_desc')){toast('Descreva o produto/
   var desc=val('pr_desc')+(document.getElementById('pr_frete').checked?' · 🚚 Entrega grátis':'');
   btn.disabled=true; btn.textContent='Publicando…';
   server('apiCriarPromocao',{descricao:desc,precoAtual:pa.toFixed(2),precoPromo:promo,alvoPerfil:val('pr_alvo'),raioKm:raio>0?String(raio):'',foto:fotoData('pr_foto')})
-  .then(function(){ toast('Promoção publicada ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='📣 Publicar promoção'; }); };
+  .then(function(){ toast('Promoção publicada ✔'); STATE.stack=['promocoes']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='📣 Publicar promoção'; }); };
 window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))return; server('apiExcluirPromocao',id).then(function(){ toast('Promoção encerrada'); render(); }); };
 
 /* ============================================================
