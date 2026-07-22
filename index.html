@@ -391,6 +391,17 @@
   .hero-foto p{margin:0;color:#e7e2d8;font-size:13.5px;line-height:1.5;text-shadow:0 1px 6px rgba(0,0,0,.6)}
   .hero-foto .hf-tag{display:inline-block;background:var(--laranja);color:#fff;font-size:11px;font-weight:800;
     letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:8px}
+  /* busca no mapa */
+  .busca-chip{position:relative;padding:0 !important;background:#fff !important;border:1px solid var(--linha) !important;overflow:visible}
+  .busca-chip input{border:none;outline:none;background:transparent;font-size:13px;padding:7px 12px;width:190px;font-family:inherit}
+  #mapBuscaRes{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:250px;background:#fff;border:1px solid var(--linha);
+    border-radius:12px;box-shadow:0 10px 26px rgba(20,30,20,.22);overflow:hidden;z-index:2000}
+  #mapBuscaRes.on{display:block}
+  .bres{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--linha)}
+  .bres:last-child{border-bottom:none}
+  .bres:hover{background:#faf5ee}
+  .bres img{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none}
+  .bres b{font-size:13px} .bres span{font-size:11px;color:var(--txt2)}
 </style>
 </head>
 <body>
@@ -548,14 +559,13 @@ var NAV_MANEJADOR=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'trofeus',   label:'Sala de troféu',    icon:'trofeus'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
-  {v:'promocoes', label:'Promoções',         emoji:'⚡'},
-  {v:'network',   label:'Network',           icon:'network'}
+  {v:'promocoes', label:'Promoções',         emoji:'⚡'}
 ];
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
   {v:'promocoes', label:'Promoções',         emoji:'⚡'},
-  {v:'ranking',   label:'Ranking',           icon:'ranking'},
-  {v:'network',   label:'Network',           icon:'network'}
+  {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
+  {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
@@ -1726,7 +1736,8 @@ function renderAgenda(){ var itens=AGENDA||[];
    MAPA (tela cheia, lado direito) com filtro e resumo
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
-var MAPFILTER={ espera:true, armadilha:true, busca:true };
+var MAPFILTER={ espera:true, armadilha:true, busca:true, rede:true };
+var NETDATA=null;
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 function addBase(map, def){
   var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
@@ -1742,7 +1753,8 @@ function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=
 VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
   document.body.classList.add('map-mode'); posicionarMapShell();
   document.getElementById('mapBar').innerHTML=''; document.getElementById('mapPanel').classList.remove('open'); document.getElementById('mapPanel').innerHTML=''; document.getElementById('cevaPanel').classList.remove('open'); document.getElementById('cevaPanel').innerHTML=''; document.getElementById('mapCount').textContent='Carregando…';
-  server('apiMapaDados').then(function(d){
+  server('apiMapaDados').catch(function(){ return {cevas:[],abates:[],armadilhas:[],transportes:[],caes:[],rotas:[],marcacoes:[],ultimoAlimento:{}}; }).then(function(d){
+    server('apiNetworkMapa').then(function(n){ NETDATA=n; desenharMapa(); }).catch(function(){ NETDATA=null; });
     d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
     d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
@@ -1763,12 +1775,37 @@ function posicionarMapShell(){ var h=document.querySelector('header'), s=documen
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'] ];
+  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'], ['rede','🌐 Rede','#e8552b'] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
-  b.innerHTML='<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>'+chipsFiltro(); }
+  var perfil='';
+  if(STATE.tipo!=='empresa' && STATE.manejador){ var vis=(STATE.manejador.visivelNetwork==='Sim');
+    perfil='<span class="chip'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')" title="Configurar meu perfil na rede">'+(vis?'👁️ Visível na rede':'🔒 Oculto na rede')+'</span>'; }
+  b.innerHTML='<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>'+chipsFiltro()+perfil+
+    '<span class="chip busca-chip"><input id="mapBusca" placeholder="🔎 Buscar amigo ou loja" oninput="buscarNoMapa(this.value)" autocomplete="off"><div id="mapBuscaRes"></div></span>'; }
 window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; buildMapBar(); desenharMapa(); };
+window.buscarNoMapa=function(q){ var box=document.getElementById('mapBuscaRes'); if(!box) return;
+  q=String(q||'').trim().toLowerCase();
+  if(q.length<2 || !NETDATA){ box.innerHTML=''; box.classList.remove('on'); return; }
+  var itens=[];
+  (NETDATA.manejadores||[]).forEach(function(m){ if(!m.eu && String(m.nome||'').toLowerCase().indexOf(q)>=0) itens.push({tipo:'m',o:m}); });
+  (NETDATA.empresas||[]).forEach(function(e){ if(String(e.nome||'').toLowerCase().indexOf(q)>=0) itens.push({tipo:'e',o:e}); });
+  itens=itens.slice(0,6);
+  box.innerHTML = itens.length ? itens.map(function(it){ var o=it.o;
+    return '<div class="bres" onclick="irPara(\''+it.tipo+'\',\''+o.id+'\')"><img src="'+esc(avatarUrl(it.tipo==='e'?{tipo:'empresa',fotoUrl:o.fotoUrl}:o))+'"><div><b>'+esc(o.nome||'')+'</b><br><span>'+(it.tipo==='e'?'Loja':'Manejador')+(o.cidade?' · '+esc(o.cidade):'')+'</span></div></div>'; }).join('')
+    : '<div class="bres"><div><span>Nada encontrado</span></div></div>';
+  box.classList.add('on'); };
+window.irPara=function(tipo,id){ if(!NETDATA||!CURRENTMAP) return;
+  var lista = tipo==='e' ? (NETDATA.empresas||[]) : (NETDATA.manejadores||[]);
+  var o = lista.filter(function(x){return String(x.id)===String(id);})[0]; if(!o) return;
+  var la=coord(o.lat), ln=coord(o.lng); if(!ptOk(la,ln)){ toast('Sem localização no mapa'); return; }
+  if(!MAPFILTER.rede){ MAPFILTER.rede=true; buildMapBar(); desenharMapa(); }
+  CURRENTMAP.setView([la,ln],14);
+  var pop = tipo==='e' ? netPopEmpresa(o) : netPopManej(o);
+  L.popup({maxWidth:280}).setLatLng([la,ln]).setContent(pop).openOn(CURRENTMAP);
+  var box=document.getElementById('mapBuscaRes'); if(box){ box.innerHTML=''; box.classList.remove('on'); }
+  var inp=document.getElementById('mapBusca'); if(inp) inp.value=''; };
 window.togglePainel=function(){ var p=document.getElementById('mapPanel'); if(p) p.classList.toggle('open'); };
 
 function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAPDATA) return; var d=MAPDATA, ab=d.abates;
@@ -1811,6 +1848,13 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return d._caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
     var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(imgSrc(a.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(a.tipoManejo==='Espera'&&a.cevaId?'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+a.cevaId+'\')">📈 Linha do tempo da ceva</button>':'')+'</div>';
     add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
+  if(MAPFILTER.rede && NETDATA){
+    (NETDATA.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return;
+      add(L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).bindPopup(netPopEmpresa(e)),la,ln); });
+    (NETDATA.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
+      if(m.eu){ add(L.marker([la,ln],{icon:avatarIcon(m,52,true)}).bindPopup('<div class="pop"><h4>📍 Você está aqui</h4></div>'),la,ln); }
+      else { add(L.marker([la,ln],{icon:avatarIcon(m)}).bindPopup(netPopManej(m)),la,ln); } });
+  }
   var info=document.getElementById('mapCount'); if(info) info.textContent = pts.length? (pts.length+' ponto(s)') : 'Nada com esse filtro (ou sem coordenadas)';
   try{
     if(pts.length===1) CURRENTMAP.setView(pts[0],14);
