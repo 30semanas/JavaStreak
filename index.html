@@ -809,25 +809,35 @@ window.salvarNetwork=function(btn){
    PROMOÇÕES
    ============================================================ */
 var PROMOS={ recebe:true, promos:[] };
+var PROMO_LIDAS=(function(){ try{ return JSON.parse(localStorage.getItem('promoLidas')||'[]'); }catch(e){ return []; } })();
+function salvarLidas(){ try{ localStorage.setItem('promoLidas', JSON.stringify(PROMO_LIDAS)); }catch(e){} }
+function isLida(id){ return PROMO_LIDAS.indexOf(id)>=0; }
+window.marcarLida=function(id){ if(!isLida(id)){ PROMO_LIDAS.push(id); salvarLidas(); } atualizarBadge(); renderPromoPanel(); };
+window.desmarcarLida=function(id){ var i=PROMO_LIDAS.indexOf(id); if(i>=0){ PROMO_LIDAS.splice(i,1); salvarLidas(); } atualizarBadge(); renderPromoPanel(); };
 var INTERESSES=[];
 var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
 function fmtRestante(iso){ var ms=new Date(iso)-new Date(); if(ms<=0) return 'expirada'; var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return (h?h+'h ':'')+m+'min'; }
 function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; atualizarBadge(); }).catch(function(){}); }
-function atualizarBadge(){ var b=document.getElementById('promoBadge'); if(!b) return; var n=(PROMOS.promos||[]).length; b.textContent=n; b.classList.toggle('on', n>0 && PROMOS.recebe!==false); }
+function atualizarBadge(){ var b=document.getElementById('promoBadge'); if(!b) return; var n=(PROMOS.promos||[]).filter(function(p){return !isLida(p.id);}).length; b.textContent=n; b.classList.toggle('on', n>0 && PROMOS.recebe!==false); }
 window.abrirPromos=function(){ document.getElementById('promoPanel').classList.add('open'); renderPromoPanel();
   if(STATE.tipo!=='empresa'){ server('apiMeusInteressesPromo').then(function(r){ INTERESSES=(r&&r.interesses)||[]; renderPromoPanel(); }).catch(function(){}); } };
 window.fecharPromos=function(){ document.getElementById('promoPanel').classList.remove('open'); };
 window.toggleRecebe=function(chk){ server('apiSetRecebePromos', chk.checked).then(function(r){ PROMOS.recebe=r.recebe; if(!r.recebe) PROMOS.promos=[]; atualizarBadge(); if(r.recebe) carregarPromos(); renderPromoPanel(); }); };
-function promoCard(p){ return '<div class="card">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
+function promoCard(p,lida){ var readBtn = lida ? '<button class="lnk-den" style="color:#6f9a5f;text-decoration:none" onclick="desmarcarLida(\''+p.id+'\')">↩️ Não lido</button>' : '<button class="btn sm" style="width:auto;margin:0;background:#3a5a34" onclick="marcarLida(\''+p.id+'\')">✓ Marcar como lido</button>';
+  return '<div class="card"'+(lida?' style="opacity:.72"':'')+'>'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
   '<h3 style="margin:0 0 2px">📣 '+esc(p.autorNome||'')+'</h3>'+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+
   '<div style="margin-top:6px">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
   '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div>'+
-  '<div class="row" style="gap:8px;margin-top:8px;align-items:center">'+(p.autorId?'<button class="btn sm sec" style="width:auto;margin:0" onclick="verLoja(\''+p.autorId+'\')">🏪 Ver loja</button>':'')+'<div class="grow"></div><button class="lnk-den" onclick="denunciar(\'promocao\',\''+p.id+'\')">🚩 Denunciar</button></div></div>'; }
-function renderPromoPanel(){ var lista = (PROMOS.recebe===false) ? '<div class="empty">Notificações desativadas. Ative acima para receber promoções.</div>'
-    : ((PROMOS.promos&&PROMOS.promos.length)? PROMOS.promos.map(promoCard).join('') : '<div class="empty"><div class="big">📣</div>Nenhuma promoção ativa na sua região agora.</div>');
+  '<div class="row" style="gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">'+(p.autorId?'<button class="btn sm sec" style="width:auto;margin:0" onclick="verLoja(\''+p.autorId+'\')">🏪 Ver loja</button>':'')+readBtn+'<div class="grow"></div><button class="lnk-den" onclick="denunciar(\'promocao\',\''+p.id+'\')">🚩 Denunciar</button></div></div>'; }
+function renderPromoPanel(){ var ativos=(PROMOS.promos||[]);
+  var naoLidas=ativos.filter(function(p){return !isLida(p.id);});
+  var lidas=ativos.filter(function(p){return isLida(p.id);});
+  var lista = (PROMOS.recebe===false) ? '<div class="empty">Notificações desativadas. Ative acima para receber promoções.</div>'
+    : (naoLidas.length? naoLidas.map(function(p){return promoCard(p,false);}).join('') : '<div class="empty"><div class="big">📣</div>Nenhuma promoção nova por aqui.'+(lidas.length?'<br>As que você já leu (e ainda ativas) ficam em <b>Lidas</b>.':'')+'</div>');
+  var lidasHtml = (PROMOS.recebe!==false && lidas.length) ? ('<details style="margin-top:12px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">📁 Lidas ('+lidas.length+') — ainda ativas</summary><div style="margin-top:8px">'+lidas.map(function(p){return promoCard(p,true);}).join('')+'</div></details>') : '';
   var interesses = (STATE.tipo!=='empresa' && PROMOS.recebe!==false) ? ('<details style="margin:4px 0 10px"><summary style="cursor:pointer;font-size:14px;color:var(--txt2)">🏬 Tipos de loja que quero receber</summary><div style="margin-top:8px">'+SEGMENTOS.map(function(s){ return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin:4px 0"><input type="checkbox" style="width:auto" value="'+esc(s)+'" '+(INTERESSES.indexOf(s)>=0?'checked':'')+' onchange="toggleInteresse()"> '+esc(s)+'</label>'; }).join('')+'<div class="meta" style="margin-top:4px">Deixe tudo desmarcado para receber de todos os tipos.</div></div></details>') : '';
   document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Promoções de parceiros</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
-    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:10px 0"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebe(this)"> Receber notificações de promoções</label>'+interesses+lista+'</div>'; }
+    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;margin:10px 0"><input type="checkbox" style="width:auto" '+(PROMOS.recebe!==false?'checked':'')+' onchange="toggleRecebe(this)"> Receber notificações de promoções</label>'+interesses+lista+lidasHtml+'</div>'; }
 window.toggleInteresse=function(){ var sel=[]; document.querySelectorAll('#promoPanel input[type=checkbox][value]').forEach(function(c){ if(c.checked) sel.push(c.value); });
   INTERESSES=sel; server('apiSetInteressesPromo',sel).then(function(){ carregarPromos(); setTimeout(function(){ if(document.getElementById('promoPanel').classList.contains('open')) renderPromoPanel(); },400); }); };
 
@@ -1364,7 +1374,7 @@ window.salvarCanil=function(btn){ if(!val('k_nome')){toast('Informe o nome');ret
   var d={nome:val('k_nome'),lat:val('k_lat'),lng:val('k_lng'),obs:val('k_obs')};
   var p=EDIT? server('apiEditar','canil',EDIT.id,d) : server('apiCriarCanil',d);
   p.then(function(){ EDIT=null; toast('Canil salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar canil'; }); };
-window.abrirCanil=function(id){ STATE.canil=(CACHE.canil||[]).filter(function(c){return c.id===id;})[0]; nav('canilDetail'); };
+window.abrirCanil=function(id){ STATE.canil=(CACHE.canil||[]).filter(function(c){return c.id===id;})[0]; nav('matilha'); };
 
 var FUNCOES_CAO=['Rastreio','Busca','Agarro','Faro','Cerco','Misto','Outro'];
 VIEWS.canilDetail=function(){ var k=STATE.canil; setTitulo('Canil'); setCrumb('Meu canil',esc(k.nome||'Canil'));
@@ -1372,12 +1382,12 @@ VIEWS.canilDetail=function(){ var k=STATE.canil; setTitulo('Canil'); setCrumb('M
     '<div class="card menu-card click" onclick="nav(\'matilha\')"><img src="'+ICONS.caes+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:#f3ead2;padding:3px"><div class="txt" style="margin-left:12px"><h3>🐕 Ver matilha</h3><p id="matCount">Carregando cães…</p></div><div class="chev">›</div></div>');
   server('apiListarCaes',k.id).then(function(l){ CACHE.cao=l; var el=document.getElementById('matCount'); if(el) el.textContent=(l.length||0)+' cão(es) neste canil'; }); };
 
-VIEWS.matilha=function(){ var k=STATE.canil; setTitulo('Matilha'); setCrumb('Meu canil',esc(k.nome||'Canil'),'Matilha'); loadingBox();
+VIEWS.matilha=function(){ var k=STATE.canil; setTitulo(k.nome||'Canil'); setCrumb('Meu canil',esc(k.nome||'Canil')); loadingBox();
   server('apiListarCaes',k.id).then(function(l){ CACHE.cao=l;
-    var html='<div class="card"><div class="meta">🐕 Matilha do canil <b>'+esc(k.nome||'')+'</b> — '+(l.length||0)+' cão(es)</div></div>'+
+    var html='<div class="card rustic-hero"><div class="row"><h2 class="grow" style="margin:0">🏠 '+esc(k.nome||'Canil')+'</h2><button class="ib" onclick="editItem(\'canil\',\''+k.id+'\')" title="Editar canil">✏️</button></div><div class="meta" style="margin-top:4px">'+(l.length||0)+' cão(es) na matilha'+(k.lat&&k.lng?' · '+mapaLink(k.lat,k.lng):'')+(k.obs?'<br>'+esc(k.obs):'')+'</div></div>'+
       (l.length? l.map(function(c){ return '<div class="card"><div class="row">'+
       (c.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(c.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">🐕</div>')+
-      '<div class="grow click" onclick="abrirCao(\''+c.id+'\')"><h3>'+esc(c.nome)+'</h3><div class="meta"><span class="pill">'+esc(c.funcao||'—')+'</span> '+esc(c.raca||'')+'<br>'+(c.sexo?esc(c.sexo)+' · ':'')+(idade(c.dataNascimento)||'')+'</div></div>'+acoes('cao',c.id)+'</div></div>'; }).join('') : '<div class="empty">Nenhum cão neste canil ainda.</div>');
+      '<div class="grow click" onclick="abrirCao(\''+c.id+'\')"><h3>'+esc(c.nome)+'</h3><div class="meta"><span class="pill">'+esc(c.funcao||'—')+'</span> '+esc(c.raca||'')+'<br>'+(c.sexo?esc(c.sexo)+' · ':'')+(idade(c.dataNascimento)||'')+'</div></div>'+acoes('cao',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum cão neste canil ainda.<br>Toque em <b>Novo cão</b>.</div>');
     app(html); fab('<button class="btn" onclick="novo(\'caoForm\')">＋ Novo cão</button>'); }); };
 VIEWS.caoForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar cão':'Novo cão'); setCrumb('Matilha',esc(STATE.canil.nome),ed?'Editar':'Novo');
   app('<div class="card"><label>Nome *</label><input id="d_nome" value="'+esc(pv('nome'))+'">'+
@@ -1458,8 +1468,8 @@ VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadi
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
-  Promise.all([ server('apiListarCevas'), server('apiListarTransportes'), server('apiListarArmadilhas'), server('apiListarTodosCaes') ])
-  .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3];
+  Promise.all([ server('apiListarCevas'), server('apiListarTransportes'), server('apiListarArmadilhas'), server('apiListarTodosCaes'), server('apiListarCanis'), server('apiListarRotas') ])
+  .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3]; ABATEOPTS.canis=res[4]; ABATEOPTS.rotas=res[5];
     app('<div class="card"><label>Tipo de manejo *</label><select id="ab_tipo" onchange="renderAbateCtx()">'+
         TIPOS_MANEJO.map(function(t){return '<option value="'+t+'">'+rotuloManejo(t)+'</option>';}).join('')+'</select>'+
         '<div id="abateCtx"></div>'+
@@ -1484,11 +1494,12 @@ function renderAbateCtx(){ var t=val('ab_tipo'), el=document.getElementById('aba
       ABATEOPTS.cevas.map(function(c){return '<option value="'+c.id+'">'+esc(c.nome||'Ceva')+'</option>';}).join('')+'</select>'+
       '<label>Alimento na ceva</label><select id="ab_alim"><option value="">—</option></select>';
   } else if(t==='Cães'){
-    h='<label>Cães na caçada *</label><div class="checks" id="ab_caes">'+
-      (ABATEOPTS.caes.length? ABATEOPTS.caes.map(function(c){return '<label class="check" onclick="toggleCheck(this)"><input type="checkbox" value="'+c.id+'">'+esc(c.nome)+' <span class="meta">('+esc(c.funcao||'')+')</span></label>';}).join('') : '<div class="meta">Nenhum cão cadastrado ainda.</div>')+'</div>';
+    h='<label>Matilha (canil) *</label><select id="ab_canil" onchange="renderCaesDaMatilha()"><option value="">Selecione…</option>'+
+      (ABATEOPTS.canis||[]).map(function(k){return '<option value="'+k.id+'">'+esc(k.nome||'Canil')+'</option>';}).join('')+'</select>'+
+      '<label>Cães na caçada *</label><div class="checks" id="ab_caes"><div class="meta">Selecione a matilha acima para listar os cães.</div></div>';
   } else if(t==='Espreita'){
-    h='<label>Transporte usado *</label><select id="ab_transp"><option value="">Selecione…</option>'+
-      ABATEOPTS.transportes.map(function(t2){return '<option value="'+t2.id+'">'+esc(t2.tipo)+(t2.identificacao?' - '+esc(t2.identificacao):'')+'</option>';}).join('')+'</select>';
+    h='<label>Rota de manejo *</label><select id="ab_rota"><option value="">Selecione…</option>'+
+      (ABATEOPTS.rotas||[]).map(function(r){return '<option value="'+r.id+'">'+esc(r.nome||'Rota')+(r.propriedade?' - '+esc(r.propriedade):'')+'</option>';}).join('')+'</select>';
   } else if(t==='Armadilha'){
     h='<label>Armadilha *</label><select id="ab_arm"><option value="">Selecione…</option>'+
       ABATEOPTS.armadilhas.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+'</option>';}).join('')+'</select>';
@@ -1496,11 +1507,15 @@ function renderAbateCtx(){ var t=val('ab_tipo'), el=document.getElementById('aba
   el.innerHTML=h;
   // prefill contexto em edição
   if(EDIT){ if(t==='Espera'){ setVal('ab_ceva',EDIT.cevaId); if(EDIT.cevaId) carregarAlimentosCeva(EDIT.alimentoId); }
-    if(t==='Espreita') setVal('ab_transp',EDIT.transporteId);
+    if(t==='Espreita') setVal('ab_rota',EDIT.rotaId);
     if(t==='Armadilha') setVal('ab_arm',EDIT.armadilhaId);
-    if(t==='Cães' && EDIT.caesIds){ var ids=String(EDIT.caesIds).split(',');
-      [].slice.call(document.querySelectorAll('#ab_caes input')).forEach(function(inp){ if(ids.indexOf(inp.value)>=0){ inp.checked=true; inp.parentNode.classList.add('on'); } }); } }
+    if(t==='Cães'){ setVal('ab_canil',EDIT.canilId||''); renderCaesDaMatilha(EDIT.caesIds?String(EDIT.caesIds).split(','):[]); } }
 }
+window.renderCaesDaMatilha=function(preIds){ var cid=val('ab_canil'); var box=document.getElementById('ab_caes'); if(!box) return;
+  var caes=(ABATEOPTS.caes||[]).filter(function(c){return String(c.canilId)===String(cid);});
+  box.innerHTML = (!cid)? '<div class="meta">Selecione a matilha acima para listar os cães.</div>'
+    : (caes.length? caes.map(function(c){return '<label class="check" onclick="toggleCheck(this)"><input type="checkbox" value="'+c.id+'">'+esc(c.nome)+' <span class="meta">('+esc(c.funcao||'')+')</span></label>';}).join('') : '<div class="meta">Nenhum cão neste canil.</div>');
+  if(preIds && preIds.length){ [].slice.call(document.querySelectorAll('#ab_caes input')).forEach(function(inp){ if(preIds.indexOf(inp.value)>=0){ inp.checked=true; inp.parentNode.classList.add('on'); } }); } };
 window.toggleCheck=function(l){ var c=l.querySelector('input'); c.checked=!c.checked; l.classList.toggle('on',c.checked); };
 window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var sel=document.getElementById('ab_alim'); if(!sel) return;
   // copia coords da ceva
@@ -1510,12 +1525,12 @@ window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var se
   server('apiListarAlimentos',cid).then(function(l){ sel.innerHTML='<option value="">—</option>'+l.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+' ('+fmtData(a.data)+')</option>';}).join(''); if(preselect) setVal('ab_alim',preselect); }); };
 window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs') };
   if(tipo==='Espera'){ d.cevaId=val('ab_ceva'); d.alimentoId=val('ab_alim'); if(!d.cevaId){toast('Selecione a ceva');return;} }
-  if(tipo==='Espreita'){ d.transporteId=val('ab_transp'); if(!d.transporteId){toast('Selecione o transporte');return;} }
+  if(tipo==='Espreita'){ d.rotaId=val('ab_rota'); if(!d.rotaId){toast('Selecione a rota de manejo');return;} }
   if(tipo==='Armadilha'){ d.armadilhaId=val('ab_arm'); if(!d.armadilhaId){toast('Selecione a armadilha');return;} }
-  if(tipo==='Cães'){ var ids=[].slice.call(document.querySelectorAll('#ab_caes input:checked')).map(function(c){return c.value;}); if(!ids.length){toast('Selecione ao menos 1 cão');return;} d.caesIds=ids.join(','); }
+  if(tipo==='Cães'){ d.canilId=val('ab_canil'); if(!d.canilId){toast('Selecione a matilha (canil)');return;} var ids=[].slice.call(document.querySelectorAll('#ab_caes input:checked')).map(function(c){return c.value;}); if(!ids.length){toast('Selecione ao menos 1 cão da matilha');return;} d.caesIds=ids.join(','); }
   if(!d.dataHora){toast('Informe data e hora');return;}
   btn.disabled=true; btn.textContent='Salvando…';
-  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',armadilhaId:d.armadilhaId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
+  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
   else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
