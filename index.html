@@ -469,14 +469,14 @@
     box-shadow:-8px 0 26px rgba(0,0,0,.28);
     padding:18px 16px;overflow-y:auto}
   #campPanel.on{display:block}
-  .cp-toggle{position:fixed;right:250px;top:50%;transform:translateY(-50%);z-index:950;
+  .cp-toggle{position:fixed;right:250px;top:50%;transform:translateY(-50%);z-index:1200;
     width:26px;height:66px;border-radius:12px 0 0 12px;border:1px solid rgba(255,255,255,.18);border-right:none;
     background:linear-gradient(180deg,rgba(232,85,43,.92),rgba(200,67,31,.92));color:#fff;font-size:14px;cursor:pointer;
     box-shadow:-4px 0 14px rgba(0,0,0,.28);transition:right .2s}
   .cp-toggle:hover{filter:brightness(1.1)}
   #campPanel.fechado{width:0;padding:0;border:none;box-shadow:none;overflow:visible}
   #campPanel.fechado .cp-body{display:none}
-  #campPanel.fechado .cp-toggle{right:0;border-radius:12px 0 0 12px}
+  .cp-toggle.fechado{right:0}
   .cp-body{color:#fff;padding-top:8px}
   .cp-body .cp-tag{display:inline-block;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;
     letter-spacing:.7px;text-transform:uppercase;padding:5px 11px;border-radius:20px;margin-bottom:12px;
@@ -490,7 +490,7 @@
   .cp-body .cp-sep{height:1px;background:rgba(255,255,255,.13);margin:14px 0}
   @media(min-width:1200px){ body.camp-on .wrap, body.camp-on #topnav, body.camp-on #topbarLine{margin-right:250px}
     body.camp-on.map-mode #mapshell{right:250px} }
-  @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} }
+  @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} .cp-toggle.fechado{right:0} }
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
@@ -522,10 +522,8 @@
     <div class="tb-tit" id="tbTitulo">JavaStreak</div>
   </div>
   <nav id="topnav"></nav>
-  <aside id="campPanel">
-    <button class="cp-toggle" id="cpToggle" onclick="toggleCampanha()" title="Mostrar/ocultar campanha">🏆</button>
-    <div class="cp-body" id="cpBody"></div>
-  </aside>
+  <aside id="campPanel"><div class="cp-body" id="cpBody"></div></aside>
+  <button class="cp-toggle" id="cpToggle" onclick="toggleCampanha()" title="Mostrar/ocultar campanha" style="display:none">🏆</button>
 
   <div class="wrap">
     <div class="crumb" id="crumb"></div>
@@ -572,7 +570,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-campanha3';
+var APP_VER = 'v22.07-campanha4';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1118,11 +1116,13 @@ var CAMP_OCULTA=(function(){ try{ return localStorage.getItem('campOculta')==='1
 window.toggleCampanha=function(){ CAMP_OCULTA=!CAMP_OCULTA; try{ localStorage.setItem('campOculta', CAMP_OCULTA?'1':'0'); }catch(e){} pintarCampanha(); };
 function pintarCampanha(){ var el=document.getElementById('campPanel'), body=document.getElementById('cpBody'), tg=document.getElementById('cpToggle');
   if(!el||!body) return;
-  if(!CAMPANHA || !AUTH.token){ el.className=''; body.innerHTML=''; document.body.classList.remove('camp-on'); return; }
+  if(!CAMPANHA || !AUTH.token){ el.className=''; body.innerHTML=''; if(tg) tg.style.display='none'; document.body.classList.remove('camp-on'); return; }
   var c=CAMPANHA;
   el.className='on'+(CAMP_OCULTA?' fechado':'');
   document.body.classList.toggle('camp-on', !CAMP_OCULTA);
-  if(tg){ tg.textContent = CAMP_OCULTA ? '🏆' : '›'; tg.title = CAMP_OCULTA ? 'Mostrar campanha' : 'Ocultar campanha'; }
+  if(tg){ tg.style.display='block'; tg.className='cp-toggle'+(CAMP_OCULTA?' fechado':'');
+    tg.textContent = CAMP_OCULTA ? '🏆' : '›';
+    tg.title = CAMP_OCULTA ? 'Mostrar campanha' : 'Ocultar campanha'; }
   body.innerHTML='<span class="cp-tag">🏆 Campanha</span>'+
     '<h4>'+esc(c.titulo||'')+'</h4>'+
     (c.descricao?'<p>'+esc(c.descricao)+'</p>':'')+
