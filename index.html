@@ -461,25 +461,36 @@
   #topnav{background:linear-gradient(180deg,rgba(18,26,18,.92),rgba(12,18,12,.92));backdrop-filter:blur(3px)}
   label{color:var(--txt)}
   /* engrenagem ao lado do nome no menu */
-  /* painel de campanha (lateral direita) */
-  #campPanel{position:fixed;right:14px;top:120px;width:250px;z-index:900;display:none}
+  /* painel de campanha — coluna lateral direita, translúcida */
+  #campPanel{position:fixed;right:0;top:0;bottom:0;width:250px;z-index:900;display:none;
+    background:linear-gradient(180deg,rgba(19,28,19,.62),rgba(13,20,13,.72));
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    border-left:1px solid rgba(255,255,255,.10);
+    box-shadow:-8px 0 26px rgba(0,0,0,.28);
+    padding:18px 16px;overflow-y:auto}
   #campPanel.on{display:block}
-  .cp-toggle{position:absolute;top:-12px;right:-6px;z-index:2;width:34px;height:34px;border-radius:50%;
-    border:2px solid #fff;background:var(--laranja);color:#fff;font-size:15px;cursor:pointer;
-    box-shadow:0 4px 12px rgba(0,0,0,.3)}
-  .cp-toggle:hover{transform:scale(1.08)}
-  .cp-body{border-radius:16px;padding:16px 14px;
-    background:linear-gradient(155deg,#e8552b,#c8431f);border:1px solid rgba(255,255,255,.25);
-    box-shadow:0 12px 30px rgba(0,0,0,.35);color:#fff;overflow:hidden}
+  .cp-toggle{position:fixed;right:250px;top:50%;transform:translateY(-50%);z-index:950;
+    width:26px;height:66px;border-radius:12px 0 0 12px;border:1px solid rgba(255,255,255,.18);border-right:none;
+    background:linear-gradient(180deg,rgba(232,85,43,.92),rgba(200,67,31,.92));color:#fff;font-size:14px;cursor:pointer;
+    box-shadow:-4px 0 14px rgba(0,0,0,.28);transition:right .2s}
+  .cp-toggle:hover{filter:brightness(1.1)}
+  #campPanel.fechado{width:0;padding:0;border:none;box-shadow:none;overflow:visible}
   #campPanel.fechado .cp-body{display:none}
-  .cp-body .cp-tag{display:inline-block;background:rgba(0,0,0,.28);color:#fff;font-size:10px;font-weight:800;
-    letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;border-radius:20px;margin-bottom:8px}
-  .cp-body h4{margin:0 0 6px;font-size:15px;color:#fff;line-height:1.25}
-  .cp-body p{margin:0;font-size:12.5px;color:#ffeee6;line-height:1.45}
-  .cp-body .cp-premio{display:block;margin-top:8px;font-size:14px;font-weight:800;color:#fff}
-  .cp-body .cp-time{display:block;margin-top:10px;font-size:12px;font-weight:800;color:#fff;
-    background:rgba(0,0,0,.30);border-radius:10px;padding:6px 8px;text-align:center}
-  @media(max-width:1200px){ #campPanel{position:static;width:auto;margin:0 14px 12px} .cp-toggle{position:static;float:right;margin:0 0 6px 8px} }
+  #campPanel.fechado .cp-toggle{right:0;border-radius:12px 0 0 12px}
+  .cp-body{color:#fff;padding-top:8px}
+  .cp-body .cp-tag{display:inline-block;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;
+    letter-spacing:.7px;text-transform:uppercase;padding:5px 11px;border-radius:20px;margin-bottom:12px;
+    box-shadow:0 4px 12px rgba(232,85,43,.4)}
+  .cp-body h4{margin:0 0 8px;font-size:18px;color:#fff;line-height:1.25;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+  .cp-body p{margin:0;font-size:13px;color:#e6e0d6;line-height:1.5;text-shadow:0 1px 6px rgba(0,0,0,.45)}
+  .cp-body .cp-premio{display:block;margin-top:14px;font-size:15px;font-weight:800;color:var(--laranja-claro);
+    text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .cp-body .cp-time{display:block;margin-top:14px;font-size:12.5px;font-weight:800;color:#fff;
+    background:rgba(232,85,43,.85);border-radius:10px;padding:8px;text-align:center;box-shadow:0 4px 14px rgba(232,85,43,.3)}
+  .cp-body .cp-sep{height:1px;background:rgba(255,255,255,.13);margin:14px 0}
+  @media(min-width:1200px){ body.camp-on .wrap, body.camp-on #topnav, body.camp-on #topbarLine{margin-right:250px}
+    body.camp-on.map-mode #mapshell{right:250px} }
+  @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} }
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
@@ -561,7 +572,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-campanha2';
+var APP_VER = 'v22.07-campanha3';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1107,14 +1118,15 @@ var CAMP_OCULTA=(function(){ try{ return localStorage.getItem('campOculta')==='1
 window.toggleCampanha=function(){ CAMP_OCULTA=!CAMP_OCULTA; try{ localStorage.setItem('campOculta', CAMP_OCULTA?'1':'0'); }catch(e){} pintarCampanha(); };
 function pintarCampanha(){ var el=document.getElementById('campPanel'), body=document.getElementById('cpBody'), tg=document.getElementById('cpToggle');
   if(!el||!body) return;
-  if(!CAMPANHA || !AUTH.token){ el.className=''; body.innerHTML=''; return; }
+  if(!CAMPANHA || !AUTH.token){ el.className=''; body.innerHTML=''; document.body.classList.remove('camp-on'); return; }
   var c=CAMPANHA;
   el.className='on'+(CAMP_OCULTA?' fechado':'');
-  if(tg) tg.title = CAMP_OCULTA ? 'Mostrar campanha' : 'Ocultar campanha';
+  document.body.classList.toggle('camp-on', !CAMP_OCULTA);
+  if(tg){ tg.textContent = CAMP_OCULTA ? '🏆' : '›'; tg.title = CAMP_OCULTA ? 'Mostrar campanha' : 'Ocultar campanha'; }
   body.innerHTML='<span class="cp-tag">🏆 Campanha</span>'+
     '<h4>'+esc(c.titulo||'')+'</h4>'+
     (c.descricao?'<p>'+esc(c.descricao)+'</p>':'')+
-    (c.patrocinador?'<p style="margin-top:6px">por <b>'+esc(c.patrocinador)+'</b></p>':'')+
+    (c.patrocinador?'<div class="cp-sep"></div><p>Patrocínio<br><b style="color:#fff;font-size:14px">'+esc(c.patrocinador)+'</b></p>':'')+
     (c.premio?'<span class="cp-premio">🎁 '+esc(c.premio)+'</span>':'')+
     (c.encerraEm?'<span class="cp-time">⏳ encerra em '+fmtRestante(c.encerraEm)+'</span>':''); }
 var AVISO_LIDOS=(function(){ try{ return JSON.parse(localStorage.getItem('avisoLidos')||'[]'); }catch(e){ return []; } })();
