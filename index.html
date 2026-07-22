@@ -570,7 +570,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-campanha4';
+var APP_VER = 'v22.07-carga';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -847,7 +847,22 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
-function iniciarPromoPoll(){ carregarAvisos(); setInterval(carregarAvisos,300000); carregarCampanha(); setInterval(carregarCampanha,300000); carregarPromos(); if(!PROMO_TIMER) PROMO_TIMER=setInterval(carregarPromos, 5*60000); }
+function iniciarPromoPoll(){
+  // Uma única rotina: só busca quando a aba está visível, com intervalo folgado.
+  carregarAvisos(); carregarCampanha(); carregarPromos();
+  if(PROMO_TIMER) return;
+  PROMO_TIMER=setInterval(function(){
+    if(document.hidden) return;               // aba em segundo plano não consome servidor
+    if(!AUTH.token) return;
+    carregarAvisos(); carregarCampanha(); carregarPromos();
+  }, 15*60000);                               // 15 min (era 5)
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && AUTH.token){
+      var agora=Date.now();
+      if(agora-(window.__ultimaAtualiz||0) > 5*60000){ window.__ultimaAtualiz=agora; carregarAvisos(); carregarCampanha(); }
+    }
+  });
+}
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
   server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
