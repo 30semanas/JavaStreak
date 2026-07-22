@@ -570,7 +570,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-carga';
+var APP_VER = 'v22.07-supabase';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -595,13 +595,21 @@ try { AUTH.token = localStorage.getItem('mj_token') || ''; } catch(e) {}
 function salvarToken(t){ AUTH.token=t||''; try{ t?localStorage.setItem('mj_token',t):localStorage.removeItem('mj_token'); }catch(e){} }
 
 /* >>>>>> COLE AQUI A SUA URL /exec DO APPS SCRIPT <<<<<< */
-var API_URL = 'https://script.google.com/macros/s/AKfycby_LWJgdy0nffHnXE0Zi9eHviuVgiDPbByini4eyWyqsotc3wsUz0zLMV3-ZBRUvp7rXQ/exec';
+/* ===== ENDEREÇO DA API =====
+   Ao migrar para o Supabase, troque as duas linhas abaixo:
+   API_URL  = https://SEU_REF.supabase.co/functions/v1/api
+   API_KEY  = a chave "anon"/"publishable" (pode ficar aqui, é pública)
+   Deixando API_KEY vazio, o app funciona com o Apps Script como antes. */
+var API_URL = 'https://olafxdwjwlubttnfvqhs.supabase.co/functions/v1/api';
+var API_KEY = 'sb_publishable_Wn_067Z_Nbg7oXjfvKHpOw_tD7pqMic';
 
 function server(fn){
   var args = Array.prototype.slice.call(arguments,1);
   var ctrl = new AbortController();
   var to = setTimeout(function(){ ctrl.abort(); }, 25000);
-  return fetch(API_URL, { method:'POST', redirect:'follow', signal:ctrl.signal,
+  var cab = {};
+  if(API_KEY){ cab['Authorization']='Bearer '+API_KEY; cab['apikey']=API_KEY; cab['Content-Type']='application/json'; }
+  return fetch(API_URL, { method:'POST', redirect:'follow', signal:ctrl.signal, headers:cab,
     body: JSON.stringify({ action:fn, args:args, token:AUTH.token }) })
   .then(function(r){ clearTimeout(to); return r.json(); })
   .then(function(j){
@@ -831,7 +839,9 @@ var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'A
 var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
 VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
   var t=STATE.loginTipo||'manejador';
+  var alvo = /supabase\.co/.test(API_URL) ? '🟢 Supabase' : '🟡 Apps Script (antigo)';
   app('<div style="text-align:center;margin:10px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:290px"></div>'+
+    '<div style="text-align:center;font-size:11px;color:#cfc9bd;margin-bottom:6px">'+APP_VER+' · '+alvo+'</div>'+
     '<div class="segbar"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">🌿 Manejador</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">🏪 Empresa</button></div>'+
     '<div class="card"><h3 style="margin-bottom:2px">Entrar '+(t==='empresa'?'como empresa':'como manejador')+'</h3>'+
     '<div class="meta" style="margin-bottom:6px">Acesse com seu login e senha.</div>'+
