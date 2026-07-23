@@ -722,7 +722,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1625';
+var APP_VER = 'vJS.230726.1700';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1535,6 +1535,7 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Descri\u00e7\u00e3o</label><textarea id="cp_desc" placeholder="Ex: quem estiver em 1\u00ba lugar \u00e0s 22h do dia 30 leva o pr\u00eamio"></textarea>'+
       '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
       '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcb3 Pagamento (Mercado Pago)</h3><div class="meta" style="margin-bottom:8px">Verifica a conta e quais meios de pagamento est\u00e3o dispon\u00edveis.</div><button class="btn sec" onclick="diagMP(this)">Verificar configura\u00e7\u00e3o</button><div id="mpDiag" style="margin-top:10px"></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf9a\ufe0f Acessos de cada plano</h3><div class="meta" style="margin-bottom:8px">Defina o que cada plano libera. Use <b>-1</b> para ilimitado e <b>0</b> para bloquear.</div><div id="limBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udd11 Redefinir senha de usu\u00e1rio</h3><div class="meta" style="margin-bottom:8px">Gera uma senha nova. Informe-a ao usu\u00e1rio por um canal seguro.</div>'+
       '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
@@ -1575,6 +1576,27 @@ window.darCortesia=function(btn){ var d=val('ct_destino');
   .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
 var LIMDADOS=null;
+window.diagMP=function(btn){ btn.disabled=true; btn.textContent='Verificando…';
+  var el=document.getElementById('mpDiag');
+  server('apiDiagMP').then(function(d){ btn.disabled=false; btn.textContent='Verificar configuração';
+    var meios=(d.meiosDisponiveis||[]);
+    var temPix=meios.some(function(m){return String(m).indexOf('pix')>=0;});
+    var temBoleto=meios.some(function(m){return String(m).indexOf('ticket')>=0||String(m).indexOf('bolbradesco')>=0;});
+    var temCartao=meios.some(function(m){return String(m).indexOf('credit_card')>=0;});
+    el.innerHTML='<div class="card" style="margin:0">'+
+      '<div class="meta">Token: <b>'+(d.temToken?d.tipoToken:'ausente')+'</b></div>'+
+      (d.conta?('<div class="meta">Conta: <b>'+esc(d.conta.apelido||'')+'</b> · '+esc(d.conta.email||'')+'<br>Tipo: '+esc(d.conta.tipo||'—')+' · País: '+esc(d.conta.site||'—')+' · Situação: '+esc(d.conta.status||'—')+'</div>'):'<div class="meta">Não foi possível ler a conta.</div>')+
+      '<div style="margin-top:10px">'+
+      '<div>'+(temPix?'✅':'❌')+' PIX</div>'+
+      '<div>'+(temBoleto?'✅':'❌')+' Boleto</div>'+
+      '<div>'+(temCartao?'✅':'❌')+' Cartão de crédito</div></div>'+
+      (d.testeCobranca ? (d.testeCobranca.ok
+        ? '<div style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:8px"><div class="meta">✅ Cobrança de teste criada (R$ 1,00)</div><a href="'+esc(d.testeCobranca.link)+'" target="_blank" class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff">Abrir cobrança de teste</a><div class="meta" style="margin-top:6px">Abra em janela anônima. Se o botão Pagar funcionar aqui, a integração está correta.</div></div>'
+        : '<div style="margin-top:10px;padding:10px;background:#fbe3e0;border-radius:8px"><div class="meta">❌ Falha ao criar cobrança:<br>'+esc(JSON.stringify(d.testeCobranca.erro).slice(0,300))+'</div></div>') : '')+
+      '<details style="margin-top:8px"><summary class="meta" style="cursor:pointer">Ver lista completa ('+meios.length+')</summary><div class="meta" style="margin-top:6px">'+esc(meios.join(', '))+'</div></details>'+
+      '</div>'; })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Verificar configuração';
+    el.innerHTML='<div class="meta">Erro: '+esc((e&&e.message)||'')+'</div>'; }); };
 function carregarLimites(){ server('apiListarLimites').then(function(d){ LIMDADOS=d; pintarLimites(); })
   .catch(function(){ var el=document.getElementById('limBox'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar.</div>'; }); }
 function pintarLimites(){ var el=document.getElementById('limBox'); if(!el||!LIMDADOS) return;
