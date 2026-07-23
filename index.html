@@ -722,7 +722,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1608';
+var APP_VER = 'vJS.230726.1625';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -833,6 +833,14 @@ var NAV_LOJISTA=[
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
 var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, mapaGeral:1};
+// qual limite controla cada item do menu
+var MODULO_LIMITE={ espera:'cevas', espreita:'rotas', caes:'canis', armadilha:'armadilhas',
+  documentacao:'documentos' };
+function moduloBloqueado(v){
+  var k=MODULO_LIMITE[v]; if(!k) return false;
+  if(STATE.tipo==='empresa') return false;
+  return !!(MEUPLANO && MEUPLANO.limites && MEUPLANO.limites[k]===0);
+}
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
   var nav=document.getElementById('sbNav'); if(!nav) return;
@@ -843,7 +851,7 @@ function buildSidebar(){
   if(STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
   nav.innerHTML=lista.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
-    var bloq = (n.v==='documentacao' && MEUPLANO && MEUPLANO.limites && MEUPLANO.limites.documentos===0);
+    var bloq = moduloBloqueado(n.v);
     return '<div class="sb-item'+(root===n.v?' active':'')+(bloq?' travado':'')+'" onclick="go(\''+n.v+'\')">'+ic+
       '<span>'+n.label+'</span>'+(bloq?'<span class="sb-lock">🔒</span>':'')+'</div>';
   }).join('');
@@ -900,7 +908,11 @@ function fab(html){ var f=document.getElementById('fab'); f.innerHTML=html; f.st
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 /* Converte qualquer link do Drive para o endpoint de thumbnail (exibível em <img>) */
 function imgSrc(u){ if(!u) return ''; u=String(u); var m=u.match(/[?&]id=([^&]+)/)||u.match(/\/d\/([^\/?]+)/); return m ? ('https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000') : u; }
-function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+function toast(msg){
+  // 'PLANO' é um sinal interno (o app já abriu a tela de planos) — não vira aviso
+  var m=String(msg==null?'':msg);
+  if(m==='PLANO' || m==='Erro: PLANO' || m.indexOf('PLANO_NECESSARIO')>=0) return;
+  var t=document.getElementById('toast'); msg=m; t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
 function huntLoader(txt){ return '<div class="hunt">'+
   '<img class="hunt-boar" src="'+BOAR+'" alt="">'+
   '<svg class="hunt-mira" viewBox="0 0 120 120">'+
