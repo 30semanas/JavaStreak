@@ -613,10 +613,17 @@
     background:#fdf0d5;border:1px dashed #e8c99a;border-radius:8px;padding:7px}
   .termo-fim.ok{color:#2e8b3d;background:#e8f5e9;border-color:#b6ddb9;border-style:solid}
   .ts-box{display:flex;justify-content:center;margin:6px 0 12px;min-height:66px}
-  .desafio{display:flex;align-items:center;gap:10px;background:#f3ede3;border:1px solid var(--linha);
-    border-radius:12px;padding:10px 12px;margin-bottom:12px}
-  .desafio span{font-weight:700;font-size:14px;color:var(--txt)}
-  .desafio input{width:70px;margin:0;text-align:center;font-size:16px;font-weight:700}
+  .cap-clique{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #d6d0c4;
+    border-radius:12px;padding:14px 16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,background .15s;
+    box-shadow:0 1px 3px rgba(20,30,20,.08)}
+  .cap-clique:hover{border-color:var(--laranja);background:#fffaf7}
+  .cap-check{width:24px;height:24px;border:2px solid #b9b2a4;border-radius:5px;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;transition:all .18s}
+  .cap-clique.ok{border-color:#2e8b3d;background:#f2f9f3;cursor:default}
+  .cap-clique.ok .cap-check{background:#2e8b3d;border-color:#2e8b3d}
+  .cap-txt{flex:1;font-weight:700;font-size:14px;color:var(--txt)}
+  .cap-clique.ok .cap-txt{color:#2e8b3d}
+  .cap-marca{font-size:18px;opacity:.5}
   /* visitas e tabela de limites */
   .vis-selo{display:inline-block;background:rgba(20,30,20,.07);color:var(--txt2);font-size:11px;font-weight:700;
     padding:3px 9px;border-radius:20px;margin:4px 0 6px}
@@ -714,7 +721,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1545';
+var APP_VER = 'vJS.230726.1555';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -739,11 +746,7 @@ try { AUTH.token = localStorage.getItem('mj_token') || ''; } catch(e) {}
 function salvarToken(t){ AUTH.token=t||''; try{ t?localStorage.setItem('mj_token',t):localStorage.removeItem('mj_token'); }catch(e){} }
 
 /* >>>>>> COLE AQUI A SUA URL /exec DO APPS SCRIPT <<<<<< */
-/* ===== ENDEREÇO DA API =====
-   Ao migrar para o Supabase, troque as duas linhas abaixo:
-   API_URL  = https://SEU_REF.supabase.co/functions/v1/api
-   API_KEY  = a chave "anon"/"publishable" (pode ficar aqui, é pública)
-   Deixando API_KEY vazio, o app funciona com o Apps Script como antes. */
+/* ===== ENDEREÇO DA API ===== */
 var API_URL = 'https://olafxdwjwlubttnfvqhs.supabase.co/functions/v1/api';
 var API_KEY = 'sb_publishable_Wn_067Z_Nbg7oXjfvKHpOw_tD7pqMic';
 
@@ -990,9 +993,8 @@ var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'A
 var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
 VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
   var t=STATE.loginTipo||'manejador';
-  var alvo = /supabase\.co/.test(API_URL) ? '🟢 Supabase' : '🟡 Apps Script (antigo)';
   app('<div style="text-align:center;margin:10px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:290px"></div>'+
-    '<div style="text-align:center;font-size:11px;color:#cfc9bd;margin-bottom:6px">'+APP_VER+' · '+alvo+'</div>'+
+    '<div style="text-align:center;font-size:11px;color:#cfc9bd;margin-bottom:6px">'+APP_VER+'</div>'+
     '<div class="segbar"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">🌿 Manejador</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">🏪 Empresa</button></div>'+
     '<div class="card"><h3 style="margin-bottom:2px">Entrar '+(t==='empresa'?'como empresa':'como manejador')+'</h3>'+
     '<div class="meta" style="margin-bottom:6px">Acesse com seu login e senha.</div>'+
@@ -1343,9 +1345,20 @@ window.checouTermo=function(el){
   } };
 function blocoDesafio(){
   return '<label>Verificação de segurança *</label><div id="capBox">'+
-    '<div class="desafio"><span id="dsPergunta">Carregando…</span>'+
-    '<input id="f_desafio" inputmode="numeric" placeholder="?" maxlength="4">'+
-    '<button type="button" class="ib" onclick="carregarDesafio()" title="Outra pergunta">🔄</button></div></div>'; }
+    '<div class="cap-clique" id="capClique" onclick="marcarNaoRobo()">'+
+    '<span class="cap-check" id="capCheck"></span>'+
+    '<span class="cap-txt" id="capTxt">Não sou um robô</span>'+
+    '<span class="cap-marca">🛡️</span></div></div>'; }
+var CAPTCHA_CLICADO=false;
+window.marcarNaoRobo=function(){
+  if(CAPTCHA_CLICADO || !DESAFIO) return;
+  var d=Date.now()-(DESAFIO.emitido||0);
+  if(d<1200){ setTimeout(window.marcarNaoRobo, 1200-d); return; }
+  CAPTCHA_CLICADO=true;
+  var c=document.getElementById('capClique'); if(c) c.className='cap-clique ok';
+  var k=document.getElementById('capCheck'); if(k) k.textContent='✓';
+  var t=document.getElementById('capTxt'); if(t) t.textContent='Verificado';
+};
 var CAPTCHA_TOKEN='', CAPTCHA_MODO='conta';
 function carregarDesafio(){
   server('apiTermo').then(function(t){ var b=document.getElementById('termoBox');
@@ -1356,11 +1369,10 @@ function carregarDesafio(){
   server('apiCaptchaConfig').then(function(c){
     CAPTCHA_MODO=c.modo;
     if(c.modo==='turnstile'){ montarTurnstile(c.siteKey); }
-    else { server('apiDesafio').then(function(d){ DESAFIO=d;
-      var p=document.getElementById('dsPergunta'); if(p) p.textContent=d.pergunta;
-      var i=document.getElementById('f_desafio'); if(i) i.value=''; }).catch(function(){}); }
+    else { server('apiDesafio').then(function(d){ DESAFIO=d; CAPTCHA_CLICADO=false;
+      var t=document.getElementById('capTxt'); if(t) t.textContent=d.texto||'Não sou um robô'; }).catch(function(){}); }
   }).catch(function(){
-    server('apiDesafio').then(function(d){ DESAFIO=d; var p=document.getElementById('dsPergunta'); if(p) p.textContent=d.pergunta; }).catch(function(){});
+    server('apiDesafio').then(function(d){ DESAFIO=d; CAPTCHA_CLICADO=false; }).catch(function(){});
   });
 }
 function montarTurnstile(siteKey){
@@ -1378,7 +1390,7 @@ function validaComum(){
   var ac=document.getElementById('f_aceite');
   if(!ac || !ac.checked){ toast('Role e aceite os termos de uso para continuar'); return false; }
   if(CAPTCHA_MODO==='turnstile'){ if(!CAPTCHA_TOKEN){ toast('Confirme a verificação de segurança'); return false; } }
-  else if(!val('f_desafio')){ toast('Responda a verificação de segurança'); return false; }
+  else if(!CAPTCHA_CLICADO){ toast('Marque "Não sou um robô" para continuar'); return false; }
   return true; }
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
@@ -1393,7 +1405,7 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
     telefone:telCompleto('f_tel'),whatsapp:telCompleto('f_wa'),
     endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),
     aceiteTermo:true, versaoTermo:TERMO_VERSAO,
-    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioResp:val('f_desafio')})
+    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioEmitido:DESAFIO&&DESAFIO.emitido})
   .then(function(r){ aplicarAuth(r); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; carregarDesafio(); }); };
 VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb('Criar conta','Empresa');
@@ -1432,7 +1444,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
     cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),
     instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto'),
     aceiteTermo:true, versaoTermo:TERMO_VERSAO,
-    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioResp:val('f_desafio')})
+    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioEmitido:DESAFIO&&DESAFIO.emitido})
   .then(function(r){ aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; carregarDesafio(); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
