@@ -500,6 +500,14 @@
   .trof .rk-on{position:absolute;bottom:52px;left:6px;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px}
 
   /* etiqueta do plano ao lado do nome */
+.sb-planos{display:block;width:calc(100% - 24px);margin:10px 12px 4px;padding:11px;cursor:pointer;
+    border-radius:12px;border:1px solid rgba(232,85,43,.55);
+    background:linear-gradient(135deg,rgba(232,85,43,.22),rgba(232,85,43,.06));backdrop-filter:blur(4px);
+    color:#ffd9c6;font-weight:800;font-size:13px;letter-spacing:.4px;text-transform:uppercase;
+    transition:background .15s,border-color .15s}
+  .sb-planos:hover{background:linear-gradient(135deg,rgba(232,85,43,.45),rgba(232,85,43,.18));border-color:var(--laranja);color:#fff}
+  .sb-planos.pago{background:linear-gradient(135deg,var(--laranja),#c8431f);border-color:transparent;color:#fff;
+    box-shadow:0 4px 14px rgba(232,85,43,.35)}
   .sb-nome{display:block}
   .sb-plano-inline{display:inline-block;margin-top:5px;padding:3px 10px;border-radius:20px;cursor:pointer;
     font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
@@ -559,6 +567,9 @@
     background:rgba(20,30,20,.05);border-radius:12px}
   .pl-rodape{text-align:center;font-size:12.5px;color:#e6e0d5;margin-top:18px;text-shadow:0 1px 6px rgba(0,0,0,.5)}
   @media(max-width:700px){ .plano{padding:20px 17px} .plano-preco{font-size:30px} }
+.tel-linha{display:flex;gap:8px}
+  .tel-linha select{flex:none;width:120px;margin:0}
+  .tel-linha input{flex:1;margin:0}
   .prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--linha)}
   .prow:last-of-type{border-bottom:none}
   .prow b{font-size:14px}
@@ -573,6 +584,7 @@
   <aside id="sidebar">
     <div class="sb-brand"><img src="" id="sbLogo" alt="JavaStreak"></div>
     <div class="sb-user" id="sbUser"></div>
+    <button class="sb-planos" id="sbPlanosBtn" onclick="go('planos')">✨ <span id="sbPlanoTxt">Planos</span></button>
     <nav id="sbNav"></nav>
     <button class="sb-sair" onclick="logout()">Sair</button>
     <div class="sb-ver" id="sbVer"></div>
@@ -642,7 +654,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v27-layout';
+var APP_VER = 'v29-documentos';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -744,6 +756,7 @@ var NAV_MANEJADOR=[
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
   {v:'abates',    label:'Abate',             icon:'abate'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
+  {v:'documentacao',label:'Documentação',    emoji:'📋'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'trofeus',   label:'Sala de troféu',    icon:'trofeus'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
@@ -787,7 +800,6 @@ function buildTopNav(root, tipo){
     return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
   }).join('');
   html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">Rede</span></div>';
-  html += '<div class="tn-item tn-planos'+(root==='planos'?' active':'')+'" onclick="go(\'planos\')" title="Planos e assinatura"><span class="emoji">✨</span><span class="lbl">Planos</span></div>';
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
@@ -922,9 +934,10 @@ VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.em
     '<div class="segbar"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">🌿 Manejador</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">🏪 Empresa</button></div>'+
     '<div class="card"><h3 style="margin-bottom:2px">Entrar '+(t==='empresa'?'como empresa':'como manejador')+'</h3>'+
     '<div class="meta" style="margin-bottom:6px">Acesse com seu login e senha.</div>'+
-    '<label>Login</label><input id="l_login" autocomplete="username" placeholder="usuário ou e-mail">'+
+    '<label>E-mail</label><input id="l_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<label>Senha</label><input id="l_senha" type="password" autocomplete="current-password" placeholder="••••••">'+
-    '<button class="btn" onclick="fazerLogin(this)">Entrar</button></div>'+
+    '<button class="btn" onclick="fazerLogin(this)">Entrar</button>'+
+    '<div style="text-align:center;margin-top:10px"><button class="lnk-den" style="font-size:13px;color:var(--laranja-esc)" onclick="go(\'esqueci\')">Esqueci minha senha</button></div></div>'+
     '<div class="card click" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')" style="text-align:center"><div class="meta">Ainda não tem conta? <b style="color:var(--verde)">Criar conta de '+(t==='empresa'?'empresa':'manejador')+'</b></div></div>');
   var s=document.getElementById('l_senha'); if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
 };
@@ -934,6 +947,160 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
+
+/* ================= MÁSCARAS ================= */
+var PAISES=[
+ {c:'55', nome:'Brasil', flag:'🇧🇷', mask:'(00) 00000-0000'},
+ {c:'351',nome:'Portugal',flag:'🇵🇹', mask:'000 000 000'},
+ {c:'1',  nome:'EUA/Canadá',flag:'🇺🇸', mask:'(000) 000-0000'},
+ {c:'54', nome:'Argentina',flag:'🇦🇷', mask:'(00) 0000-0000'},
+ {c:'595',nome:'Paraguai',flag:'🇵🇾', mask:'(000) 000-000'},
+ {c:'598',nome:'Uruguai',flag:'🇺🇾', mask:'(00) 000-000'},
+ {c:'591',nome:'Bolívia',flag:'🇧🇴', mask:'000-00000'},
+ {c:'0',  nome:'Outro país',flag:'🌐', mask:''}
+];
+function soDig(v){ return String(v||'').replace(/\D/g,''); }
+function aplicaMask(v, mask){ if(!mask) return soDig(v);
+  var d=soDig(v), out='', i=0;
+  for(var k=0;k<mask.length && i<d.length;k++){
+    if(mask[k]==='0'){ out+=d[i++]; } else { out+=mask[k]; }
+  }
+  return out; }
+function maskCPF(v){ return aplicaMask(v,'000.000.000-00'); }
+window.mCPF=function(el){ var p=el.selectionStart, antes=el.value.length;
+  el.value=maskCPF(el.value); el.setSelectionRange(p+(el.value.length-antes),p+(el.value.length-antes)); };
+window.mTel=function(el){ var sel=document.getElementById(el.dataset.pais||'');
+  var cod=sel?sel.value:'55';
+  var p=PAISES.filter(function(x){return x.c===cod;})[0]||PAISES[0];
+  var antes=el.value.length, pos=el.selectionStart;
+  el.value=aplicaMask(el.value,p.mask);
+  try{ el.setSelectionRange(pos+(el.value.length-antes),pos+(el.value.length-antes)); }catch(e){} };
+window.mudouPais=function(idSel,idTel){ var el=document.getElementById(idTel); if(el){ el.value=''; el.placeholder=(PAISES.filter(function(x){return x.c===document.getElementById(idSel).value;})[0]||PAISES[0]).mask||'número'; } };
+function campoTel(id,label,valor,obrig){
+  var sid=id+'_pais';
+  return '<label>'+label+(obrig?' *':'')+'</label><div class="tel-linha">'+
+    '<select id="'+sid+'" onchange="mudouPais(\''+sid+'\',\''+id+'\')">'+
+      PAISES.map(function(p){ return '<option value="'+p.c+'"'+(p.c==='55'?' selected':'')+'>'+p.flag+' +'+(p.c==='0'?'':p.c)+'</option>'; }).join('')+
+    '</select>'+
+    '<input id="'+id+'" data-pais="'+sid+'" inputmode="tel" placeholder="(00) 00000-0000" value="'+esc(valor||'')+'" oninput="mTel(this)"></div>'; }
+function telCompleto(id){ var sel=document.getElementById(id+'_pais'); var cod=sel?sel.value:'55';
+  var n=soDig(val(id)); if(!n) return ''; return (cod&&cod!=='0'?'+'+cod+' ':'')+val(id); }
+
+/* ================= DOCUMENTAÇÃO ================= */
+var DOCTIPOS=null, DOCCAT='acervo', DOCLISTA=[], PROPS=[], TRANSPS=[];
+var DOC_ROTULO={acervo:'Acervo',veiculo:'Veículos',pessoal:'Pessoal',propriedade:'Propriedade'};
+var DOC_ICONE={acervo:'🔫',veiculo:'🚗',pessoal:'👤',propriedade:'🏞️'};
+VIEWS.documentacao=function(){ setTitulo('Documentação'); setCrumb('Documentação'); loadingBox('Carregando…');
+  Promise.all([
+    DOCTIPOS?Promise.resolve(DOCTIPOS):server('apiTiposDocumento'),
+    server('apiListarDocumentos'),
+    server('apiListarPropriedades').catch(function(){return [];}),
+    server('apiListarTransportes').catch(function(){return [];})
+  ]).then(function(res){
+    DOCTIPOS=res[0]; DOCLISTA=res[1]||[]; PROPS=res[2]||[]; TRANSPS=res[3]||[];
+    pintarDocs();
+  }); };
+function pintarDocs(){
+  var abas='<div class="doc-abas">'+Object.keys(DOC_ROTULO).map(function(c){
+    var n=DOCLISTA.filter(function(d){return String(d.categoria)===c;}).length;
+    return '<button class="'+(DOCCAT===c?'on':'')+'" onclick="mudarDocCat(\''+c+'\')">'+DOC_ICONE[c]+' '+DOC_ROTULO[c]+(n?' <b>'+n+'</b>':'')+'</button>';
+  }).join('')+'</div>';
+  var corpo = (DOCCAT==='propriedade') ? corpoPropriedades() : corpoDocumentos(DOCCAT);
+  app(heroFoto('documentacao','Documentação','Guarde seus documentos e acompanhe os vencimentos. Tudo entra na agenda.','Documentos')+abas+corpo);
+}
+window.mudarDocCat=function(c){ DOCCAT=c; pintarDocs(); };
+function statusVenc(v){ if(!v) return '';
+  var d=new Date(v); if(isNaN(d)) return '';
+  var dias=Math.ceil((d-new Date())/86400000);
+  if(dias<0) return '<span class="doc-tag venc">vencido há '+Math.abs(dias)+'d</span>';
+  if(dias<=30) return '<span class="doc-tag perto">vence em '+dias+'d</span>';
+  return '<span class="doc-tag ok">válido</span>'; }
+function corpoDocumentos(cat){
+  var l=DOCLISTA.filter(function(d){return String(d.categoria)===cat;});
+  var linhas = l.length ? l.map(function(d){
+    var extra='';
+    if(cat==='veiculo'&&d.transporteId){ var t=TRANSPS.filter(function(x){return x.id===d.transporteId;})[0];
+      if(t) extra='<div class="meta">🚗 '+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</div>'; }
+    return '<div class="doc-linha"><div class="grow"><b>'+esc(d.tipo)+'</b> '+statusVenc(d.vencimento)+
+      '<div class="meta">'+(d.numero?'nº '+esc(d.numero):'sem número')+
+      (d.emissao?' · emitido '+fmtData(d.emissao):'')+(d.vencimento?' · vence '+fmtData(d.vencimento):' · sem vencimento')+'</div>'+extra+
+      (d.obs?'<div class="meta">'+esc(d.obs)+'</div>':'')+'</div>'+
+      '<button class="ib" onclick="editarDoc(\''+d.id+'\')" title="Editar">✏️</button>'+
+      '<button class="ib" onclick="excluirDoc(\''+d.id+'\')" title="Excluir">🗑️</button></div>';
+  }).join('') : '<div class="meta" style="padding:14px 0">Nenhum documento cadastrado nesta seção.</div>';
+  var aviso = (cat==='veiculo'&&!TRANSPS.length) ? '<div class="meta" style="margin-bottom:10px">Cadastre um veículo em <b>Rotas de manejo → Meio de transporte</b> para vincular documentos.</div>' : '';
+  return '<div class="card">'+aviso+linhas+
+    '<button class="btn" style="margin-top:12px" onclick="novoDoc()">＋ Adicionar documento</button></div>';
+}
+function corpoPropriedades(){
+  var linhas = PROPS.length ? PROPS.map(function(p){
+    return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
+      '<div class="meta">'+(p.dono?'Proprietário: '+esc(p.dono):'sem proprietário')+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
+      '<div class="meta">'+(p.autorizacaoNum?'Autorização nº '+esc(p.autorizacaoNum):'sem autorização')+(p.autorizacaoValidade?' · válida até '+fmtData(p.autorizacaoValidade):'')+'</div>'+
+      (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
+      '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar">✏️</button>'+
+      '<button class="ib" onclick="excluirProp(\''+p.id+'\')" title="Excluir">🗑️</button></div>';
+  }).join('') : '<div class="meta" style="padding:14px 0">Nenhuma propriedade cadastrada.</div>';
+  return '<div class="card">'+linhas+
+    '<button class="btn" style="margin-top:12px" onclick="novaProp()">＋ Adicionar propriedade</button></div>';
+}
+/* ---- formulário de documento ---- */
+var DOCEDIT=null;
+window.novoDoc=function(){ DOCEDIT=null; nav('docForm'); };
+window.editarDoc=function(id){ DOCEDIT=DOCLISTA.filter(function(d){return d.id===id;})[0]||null; nav('docForm'); };
+VIEWS.docForm=function(){ var d=DOCEDIT||{}, cat=DOCCAT;
+  setTitulo(DOCEDIT?'Editar documento':'Novo documento'); setCrumb('Documentação',DOC_ROTULO[cat]);
+  var tipos=(DOCTIPOS&&DOCTIPOS[cat])||[];
+  var vinc='';
+  if(cat==='veiculo'){ vinc='<label>Veículo / embarcação</label><select id="dc_transp"><option value="">— nenhum —</option>'+
+    TRANSPS.map(function(t){ return '<option value="'+t.id+'"'+(d.transporteId===t.id?' selected':'')+'>'+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</option>'; }).join('')+'</select>'; }
+  app('<div class="card">'+
+    '<label>Tipo de documento *</label><select id="dc_tipo">'+tipos.map(function(t){ return '<option'+(d.tipo===t?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+'</select>'+
+    vinc+
+    '<label>Número / registro</label><input id="dc_num" value="'+esc(d.numero||'')+'">'+
+    '<div class="two"><div><label>Emissão</label><input id="dc_emi" type="date" value="'+esc((d.emissao||'').slice(0,10))+'"></div>'+
+    '<div><label>Vencimento</label><input id="dc_venc" type="date" value="'+esc((d.vencimento||'').slice(0,10))+'"></div></div>'+
+    '<div class="meta" style="margin:-4px 0 8px">Com vencimento preenchido, o documento aparece na sua Agenda.</div>'+
+    '<label>Observações</label><textarea id="dc_obs">'+esc(d.obs||'')+'</textarea>'+
+    '<button class="btn" onclick="salvarDoc(this)">'+(DOCEDIT?'Salvar alterações':'Adicionar')+'</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
+window.salvarDoc=function(btn){ if(!val('dc_tipo')){toast('Selecione o tipo');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  var d={categoria:DOCCAT,tipo:val('dc_tipo'),numero:val('dc_num'),emissao:val('dc_emi'),
+    vencimento:val('dc_venc'),obs:val('dc_obs'),transporteId:val('dc_transp')||''};
+  if(DOCEDIT) d.id=DOCEDIT.id;
+  server('apiSalvarDocumento',d).then(function(){ toast('Documento salvo ✔'); DOCEDIT=null; STATE.stack=['documentacao']; render(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
+window.excluirDoc=function(id){ if(!confirm('Excluir este documento?'))return;
+  server('apiExcluirDocumento',id).then(function(){ toast('Excluído'); render(); }); };
+/* ---- formulário de propriedade ---- */
+var PROPEDIT=null;
+window.novaProp=function(){ PROPEDIT=null; nav('propForm'); };
+window.editarProp=function(id){ PROPEDIT=PROPS.filter(function(p){return p.id===id;})[0]||null; nav('propForm'); };
+VIEWS.propForm=function(){ var p=PROPEDIT||{};
+  setTitulo(PROPEDIT?'Editar propriedade':'Nova propriedade'); setCrumb('Documentação','Propriedade');
+  app('<div class="card">'+
+    '<label>Nome da propriedade *</label><input id="pr_nome" value="'+esc(p.nome||'')+'" placeholder="Ex: Fazenda Boa Vista">'+
+    '<label>Proprietário</label><input id="pr_dono" value="'+esc(p.dono||'')+'" placeholder="Nome do dono">'+
+    '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
+    '<label>Nº da autorização de manejo</label><input id="pr_autnum" value="'+esc(p.autorizacaoNum||'')+'">'+
+    '<label>Validade da autorização</label><input id="pr_autval" type="date" value="'+esc((p.autorizacaoValidade||'').slice(0,10))+'">'+
+    '<div class="two"><div><label>Latitude</label><input id="pr_lat" inputmode="decimal" value="'+esc(p.lat||'')+'"></div>'+
+    '<div><label>Longitude</label><input id="pr_lng" inputmode="decimal" value="'+esc(p.lng||'')+'"></div></div>'+
+    gpsButton('pr_lat','pr_lng')+
+    '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
+    '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
+window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
+    autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),
+    lat:val('pr_lat'),lng:val('pr_lng'),obs:val('pr_obs')};
+  if(PROPEDIT) d.id=PROPEDIT.id;
+  server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; STATE.stack=['documentacao']; DOCCAT='propriedade'; render(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
+window.excluirProp=function(id){ if(!confirm('Excluir esta propriedade?'))return;
+  server('apiExcluirPropriedade',id).then(function(){ toast('Excluída'); render(); }); };
 /* ================= PLANOS ================= */
 var MEUPLANO=null;
 var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',canis:'Canis',
@@ -944,12 +1111,17 @@ function carregarPlano(){ if(!AUTH.token) return;
   server('apiMeuPlano').then(function(p){ MEUPLANO=p; pintarPlano(); })
   .catch(function(e){ console.warn('Plano indisponível:', e&&e.message);
     MEUPLANO={plano:'free',nome:'Novato',ativo:true,fim:'',origem:'',limites:{},precos:{}}; pintarPlano(); }); }
-function pintarPlano(){ var el=document.getElementById('sbPlano'); if(!el||!MEUPLANO) return;
-  var livre=(MEUPLANO.plano==='free');
-  el.className='sb-plano-inline'+(livre?'':' pago');
-  el.title=(MEUPLANO.fim?'Ativo até '+fmtData(MEUPLANO.fim):'Plano '+MEUPLANO.nome);
-  el.textContent=MEUPLANO.nome;
-  el.onclick=function(){ go('planos'); }; }
+function pintarPlano(){ if(!MEUPLANO) return;
+  var el=document.getElementById('sbPlano');
+  if(el){ var livre=(MEUPLANO.plano==='free');
+    el.className='sb-plano-inline'+(livre?'':' pago');
+    el.title=(MEUPLANO.fim?'Ativo até '+fmtData(MEUPLANO.fim):'Plano '+MEUPLANO.nome);
+    el.textContent=MEUPLANO.nome; el.onclick=function(){ go('planos'); }; }
+  var b=document.getElementById('sbPlanosBtn'), t=document.getElementById('sbPlanoTxt');
+  if(b&&t){ var pago=(MEUPLANO.plano!=='free');
+    b.className='sb-planos'+(pago?' pago':'');
+    t.textContent=pago?MEUPLANO.nome:'Ver planos';
+    b.title=MEUPLANO.fim?('Ativo até '+fmtData(MEUPLANO.fim)):'Escolha seu plano'; } }
 function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
 window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
 VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
@@ -1033,35 +1205,93 @@ window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha');
 
 window.sairCadastro=function(){ STATE.stack=['login']; render(); };
 window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo; STATE.stack=[tipo==='empresa'?'registrarEmpresa':'registrar']; render(); };
+
+/* ================= RECUPERAR SENHA ================= */
+VIEWS.esqueci=function(){ setTitulo('Recuperar senha'); setCrumb('Recuperar senha');
+  app('<div class="card"><h3 style="margin:0 0 4px">Esqueceu a senha?</h3>'+
+    '<div class="meta" style="margin-bottom:10px">Informe o e-mail cadastrado. Enviaremos um código de 6 dígitos.</div>'+
+    '<label>E-mail *</label><input id="rs_email" type="email" placeholder="seu@email.com">'+
+    '<button class="btn" onclick="pedirCodigo(this)">Enviar código</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="sairCadastro()">Voltar ao login</button></div>'); };
+window.pedirCodigo=function(btn){ var e=val('rs_email');
+  if(!e||e.indexOf('@')<0){toast('Informe um e-mail válido');return;}
+  btn.disabled=true; btn.textContent='Enviando…';
+  server('apiSolicitarReset',e).then(function(){ STATE.emailReset=e; go('novaSenha'); })
+  .catch(function(x){ btn.disabled=false; btn.textContent='Enviar código'; toast((x&&x.message)||'Erro'); }); };
+VIEWS.novaSenha=function(){ setTitulo('Nova senha'); setCrumb('Recuperar senha','Nova senha');
+  app('<div class="card"><h3 style="margin:0 0 4px">Digite o código</h3>'+
+    '<div class="meta" style="margin-bottom:10px">Enviamos um código para <b>'+esc(STATE.emailReset||'')+'</b>. Ele vale por 30 minutos. Verifique também a caixa de spam.</div>'+
+    '<label>Código *</label><input id="rs_cod" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;font-size:22px;letter-spacing:6px">'+
+    '<label>Nova senha *</label><input id="rs_s1" type="password" autocomplete="new-password">'+
+    '<label>Confirmar *</label><input id="rs_s2" type="password" autocomplete="new-password">'+
+    '<button class="btn" onclick="salvarNovaSenha(this)">Redefinir senha</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="go(\'esqueci\')">Reenviar código</button></div>'); };
+window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=val('rs_s2');
+  if(!c){toast('Informe o código');return;}
+  if(!s1||s1.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(s1!==s2){toast('Senhas não conferem');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiConfirmarReset',STATE.emailReset,c,s1)
+  .then(function(){ toast('Senha alterada! Faça login.'); STATE.stack=['login']; render(); })
+  .catch(function(x){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((x&&x.message)||'Erro'); }); };
 VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Criar conta');
   app('<div class="card"><h3>Dados de acesso</h3>'+
-    '<label>Login *</label><input id="f_login" autocomplete="username" placeholder="usuário ou e-mail">'+
-    '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div>'+
+    '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
+    '<div class="meta" style="margin:-6px 0 8px">Seu e-mail será seu login e será usado para recuperar a senha.</div>'+
+    '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password"></div>'+
     '<div><label>Confirmar *</label><input id="f_senha2" type="password" autocomplete="new-password"></div></div></div>'+
     '<div class="card"><h3>Dados do manejador</h3>'+
     '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
     '<div class="two"><div><label>Data de nascimento</label><input id="f_nasc" type="date"></div>'+
     '<div><label>Sexo *</label><select id="f_sexo"><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div></div>'+
-    '<div class="two"><div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00"></div>'+
+    '<div class="two"><div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="mCPF(this)"></div>'+
     '<div><label>CR</label><input id="f_cr"></div></div>'+
-    '<div class="two"><div><label>Telefone</label><input id="f_tel" inputmode="tel"></div><div></div></div>'+
-    '<label>E-mail</label><input id="f_email" type="email">'+
+    campoTel('f_tel','Telefone')+
+    campoTel('f_wa','WhatsApp')+
     '<label>Endereço</label><textarea id="f_end"></textarea>'+
     '<div class="two"><div><label>Latitude *</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude *</label><input id="f_lng" inputmode="decimal"></div></div>'+
-    gpsButton('f_lat','f_lng')+
+    gpsButton('f_lat','f_lng')+'</div>'+
+    blocoTermo()+
+    '<div class="card">'+blocoDesafio()+
     '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button>'+
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
-    '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Quero criar conta de empresa</button></div></div>'); };
+    '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Conta de empresa</button></div></div>');
+  carregarDesafio(); };
+/* ---- termo e verificação (usados nos dois cadastros) ---- */
+var DESAFIO=null;
+function blocoTermo(){
+  return '<div class="card"><h3 style="margin:0 0 6px">Termos de uso e privacidade</h3>'+
+    '<div class="termo-box" id="termoBox">Carregando…</div>'+
+    '<label class="aceite"><input type="checkbox" id="f_aceite"> <span>Li e aceito os <b>Termos de Uso</b> e a <b>Política de Privacidade</b>, declaro ter 18 anos ou mais e possuir as autorizações legais exigidas.</span></label></div>'; }
+function blocoDesafio(){
+  return '<label>Verificação de segurança *</label><div class="desafio"><span id="dsPergunta">Carregando…</span>'+
+    '<input id="f_desafio" inputmode="numeric" placeholder="?" maxlength="4">'+
+    '<button type="button" class="ib" onclick="carregarDesafio()" title="Outra pergunta">🔄</button></div>'; }
+function carregarDesafio(){
+  server('apiTermo').then(function(t){ var b=document.getElementById('termoBox'); if(b) b.textContent=t.texto; TERMO_VERSAO=t.versao; }).catch(function(){});
+  server('apiDesafio').then(function(d){ DESAFIO=d; var p=document.getElementById('dsPergunta'); if(p) p.textContent=d.pergunta;
+    var i=document.getElementById('f_desafio'); if(i) i.value=''; }).catch(function(){}); }
+var TERMO_VERSAO='1.0';
+function validaComum(){
+  if(!document.getElementById('f_aceite').checked){ toast('É preciso aceitar os termos para continuar'); return false; }
+  if(!val('f_desafio')){ toast('Responda a verificação de segurança'); return false; }
+  return true; }
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
-  if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
-  if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome');return;}
-  if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização (lat/long) — use o GPS ou o mapa');return;}
+  if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
+  if(!senha||senha.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(senha!==senha2){toast('Senhas não conferem');return;}
+  if(!nome){toast('Informe o nome');return;}
+  if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização — use o GPS ou o mapa');return;}
+  if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
-  server('apiRegistrar',{tipo:'manejador',login:login,senha:senha,nome:nome,dataNascimento:val('f_nasc'),sexo:val('f_sexo'),cpf:val('f_cpf'),cr:val('f_cr'),telefone:val('f_tel'),email:val('f_email'),endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng')})
-  .then(function(r){ salvarToken(r.token); toast('Conta criada ✔'); aplicarAuth(r); })
-  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta e entrar'; }); };
-
-var SEGMENTOS=['Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
+  server('apiRegistrar',{tipo:'manejador',email:login,login:login,senha:senha,nome:nome,
+    dataNascimento:val('f_nasc'),sexo:val('f_sexo'),cpf:val('f_cpf'),cr:val('f_cr'),
+    telefone:telCompleto('f_tel'),whatsapp:telCompleto('f_wa'),
+    endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO,
+    desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioResp:val('f_desafio')})
+  .then(function(r){ aplicarAuth(r); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; carregarDesafio(); }); };
 VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb('Criar conta','Empresa');
   app('<div class="card"><h3>Dados de acesso</h3>'+
     '<label>Login *</label><input id="fe_login" autocomplete="username" placeholder="usuário ou e-mail">'+
@@ -1086,13 +1316,21 @@ VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb
     '<button class="btn sec" onclick="trocarCadastro(\'manejador\')">🌿 Quero criar conta de manejador</button></div></div>');
   bindFoto('fe_foto','fe_prev'); };
 window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
-  if(!login){toast('Informe um login');return;} if(!senha||senha.length<4){toast('Senha mín. 4');return;}
-  if(senha!==senha2){toast('Senhas não conferem');return;} if(!nome){toast('Informe o nome da empresa');return;}
-  if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede (lat/long)');return;}
+  if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
+  if(!senha||senha.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(senha!==senha2){toast('Senhas não conferem');return;}
+  if(!nome){toast('Informe o nome da empresa');return;}
+  if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede');return;}
+  if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
-  server('apiRegistrar',{tipo:'empresa',login:login,senha:senha,nome:nome,segmento:val('fe_seg'),descricao:val('fe_desc'),telefone:val('fe_tel'),whatsapp:val('fe_wa'),email:val('fe_email'),cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto')})
-  .then(function(r){ salvarToken(r.token); toast('Conta criada ✔'); aplicarAuth(r); })
-  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; }); };
+  server('apiRegistrar',{tipo:'empresa',email:login,login:login,senha:senha,nome:nome,segmento:val('fe_seg'),
+    descricao:val('fe_desc'),telefone:telCompleto('fe_tel'),whatsapp:telCompleto('fe_wa'),
+    cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),
+    instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto'),
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO,
+    desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioResp:val('f_desafio')})
+  .then(function(r){ aplicarAuth(r); })
+  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; carregarDesafio(); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
 
 /* ============================================================
@@ -1166,6 +1404,14 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Descri\u00e7\u00e3o</label><textarea id="cp_desc" placeholder="Ex: quem estiver em 1\u00ba lugar \u00e0s 22h do dia 30 leva o pr\u00eamio"></textarea>'+
       '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
       '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udd11 Redefinir senha de usu\u00e1rio</h3><div class="meta" style="margin-bottom:8px">Gera uma senha nova. Informe-a ao usu\u00e1rio por um canal seguro.</div>'+
+      '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
+      '<label>Nova senha (vazio = gerar autom\u00e1tica)</label><input id="rp_senha" placeholder="deixe vazio para gerar">'+
+      '<button class="btn" onclick="adminReset(this)">Redefinir senha</button><div id="rpRes" style="margin-top:10px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcdc Termos de uso e privacidade</h3><div class="meta" style="margin-bottom:8px">Texto exibido no cadastro. Ao salvar, novos usu\u00e1rios aceitam a nova vers\u00e3o.</div>'+
+      '<textarea id="tm_texto" style="min-height:260px;font-size:12px;font-family:monospace"></textarea>'+
+      '<label>Vers\u00e3o</label><input id="tm_versao" placeholder="ex: 1.1">'+
+      '<button class="btn" onclick="salvarTermoAdm(this)">Salvar termo</button></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf81 Liberar acesso (cortesia)</h3><div class="meta" style="margin-bottom:8px">D\u00ea acesso gratuito por tempo determinado \u2014 para testes ou parceiros.</div>'+
       '<label>Quem recebe</label><select id="ct_destino" onchange="mudouDestino()"><option value="login">Um usu\u00e1rio espec\u00edfico</option><option value="manejadores">Todos os manejadores</option><option value="empresas">Todas as empresas</option><option value="todos">Todos os usu\u00e1rios</option><option value="novos:7">Cadastrados nos \u00faltimos 7 dias</option><option value="novos:30">Cadastrados nos \u00faltimos 30 dias</option></select>'+
       '<div id="ct_loginBox"><label>Login do usu\u00e1rio *</label><input id="ct_login" placeholder="login cadastrado"></div>'+
@@ -1176,7 +1422,7 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
-    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarParametros(); carregarAssinaturas();
+    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarParametros(); carregarAssinaturas(); carregarTermoAdm();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 function carregarAssinaturas(){ server('apiListarAssinaturas').then(function(l){ var el=document.getElementById('ctList'); if(!el)return;
   el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div>'+l.map(function(a){
@@ -1199,6 +1445,25 @@ window.darCortesia=function(btn){ var d=val('ct_destino');
     carregarAssinaturas(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
+function carregarTermoAdm(){ server('apiTermo').then(function(t){
+  var a=document.getElementById('tm_texto'); if(a) a.value=t.texto;
+  var v=document.getElementById('tm_versao'); if(v) v.value=t.versao; }).catch(function(){}); }
+window.salvarTermoAdm=function(btn){ var t=val('tm_texto');
+  if(!t||t.length<50){toast('Texto muito curto');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiSalvarTermo',t,val('tm_versao')).then(function(r){ toast('Termo salvo (versão '+r.versao+') ✔');
+    btn.disabled=false; btn.textContent='Salvar termo'; carregarTermoAdm(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Salvar termo'; toast((e&&e.message)||'Erro'); }); };
+window.adminReset=function(btn){ var l=val('rp_login');
+  if(!l){toast('Informe o e-mail do usuário');return;}
+  if(!confirm('Redefinir a senha de '+l+'?'))return;
+  btn.disabled=true; btn.textContent='Redefinindo…';
+  server('apiAdminResetSenha',l,val('rp_senha')).then(function(r){
+    btn.disabled=false; btn.textContent='Redefinir senha';
+    var el=document.getElementById('rpRes');
+    if(el) el.innerHTML='<div class="card" style="border-left:5px solid var(--ok);margin:0"><div class="meta">Senha de <b>'+esc(r.login)+'</b> redefinida para:</div><div style="font-size:22px;font-weight:800;letter-spacing:3px;color:var(--laranja-esc);margin-top:6px">'+esc(r.senha)+'</div><div class="meta" style="margin-top:6px">Anote agora — não será exibida de novo.</div></div>';
+    setVal('rp_senha',''); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((e&&e.message)||'Erro'); }); };
 function carregarParametros(){ server('apiListarParametros').then(function(l){ var el=document.getElementById('paramBox'); if(!el)return;
   PARAMS=l||[];
   el.innerHTML = PARAMS.map(function(p){
@@ -1586,10 +1851,17 @@ window.salvarNivel=function(btn){ btn.disabled=true; btn.textContent='Salvando�
    ESPREITA / TRANSPORTES
    ============================================================ */
 var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Cavalo','A pé','Bicicleta','Caminhonete','Outro'];
+var TIPOS_MARITIMO=['Barco','Lancha','Bote','Caiaque','Canoa','Jet ski','Outra embarcação'];
+function tiposPorMeio(m){ return (m==='maritimo')?TIPOS_MARITIMO:TIPOS_TRANSP; }
+window.mudouMeio=function(){ var m=val('t_meio'); var s=document.getElementById('t_tipo'); if(!s)return;
+  s.innerHTML=tiposPorMeio(m).map(function(t){return '<option>'+t+'</option>';}).join(''); };
 function iconeTransp(t){ var m={'Carro':'🚗','Moto':'🏍️','Quadriciclo':'🛺','Cavalo':'🐎','A pé':'🚶','Bicicleta':'🚲','Caminhonete':'🛻'}; return m[t]||'🧭'; }
 VIEWS.espreita=function(){ setTitulo('Rotas de manejo'); setCrumb('Rotas de manejo');
-  app(moduloCard('🚗','Meio de transporte','Carros, motos, cavalos… saúde e manutenção',true,"nav('transportes')")+
-      moduloCard('🧭','Rotas','Gravar trajetos por GPS e usar como guia',true,"nav('rotas')")); };
+  app(moduloCard('🚗','Meio de transporte','Veículos, cavalos e embarcações',true,"nav('transportes')")+
+      moduloCard('🧭','Rotas de manejo','Trajetos por GPS em terra',true,"abrirRotas('manejo')")+
+      moduloCard('🎣','Rotas de pesca','Trajetos com embarcação',true,"abrirRotas('pesca')")); };
+window.abrirRotas=function(mod){ STATE.modalidade=mod||'manejo'; nav('rotas'); };
+function modalidadeAtual(){ return STATE.modalidade||'manejo'; }
 VIEWS.transportes=function(){ setTitulo('Meio de transporte'); setCrumb('Rotas de manejo','Transporte'); loadingBox();
   server('apiListarTransportes').then(function(l){ CACHE.transporte=l;
     var html=l.length? l.map(function(t){ return '<div class="card"><div class="row">'+
@@ -1664,7 +1936,12 @@ window.salvarDocVeiculo=function(btn){ btn.disabled=true; btn.textContent='Salva
   server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Documentação salva ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
 
 VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'Novo transporte'); setCrumb('Rotas de manejo',ed?'Editar':'Novo');
-  app('<div class="card"><label>Tipo *</label><select id="t_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+  var meioAt=(EDIT&&EDIT.meio)||'terrestre';
+  app('<div class="card"><label>Categoria *</label><select id="t_meio" onchange="mudouMeio()">'+
+    '<option value="terrestre"'+(meioAt!=='maritimo'?' selected':'')+'>🚗 Terrestre / montaria</option>'+
+    '<option value="maritimo"'+(meioAt==='maritimo'?' selected':'')+'>⛵ Embarcação (marítimo)</option></select>'+
+    '<div class="meta" style="margin:-6px 0 8px">Embarcações ficam disponíveis nas rotas de pesca.</div>'+
+    '<label>Tipo *</label><select id="t_tipo">'+tiposPorMeio(meioAt).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Identificação / apelido</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="Ex: Cavalo Trovão / Placa">'+
     '<label>Observações</label><textarea id="t_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'')+'</label>'+
@@ -1673,7 +1950,7 @@ VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'No
     '<button class="btn" onclick="salvarTransp(this)">'+(ed?'Salvar alterações':'Salvar transporte')+'</button></div>');
   if(ed) setVal('t_tipo',EDIT.tipo); bindFoto('t_foto','t_prev'); };
 window.salvarTransp=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
-  var base={tipo:val('t_tipo'),identificacao:val('t_id'),obs:val('t_obs'),foto:fotoData('t_foto')};
+  var base={tipo:val('t_tipo'),identificacao:val('t_id'),obs:val('t_obs'),meio:val('t_meio'),foto:fotoData('t_foto')};
   if(EDIT){ server('apiEditar','transporte',EDIT.id,base).then(function(){ EDIT=null; toast('Salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
   else { server('apiCriarTransporte',base).then(function(){ toast('Transporte cadastrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar transporte'; }); } };
 
@@ -1698,8 +1975,10 @@ var TIPOS_MARCA=[ ['Abate','🐗'], ['Referência','📍'], ['Aviso','⚠️'], 
 function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][0]===t) return TIPOS_MARCA[i][1]; return '📌'; }
 var LASTPOS=null, MARKCTX=null, MARKPOS=null;
 
-VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Rotas de manejo','Rotas'); loadingBox();
-  Promise.all([server('apiListarRotas'), server('apiRotasCompartilhadasComigo').catch(function(){return [];})]).then(function(res){ var l=res[0]||[], comp=res[1]||[]; CACHE.rota=l.concat(comp);
+VIEWS.rotas=function(){ var mod=modalidadeAtual(); var ehPesca=(mod==='pesca');
+  setTitulo(ehPesca?'Rotas de pesca':'Rotas de manejo'); setCrumb('Rotas de manejo',ehPesca?'Pesca':'Manejo'); loadingBox();
+  Promise.all([server('apiListarRotas'), server('apiRotasCompartilhadasComigo').catch(function(){return [];})]).then(function(res){ var todas=res[0]||[], comp=res[1]||[]; CACHE.rota=todas.concat(comp);
+    var l=todas.filter(function(r){ return String(r.modalidade||'manejo')===mod; });
     l.sort(function(a,b){return String(b.dataCadastro).localeCompare(String(a.dataCadastro));});
     var banner = ROTA_REC.ativo ? '<div class="card" style="border-left:5px solid var(--danger)"><h3 style="margin:0 0 4px">● Gravação em andamento</h3><div class="meta">'+esc(ROTA_REC.nome||'')+' · '+((ROTA_REC.pontos||[]).length)+' pontos</div><button class="btn sm" style="margin-top:8px" onclick="nav(\'rotaGravar\')">Retomar gravação</button></div>' : '';
     var minhas = l.length? l.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+'</h3>'+
@@ -1707,7 +1986,7 @@ VIEWS.rotas=function(){ setTitulo('Rotas'); setCrumb('Rotas de manejo','Rotas');
       '<button class="btn sm" style="margin-top:8px;width:auto" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar</button> <button class="btn sm sec" style="margin-top:8px;width:auto" onclick="compartilhar(\''+r.id+'\')">🔗 Compartilhar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
       : '<div class="empty"><div class="big">🧭</div>Nenhuma rota gravada ainda.<br>Toque em <b>Gravar nova rota</b>.</div>';
     var compHtml = comp.length? '<h3 style="margin:16px 4px 6px">🤝 Compartilhadas comigo</h3>'+comp.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="guiarRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+' <span class="pill '+(r.permissao==='editar'?'ok':'gray')+'">'+(r.permissao==='editar'?'Editar':'Seguir')+'</span></h3><div class="meta">de '+esc(r.donoNome||'manejador')+' · '+((r.pontos||[]).length)+' pts GPS</div></div><div class="chev">›</div></div><button class="btn sm" style="margin-top:8px;width:auto;background:linear-gradient(#3a5a34,#2e4d2e)" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar / seguir rota</button></div>'; }).join('') : '';
-    app(banner+minhas+compHtml); fab('<button class="btn" onclick="nav(\'rotaForm\')">＋ Gravar nova rota</button>'); }); };
+    app(banner+minhas+compHtml); fab('<button class="btn" onclick="nav(\'rotaForm\')">＋ Gravar nova '+(ehPesca?'rota de pesca':'rota')+'</button>'); }); };
 window.compartilhar=function(id){ STATE.shareRotaId=id; nav('compartilharRota'); };
 VIEWS.compartilharRota=function(){ var id=STATE.shareRotaId; var r=(CACHE.rota||[]).filter(function(x){return x.id===id;})[0]||{}; setTitulo('Compartilhar rota'); setCrumb('Rotas','Compartilhar');
   app('<div class="card"><h3 style="margin:0 0 4px">🔗 '+esc(r.nome||'Rota')+'</h3><div class="meta">Compartilhe com outro manejador informando o <b>login</b> dele.</div>'+
@@ -1722,18 +2001,29 @@ window.enviarCompart=function(btn){ var login=val('sh_login'); if(!login){toast(
   server('apiCompartilharRota',STATE.shareRotaId,login,val('sh_perm')).then(function(r){ toast('Compartilhada com '+(r.nome||login)+' ✔'); document.getElementById('sh_login').value=''; btn.disabled=false; btn.textContent='Compartilhar'; carregarShares(STATE.shareRotaId); }).catch(function(e){ btn.disabled=false; btn.textContent='Compartilhar'; toast((e&&e.message)||'Erro ao compartilhar'); }); };
 window.revogarShare=function(sid,rid){ server('apiRevogarCompart',sid).then(function(){ toast('Acesso removido'); carregarShares(rid); }); };
 
-VIEWS.rotaForm=function(){ setTitulo('Nova rota'); setCrumb('Rotas','Nova');
-  app('<div class="card"><label>Nome da rota *</label><input id="ro_nome" placeholder="Ex: Contorno da mata">'+
-    '<label>Propriedade</label><input id="ro_prop" placeholder="Nome da propriedade/fazenda">'+
-    '<label>Tipo de transporte</label><select id="ro_tipo">'+TIPOS_TRANSP.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+VIEWS.rotaForm=function(){ var ehPesca=(modalidadeAtual()==='pesca');
+  setTitulo(ehPesca?'Nova rota de pesca':'Nova rota'); setCrumb('Rotas','Nova');
+  app('<div class="card"><label>Nome da rota *</label><input id="ro_nome" placeholder="'+(ehPesca?'Ex: Ponto do remanso':'Ex: Contorno da mata')+'">'+
+    '<label>Propriedade</label><select id="ro_propId"><option value="">— selecione (opcional) —</option></select>'+
+    '<label>'+(ehPesca?'Embarcação':'Tipo de transporte')+'</label><select id="ro_transp"><option value="">— selecione —</option></select>'+
+    (ehPesca?'<div class="meta" style="margin:-6px 0 8px">Somente embarcações cadastradas em Meio de transporte.</div>':'')+
     '<div class="meta" style="margin:12px 0 4px"><b>Como criar a rota?</b></div>'+
     '<button class="btn" onclick="comecarGravacao(this)">▶️ Gravar andando (GPS)</button>'+
     '<div class="meta" style="margin:4px 0 8px;font-size:12px">Mantenha o app aberto e o GPS ligado — ele registra sua posição enquanto você percorre o caminho.</div>'+
     '<button class="btn sec" onclick="comecarDesenho(this)">🗺️ Marcar no mapa (clicando)</button>'+
-    '<div class="meta" style="margin:4px 0 0;font-size:12px">Abra um mapa e toque/clique nos pontos para desenhar o trajeto — sem precisar estar no local.</div></div>'); };
+    '<div class="meta" style="margin:4px 0 0;font-size:12px">Abra um mapa e toque/clique nos pontos para desenhar o trajeto — sem precisar estar no local.</div></div>');
+  carregarSelectsRota(ehPesca); };
+function carregarSelectsRota(ehPesca){
+  server('apiListarPropriedades').then(function(l){ var s=document.getElementById('ro_propId'); if(!s)return;
+    s.innerHTML='<option value="">— selecione (opcional) —</option>'+(l||[]).map(function(p){ return '<option value="'+p.id+'">'+esc(p.nome)+'</option>'; }).join(''); }).catch(function(){});
+  server('apiListarTransportes').then(function(l){ var s=document.getElementById('ro_transp'); if(!s)return;
+    var f=(l||[]).filter(function(t){ var m=String(t.meio||'terrestre'); return ehPesca ? m==='maritimo' : m!=='maritimo'; });
+    s.innerHTML='<option value="">— selecione —</option>'+f.map(function(t){ return '<option value="'+esc(t.tipo+(t.identificacao?' - '+t.identificacao:''))+'">'+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</option>'; }).join('')+
+      (f.length?'':'<option value="" disabled>'+(ehPesca?'Cadastre uma embarcação primeiro':'Cadastre um transporte primeiro')+'</option>'); }).catch(function(){});
+}
 window.comecarGravacao=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
   if(!navigator.geolocation){ toast('GPS não suportado neste aparelho'); return; }
-  ROTA_REC={ ativo:true, nome:nome, propriedade:val('ro_prop'), tipoTransporte:val('ro_tipo'), pontos:[], distancia:0, inicio:Date.now() };
+  ROTA_REC={ ativo:true, nome:nome, propriedadeId:val('ro_propId'), tipoTransporte:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[], distancia:0, inicio:Date.now() };
   STATE.stack=['espreita','rotas','rotaGravar']; render(); };
 
 VIEWS.rotaGravar=function(){ if(!ROTA_REC.ativo){ STATE.stack=['espreita','rotas']; render(); return; }
@@ -1775,8 +2065,8 @@ window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota 
   if(GEOWATCH!=null){ try{navigator.geolocation.clearWatch(GEOWATCH);}catch(e){} GEOWATCH=null; }
   btn.disabled=true; btn.textContent='Salvando…';
   var pend=ROTA_REC.marcacoes||[];
-  server('apiCriarRota',{ nome:ROTA_REC.nome, propriedade:ROTA_REC.propriedade, tipoTransporte:ROTA_REC.tipoTransporte,
-    pontos:simplificar(ROTA_REC.pontos,800), distancia:Math.round(ROTA_REC.distancia||0) })
+  server('apiCriarRota',{ nome:ROTA_REC.nome, propriedadeId:ROTA_REC.propriedadeId, tipoTransporte:ROTA_REC.tipoTransporte,
+    modalidade:ROTA_REC.modalidade, pontos:simplificar(ROTA_REC.pontos,800), distancia:Math.round(ROTA_REC.distancia||0) })
   .then(function(rota){
     if(!pend.length) return null;
     return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
@@ -1879,7 +2169,7 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
 /* ----- Rota desenhada manualmente (clicando no mapa) ----- */
 var DRAW=null;
 window.comecarDesenho=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
-  DRAW={ nome:nome, propriedade:val('ro_prop'), tipo:val('ro_tipo'), pontos:[] };
+  DRAW={ nome:nome, propriedadeId:val('ro_propId'), tipo:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[] };
   STATE.stack=['espreita','rotas','rotaDesenhar']; render(); };
 VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; render(); return; }
   if(!DRAW.marcacoes) DRAW.marcacoes=[]; if(!DRAW.modo) DRAW.modo='traco';
@@ -1921,7 +2211,7 @@ window.desenhoLimpar=function(){ if(DRAW){ DRAW.pontos=[]; redrawDesenho(); } };
 window.salvarDesenho=function(btn){ if(!DRAW||DRAW.pontos.length<2){ toast('Marque ao menos 2 pontos no traçado'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
   var pend=DRAW.marcacoes||[];
-  server('apiCriarRota',{ nome:DRAW.nome, propriedade:DRAW.propriedade, tipoTransporte:DRAW.tipo, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
+  server('apiCriarRota',{ nome:DRAW.nome, propriedadeId:DRAW.propriedadeId, tipoTransporte:DRAW.tipo, modalidade:DRAW.modalidade, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
   .then(function(rota){
     if(!pend.length) return null;
     return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
@@ -2040,11 +2330,14 @@ VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadi
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
-  Promise.all([ server('apiListarCevas'), server('apiListarTransportes'), server('apiListarArmadilhas'), server('apiListarTodosCaes'), server('apiListarCanis'), server('apiListarRotas') ])
-  .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3]; ABATEOPTS.canis=res[4]; ABATEOPTS.rotas=res[5];
+  Promise.all([ server('apiListarCevas'), server('apiListarTransportes'), server('apiListarArmadilhas'), server('apiListarTodosCaes'), server('apiListarCanis'), server('apiListarRotas'), server('apiListarPropriedades').catch(function(){return [];}) ])
+  .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3]; ABATEOPTS.canis=res[4]; ABATEOPTS.rotas=res[5]; ABATEOPTS.props=res[6];
     app('<div class="card"><label>Tipo de manejo *</label><select id="ab_tipo" onchange="renderAbateCtx()">'+
         TIPOS_MANEJO.map(function(t){return '<option value="'+t+'">'+rotuloManejo(t)+'</option>';}).join('')+'</select>'+
         '<div id="abateCtx"></div>'+
+        '<label>Propriedade</label><select id="ab_prop"><option value="">— não informada —</option>'+
+        (ABATEOPTS.props||[]).map(function(p){ return '<option value="'+p.id+'"'+(EDIT&&EDIT.propriedadeId===p.id?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>'+
+        ((ABATEOPTS.props||[]).length?'':'<div class="meta" style="margin:-6px 0 8px">Cadastre propriedades em <b>Documentação → Propriedade</b>.</div>')+
         '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
         '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
         '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
@@ -2100,9 +2393,10 @@ window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:ti
   if(tipo==='Espreita'){ d.rotaId=val('ab_rota'); if(!d.rotaId){toast('Selecione a rota de manejo');return;} }
   if(tipo==='Armadilha'){ d.armadilhaId=val('ab_arm'); if(!d.armadilhaId){toast('Selecione a armadilha');return;} }
   if(tipo==='Cães'){ d.canilId=val('ab_canil'); if(!d.canilId){toast('Selecione a matilha (canil)');return;} var ids=[].slice.call(document.querySelectorAll('#ab_caes input:checked')).map(function(c){return c.value;}); if(!ids.length){toast('Selecione ao menos 1 cão da matilha');return;} d.caesIds=ids.join(','); }
+  d.propriedadeId=val('ab_prop')||'';
   if(!d.dataHora){toast('Informe data e hora');return;}
   btn.disabled=true; btn.textContent='Salvando…';
-  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
+  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
   else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
