@@ -751,7 +751,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2027';
+var APP_VER = 'vJS.230726.2036';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1592,11 +1592,13 @@ VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb
     '<label>Facebook</label><input id="fe_face">'+
     '<label>Site</label><input id="fe_site" placeholder="https://...">'+
     '<label>Logo/foto</label><input id="fe_foto" type="file" accept="image/*"><img id="fe_prev" class="foto-prev">'+
-    '<div class="meta" style="margin-top:8px">Sua empresa já aparece na rede após o cadastro. Regras de conduta: conteúdo ofensivo pode ser denunciado por outros usuários.</div>'+
+    '<div class="meta" style="margin-top:8px">Sua empresa já aparece na rede após o cadastro. Conteúdo ofensivo pode ser denunciado por outros usuários.</div></div>'+
+    blocoTermo()+
+    '<div class="card">'+blocoDesafio()+
     '<button class="btn" onclick="salvarEmpresaConta(this)">Criar conta de empresa</button>'+
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
-    '<button class="btn sec" onclick="trocarCadastro(\'manejador\')">🌿 Quero criar conta de manejador</button></div></div>');
-  bindFoto('fe_foto','fe_prev'); };
+    '<button class="btn sec" onclick="trocarCadastro(\'manejador\')">🌿 Conta de manejador</button></div></div>');
+  bindFoto('fe_foto','fe_prev'); carregarDesafio(); };
 window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
   if(!senha||senha.length<4){toast('Senha com no mínimo 4 caracteres');return;}
@@ -2301,6 +2303,7 @@ window.salvarNivel=function(btn){ btn.disabled=true; btn.textContent='Salvando�
 /* ============================================================
    ESPREITA / TRANSPORTES
    ============================================================ */
+var SEGMENTOS=['Agricultor','Despachante','Clube de tiro','Loja de artigos de caça','Veterinário','Canil','Outro'];
 var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Cavalo','A pé','Bicicleta','Caminhonete','Outro'];
 var TIPOS_MARITIMO=['Barco','Lancha','Bote','Caiaque','Canoa','Jet ski','Outra embarcação'];
 function tiposPorMeio(m){ return (m==='maritimo')?TIPOS_MARITIMO:TIPOS_TRANSP; }
