@@ -726,7 +726,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1731';
+var APP_VER = 'vJS.230726.1745';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1233,7 +1233,7 @@ var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',ca
 function sincronizarPagamentos(cb){
   if(!AUTH.token) return cb&&cb();
   server('apiSincronizarPagamentos').then(function(r){
-    if(r&&r.aprovados>0){ toast('Pagamento confirmado! Plano ativado ✔'); }
+    if(r&&r.aprovados>0){ toast('Pagamento confirmado! Seu plano foi ativado ✔'); carregarPlano(); }
     cb&&cb();
   }).catch(function(){ cb&&cb(); });
 }
@@ -1328,12 +1328,12 @@ window.assinar=function(plano){
     } else toast('Não foi possível abrir o pagamento'); })
   .catch(function(e){ if(e&&e.message!=='PLANO') toast((e&&e.message)||'Erro ao gerar cobrança'); }); };
 function iniciarPromoPoll(){
-  // se voltou da tela de pagamento, confere na hora
-  try{ if(/[?&]pago=/.test(location.search)){
-    sincronizarPagamentos(function(){ carregarPlano(); render(); });
-    history.replaceState(null,'',location.pathname);
-  } }catch(e){}
-  carregarPlano();
+  // Sempre que o app abre, confere se algum pagamento pendente já foi aprovado.
+  // Assim quem pagou (inclusive boleto que compensou depois) é liberado sozinho.
+  var voltouDoPagamento=false;
+  try{ voltouDoPagamento=/[?&]pago=/.test(location.search);
+    if(voltouDoPagamento) history.replaceState(null,'',location.pathname); }catch(e){}
+  sincronizarPagamentos(function(){ carregarPlano(); if(voltouDoPagamento) render(); });
   // Uma única rotina: só busca quando a aba está visível, com intervalo folgado.
   carregarAvisos(); carregarCampanha(); carregarPromos();
   if(PROMO_TIMER) return;
@@ -1622,9 +1622,9 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
     carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarParametros(); carregarAssinaturas(); carregarTermoAdm(); carregarLimites(); carregarPagsAdm();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 function carregarAssinaturas(){ server('apiListarAssinaturas').then(function(l){ var el=document.getElementById('ctList'); if(!el)return;
-  el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div>'+l.map(function(a){
+  el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div><div class="lista-rolagem">'+l.map(function(a){
     return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.login)+'</b> <span class="pill '+(a.vigente?'ok':'gray')+'">'+esc(a.nomePlano)+'</span><div class="meta">'+(a.vigente?'até '+fmtData(a.fim):'encerrado')+(a.obs?' · '+esc(a.obs):'')+'</div></div>'+(a.vigente?'<button class="ib" onclick="encerrarAss(\''+a.id+'\')" title="Encerrar">🚫</button>':'')+'</div>';
-  }).join('')):'<div class="meta">Nenhum acesso concedido ainda.</div>'; }).catch(function(){}); }
+  }).join('')+'</div>'):'<div class="meta">Nenhum acesso concedido ainda.</div>'; }).catch(function(){}); }
 window.mudouDestino=function(){ var d=val('ct_destino'); var box=document.getElementById('ct_loginBox');
   if(box) box.style.display=(d==='login')?'block':'none';
   var c=document.getElementById('ct_conta'); if(!c) return;
@@ -1674,7 +1674,9 @@ function carregarPagsAdm(){ var el=document.getElementById('pagAdm'); if(!el) re
       .map(function(x){ return '<button class="'+(PAGFILTRO===x[0]?'on':'')+'" onclick="filtrarPags(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+
       '</div>';
     var busca='<input id="pagBusca" placeholder="Buscar por e-mail do cliente" style="margin-bottom:10px" onkeyup="if(event.key===\'Enter\')buscarPag()">';
-    var acao = r.pendentes ? '<button class="btn" onclick="verificarTodos(this)">🔄 Verificar todos os pendentes no Mercado Pago</button>' : '';
+    var acao = (r.pendentes ? '<button class="btn" onclick="verificarTodos(this)">🔄 Verificar todos os pendentes no Mercado Pago</button>' : '')+
+      '<button class="btn sec" style="margin-top:8px" onclick="repararAssinaturas(this)">🔧 Reparar planos de quem pagou</button>'+
+      '<div class="meta" style="margin:6px 0 4px">Use o reparo se alguém aparece como <b>PAGO</b> mas continua sem o plano.</div>';
     var itens = l.length ? l.map(function(p){
       var st=String(p.status), pago=(st==='pago');
       return '<div class="hist-item"><div class="grow">'+
@@ -1685,18 +1687,21 @@ function carregarPagsAdm(){ var el=document.getElementById('pagAdm'); if(!el) re
         (pago?'':'<button class="btn sm" style="width:auto;margin-top:8px" onclick="liberarPag(\''+p.id+'\',\''+esc(p.login||'')+'\')">✅ Liberar plano manualmente</button>')+
         '</div><div class="hist-valor">R$ '+Number(p.valor||0).toFixed(2).replace('.',',')+'</div></div>';
     }).join('') : '<div class="meta" style="padding:12px 0">Nenhum pagamento nesta lista.</div>';
-    el.innerHTML=filtros+busca+acao+'<div style="margin-top:8px">'+itens+'</div>';
+    el.innerHTML=filtros+busca+acao+
+      '<div class="lista-rolagem">'+itens+'</div>'+
+      (l.length>4?'<div class="meta" style="text-align:center;margin-top:6px">'+l.length+' registro(s) — role a lista</div>':'');
   }).catch(function(e){ el.innerHTML='<div class="meta">Erro ao carregar: '+esc((e&&e.message)||'')+'</div>'; }); }
 window.filtrarPags=function(f){ PAGFILTRO=f; carregarPagsAdm(); };
 window.buscarPag=function(){ var q=val('pagBusca'); var el=document.getElementById('pagAdm');
   server('apiAdminPagamentos',q).then(function(d){ PAGFILTRO='todos'; var l=(d&&d.lista)||[];
     el.innerHTML='<div class="meta" style="margin-bottom:8px">Resultado para "'+esc(q)+'" ('+l.length+')</div>'+
+      '<div class="lista-rolagem">'+
       (l.length?l.map(function(p){ var pago=String(p.status)==='pago';
         return '<div class="hist-item"><div class="grow"><div class="row" style="gap:8px"><b>'+esc(p.login)+'</b><span class="pill '+(pago?'ok':'warn')+'">'+(pago?'PAGO':'PENDENTE')+'</span></div>'+
         '<div class="meta">'+esc(p.plano)+' · '+fmtDataHora(p.criadoEm)+'</div>'+
         (pago?'':'<button class="btn sm" style="width:auto;margin-top:8px" onclick="liberarPag(\''+p.id+'\',\''+esc(p.login)+'\')">✅ Liberar plano</button>')+
         '</div><div class="hist-valor">R$ '+Number(p.valor||0).toFixed(2).replace('.',',')+'</div></div>'; }).join('')
-        :'<div class="meta">Nenhum pagamento encontrado.</div>')+
+        :'<div class="meta">Nenhum pagamento encontrado.</div>')+'</div>'+
       '<button class="btn sec" style="margin-top:10px" onclick="carregarPagsAdm()">Voltar</button>'; }); };
 window.verificarTodos=function(btn){ btn.disabled=true; btn.textContent='Consultando Mercado Pago…';
   server('apiVerificarTodosPendentes').then(function(r){
@@ -1705,6 +1710,13 @@ window.verificarTodos=function(btn){ btn.disabled=true; btn.textContent='Consult
     else toast('Nenhum pagamento novo aprovado');
     carregarPagsAdm(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='🔄 Verificar todos os pendentes no Mercado Pago'; toast((e&&e.message)||'Erro'); }); };
+window.repararAssinaturas=function(btn){ btn.disabled=true; btn.textContent='Reparando…';
+  server('apiRepararAssinaturas').then(function(r){
+    btn.disabled=false; btn.textContent='🔧 Reparar planos de quem pagou';
+    if(r&&r.corrigidos>0) toast(r.corrigidos+' plano(s) reativado(s): '+(r.logins||[]).join(', '));
+    else toast('Nenhum plano precisava de reparo');
+    carregarPagsAdm(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='🔧 Reparar planos de quem pagou'; toast((e&&e.message)||'Erro'); }); };
 window.liberarPag=function(id,login){
   if(!confirm('Liberar o plano de '+login+' manualmente?\n\nUse quando o cliente comprovou o pagamento mas o sistema não identificou.')) return;
   server('apiConfirmarManual',id).then(function(){ toast('Plano liberado ✔'); carregarPagsAdm(); })
@@ -1786,7 +1798,7 @@ window.salvarParametros=function(btn){ var mapa={};
     carregarParametros(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Salvar ajustes'; toast((e&&e.message)||'Erro'); }); };
 function carregarAvisosAdmin(){ server('apiListarAvisosAdmin').then(function(l){ var el=document.getElementById('avList'); if(!el)return;
-  el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div>'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
+  el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div><div class="lista-rolagem">'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
     return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.titulo)+'</b> <span class="pill '+(ativo?'ok':'gray')+'">'+(ativo?'ativo':'expirado')+'</span><div class="meta">'+esc(a.publico||'Todos')+' \u00b7 '+fmtData(a.criadoEm)+'</div></div><button class="ib" onclick="excluirAviso(\''+a.id+'\')">\ud83d\uddd1\ufe0f</button></div>'; }).join('')) : '<div class="meta">Nenhum aviso enviado ainda.</div>'; }).catch(function(){}); }
 window.enviarAviso=function(btn){ if(!val('av_tit')||!val('av_msg')){ toast('Preencha t\u00edtulo e mensagem'); return; }
   btn.disabled=true; btn.textContent='Enviando\u2026';
