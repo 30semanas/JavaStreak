@@ -499,7 +499,24 @@
   .pl-btn.sec{background:transparent;color:var(--laranja-claro)}
   .trof .rk-on{position:absolute;bottom:52px;left:6px;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px}
 
+  /* etiqueta do plano ao lado do nome */
+  .sb-nome{display:block}
+  .sb-plano-inline{display:inline-block;margin-top:5px;padding:3px 10px;border-radius:20px;cursor:pointer;
+    font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+    background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);color:#e8e2d6;transition:background .15s}
+  .sb-plano-inline:hover{background:rgba(232,85,43,.3);border-color:var(--laranja);color:#fff}
+  .sb-plano-inline.pago{background:linear-gradient(135deg,var(--laranja),#c8431f);border-color:transparent;color:#fff;
+    box-shadow:0 2px 10px rgba(232,85,43,.35)}
+  /* botão Planos na barra superior */
+  .tn-planos{background:linear-gradient(135deg,rgba(232,85,43,.22),rgba(232,85,43,.06))!important;
+    border:1px solid rgba(232,85,43,.55)!important;backdrop-filter:blur(4px)}
+  .tn-planos:hover{background:linear-gradient(135deg,rgba(232,85,43,.4),rgba(232,85,43,.15))!important;
+    border-color:var(--laranja)!important}
+  .tn-planos .emoji{filter:drop-shadow(0 0 6px rgba(232,85,43,.8))}
+  .tn-planos .lbl{color:#ffd9c6}
+  .tn-planos.active .lbl{color:#fff}
   /* ===== TELA DE PLANOS ===== */
+  body.tela-planos .wrap{max-width:1040px}
   .pl-aviso{background:linear-gradient(135deg,var(--laranja),#d8481f);color:#fff;border-radius:14px;
     padding:14px 16px;margin-bottom:14px;font-size:14px;line-height:1.5;box-shadow:0 6px 18px rgba(232,85,43,.3)}
   .pl-per{display:flex;gap:6px;background:rgba(20,28,20,.5);border:1px solid rgba(255,255,255,.12);
@@ -507,7 +524,8 @@
   .pl-per button{flex:1;padding:10px 8px;border:none;background:transparent;color:#e8e2d6;
     font-weight:800;font-size:13px;border-radius:10px;cursor:pointer;transition:background .15s,color .15s}
   .pl-per button.on{background:var(--laranja);color:#fff;box-shadow:0 3px 10px rgba(232,85,43,.35)}
-  .pl-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;align-items:start}
+  .pl-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+  @media(max-width:900px){ .pl-grade{grid-template-columns:1fr} }
   .pl-grade.uma{grid-template-columns:minmax(280px,420px);justify-content:center}
   .plano{background:#fff;border:1px solid var(--linha);border-radius:18px;padding:22px 20px;position:relative;
     display:flex;flex-direction:column;box-shadow:0 4px 16px rgba(20,30,20,.10);transition:transform .15s,box-shadow .15s}
@@ -556,7 +574,6 @@
     <div class="sb-brand"><img src="" id="sbLogo" alt="JavaStreak"></div>
     <div class="sb-user" id="sbUser"></div>
     <nav id="sbNav"></nav>
-    <div class="sb-plano" id="sbPlano"></div>
     <button class="sb-sair" onclick="logout()">Sair</button>
     <div class="sb-ver" id="sbVer"></div>
   </aside>
@@ -625,7 +642,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v26-planos';
+var APP_VER = 'v27-layout';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -704,6 +721,7 @@ function render(){
   document.getElementById('btnBack').style.display = mostrarVoltar ? 'block':'none';
   var tb=document.getElementById('tbBack'); if(tb) tb.style.display = mostrarVoltar ? 'block':'none';
   var f=document.getElementById('fab'); f.style.display='none'; f.innerHTML='';
+  document.body.classList.toggle('tela-planos', view==='planos');
   (VIEWS[view]||VIEWS.login)();
   aplicarFundo(view);
   updateHeader();
@@ -755,7 +773,8 @@ function buildSidebar(){
   pintarCampanha();
   var u=document.getElementById('sbUser');
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
-    u.innerHTML = (tipo==='empresa') ? esc(nome) : ('<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>'+esc(nome)); }
+    var cfg=(tipo==='empresa')?'':'<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>';
+    u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span><span class="sb-plano-inline" id="sbPlano"></span>'; }
   buildTopNav(root, tipo);
 }
 function buildTopNav(root, tipo){
@@ -768,6 +787,7 @@ function buildTopNav(root, tipo){
     return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
   }).join('');
   html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">Rede</span></div>';
+  html += '<div class="tn-item tn-planos'+(root==='planos'?' active':'')+'" onclick="go(\'planos\')" title="Planos e assinatura"><span class="emoji">✨</span><span class="lbl">Planos</span></div>';
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
@@ -926,10 +946,10 @@ function carregarPlano(){ if(!AUTH.token) return;
     MEUPLANO={plano:'free',nome:'Novato',ativo:true,fim:'',origem:'',limites:{},precos:{}}; pintarPlano(); }); }
 function pintarPlano(){ var el=document.getElementById('sbPlano'); if(!el||!MEUPLANO) return;
   var livre=(MEUPLANO.plano==='free');
-  el.style.display='block';
-  el.innerHTML='<div class="pl-tag">'+esc(MEUPLANO.nome)+'</div>'+
-    (MEUPLANO.fim?'<div class="pl-fim">até '+fmtData(MEUPLANO.fim)+(MEUPLANO.origem==='cortesia'?' · cortesia':'')+'</div>':'')+
-    (livre?'<button class="pl-btn" onclick="go(\'planos\')">Ver planos</button>':'<button class="pl-btn sec" onclick="go(\'planos\')">Meu plano</button>'); }
+  el.className='sb-plano-inline'+(livre?'':' pago');
+  el.title=(MEUPLANO.fim?'Ativo até '+fmtData(MEUPLANO.fim):'Plano '+MEUPLANO.nome);
+  el.textContent=MEUPLANO.nome;
+  el.onclick=function(){ go('planos'); }; }
 function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
 window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
 VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
