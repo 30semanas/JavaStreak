@@ -497,13 +497,50 @@
   .pl-fim{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px}
   .pl-btn{margin-top:8px;width:100%;padding:8px;border-radius:9px;border:1px solid var(--laranja);background:var(--laranja);color:#fff;font-weight:800;font-size:12px;cursor:pointer}
   .pl-btn.sec{background:transparent;color:var(--laranja-claro)}
-  .pl-card.atual{border:2px solid var(--ok)}
-  .pl-card.sugerido{border:2px solid var(--laranja);box-shadow:0 8px 24px rgba(232,85,43,.25)}
-.pl-preco{font-size:26px;font-weight:800;color:var(--laranja-esc);margin:8px 0 4px}
-  .pl-preco span{font-size:13px;font-weight:600;color:var(--txt2)}
-  .pl-item{font-size:13px;padding:4px 0;color:var(--txt)}
-  .pl-item.off{color:#b9b3a7;text-decoration:line-through}
   .trof .rk-on{position:absolute;bottom:52px;left:6px;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px}
+
+  /* ===== TELA DE PLANOS ===== */
+  .pl-aviso{background:linear-gradient(135deg,var(--laranja),#d8481f);color:#fff;border-radius:14px;
+    padding:14px 16px;margin-bottom:14px;font-size:14px;line-height:1.5;box-shadow:0 6px 18px rgba(232,85,43,.3)}
+  .pl-per{display:flex;gap:6px;background:rgba(20,28,20,.5);border:1px solid rgba(255,255,255,.12);
+    border-radius:14px;padding:5px;margin:0 auto 18px;max-width:420px;backdrop-filter:blur(4px)}
+  .pl-per button{flex:1;padding:10px 8px;border:none;background:transparent;color:#e8e2d6;
+    font-weight:800;font-size:13px;border-radius:10px;cursor:pointer;transition:background .15s,color .15s}
+  .pl-per button.on{background:var(--laranja);color:#fff;box-shadow:0 3px 10px rgba(232,85,43,.35)}
+  .pl-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;align-items:start}
+  .pl-grade.uma{grid-template-columns:minmax(280px,420px);justify-content:center}
+  .plano{background:#fff;border:1px solid var(--linha);border-radius:18px;padding:22px 20px;position:relative;
+    display:flex;flex-direction:column;box-shadow:0 4px 16px rgba(20,30,20,.10);transition:transform .15s,box-shadow .15s}
+  .plano:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(20,30,20,.16)}
+  .plano.destaque{border:2px solid var(--laranja);box-shadow:0 12px 34px rgba(232,85,43,.24)}
+  .plano.atual{border:2px solid var(--ok)}
+  .plano-fita{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--laranja);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;padding:5px 14px;border-radius:20px;
+    box-shadow:0 4px 12px rgba(232,85,43,.4);white-space:nowrap}
+  .plano-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .plano-nome{font-size:19px;font-weight:800;letter-spacing:-.01em;color:var(--txt)}
+  .plano-badge{background:var(--ok);color:#fff;font-size:10px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.5px;padding:4px 9px;border-radius:20px}
+  .plano-preco{font-size:34px;font-weight:800;color:var(--txt);margin:14px 0 2px;line-height:1;letter-spacing:-.02em}
+  .plano-preco span{font-size:14px;font-weight:600;color:var(--txt2);letter-spacing:0}
+  .plano-eco{font-size:12px;font-weight:700;color:#2e8b3d;min-height:18px;margin-bottom:12px}
+  .plano-sub{font-size:13.5px;color:var(--txt2);line-height:1.5;margin-bottom:14px}
+  .plano-lista{list-style:none;padding:0;margin:6px 0 18px;flex:1}
+  .plano-lista li{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;padding:6px 0;
+    border-bottom:1px dashed rgba(0,0,0,.06);color:var(--txt)}
+  .plano-lista li:last-child{border-bottom:none}
+  .plano-lista li span{font-weight:800;flex:none;width:15px}
+  .plano-lista li.sim span{color:#2e8b3d}
+  .plano-lista li.nao{color:#a9a294}
+  .plano-lista li.nao span{color:#cfc6b6}
+  .plano-lista li b{margin-left:auto;font-weight:800;color:var(--laranja-esc)}
+  .plano-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--laranja);color:#fff;
+    font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 4px 14px rgba(232,85,43,.32);transition:filter .15s}
+  .plano-btn:hover{filter:brightness(1.08)}
+  .plano-ativo{text-align:center;font-size:13px;font-weight:700;color:var(--txt2);padding:13px;
+    background:rgba(20,30,20,.05);border-radius:12px}
+  .pl-rodape{text-align:center;font-size:12.5px;color:#e6e0d5;margin-top:18px;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  @media(max-width:700px){ .plano{padding:20px 17px} .plano-preco{font-size:30px} }
   .prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--linha)}
   .prow:last-of-type{border-bottom:none}
   .prow b{font-size:14px}
@@ -588,7 +625,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v25c-planos';
+var APP_VER = 'v26-planos';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -900,30 +937,48 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
     var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
     var ehEmp=(meu.plano==='empresa');
     var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
-    var aviso = info ? ('<div class="card" style="border-left:5px solid var(--laranja)"><h3 style="margin:0 0 4px">🔒 '+esc(LIMROTULO[info.recurso]||'Recurso')+'</h3><div class="meta">Não disponível no seu plano. Libera no plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div></div>') : '';
-    var per = '<div class="segbar" style="margin-bottom:12px"><button class="'+(PERIODO_SEL==='MES'?'on':'')+'" onclick="setPeriodo(\'MES\')">Mensal</button><button class="'+(PERIODO_SEL==='SEM'?'on':'')+'" onclick="setPeriodo(\'SEM\')">Semestral</button><button class="'+(PERIODO_SEL==='ANO'?'on':'')+'" onclick="setPeriodo(\'ANO\')">Anual</button></div>';
-    var cards;
+    var aviso = info ? ('<div class="pl-aviso"><b>🔒 '+esc(LIMROTULO[info.recurso]||'Recurso bloqueado')+'</b><br>Disponível a partir do plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div>') : '';
+    var per='<div class="pl-per">'+[['MES','Mensal'],['SEM','Semestral'],['ANO','Anual']].map(function(x){
+      return '<button class="'+(PERIODO_SEL===x[0]?'on':'')+'" onclick="setPeriodo(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
+
+    var grade;
     if(ehEmp){
-      cards='<div class="card pl-card sugerido"><div class="row"><h3 class="grow" style="margin:0">Empresa</h3>'+(meu.ativo?'<span class="pill ok">ativo</span>':'')+'</div>'+
-        '<div class="meta" style="margin-top:6px">Acesso completo: presença no mapa, promoções relâmpago e ranking.</div>'+
-        '<div class="pl-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
-        (meu.ativo?'<div class="meta">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="btn" style="margin-top:12px" onclick="assinar(\'empresa\')">Assinar</button>')+'</div>';
+      grade='<div class="pl-grade uma"><div class="plano destaque">'+
+        '<div class="plano-top"><div class="plano-nome">Empresa</div>'+(meu.ativo?'<span class="plano-badge">ativo</span>':'')+'</div>'+
+        '<div class="plano-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
+        economia(meu.precos)+
+        '<div class="plano-sub">Presença no mapa, promoções relâmpago e ranking.</div>'+
+        (meu.ativo?'<div class="plano-ativo">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="plano-btn" onclick="assinar(\'empresa\')">Assinar</button>')+
+        '</div></div>';
     } else {
-      cards = lista.map(function(p){
-        var atual=(p.plano===meu.plano);
+      grade='<div class="pl-grade">'+lista.map(function(p){
+        var atual=(p.plano===meu.plano), free=(p.plano==='free'), sugerido=(info&&info.precisa===p.plano);
+        var destaque=(p.plano==='n2'&&!info)||sugerido;
         var itens=Object.keys(LIMROTULO).map(function(k){ var v=p.limites[k]; var sim=(v!==0);
-          return '<div class="pl-item'+(sim?'':' off')+'">'+(sim?'✓':'✕')+' '+esc(LIMROTULO[k])+
-            (['compartilharRota','fotoPerfil','verManejadores','filtrarPromos'].indexOf(k)<0 && sim ? ' <b>'+limTexto(v)+'</b>':'')+'</div>'; }).join('');
-        var preco = (p.plano==='free') ? '<div class="pl-preco">Grátis</div>'
-          : '<div class="pl-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>';
-        return '<div class="card pl-card'+(atual?' atual':'')+(info&&info.precisa===p.plano?' sugerido':'')+'">'+
-          '<div class="row"><h3 class="grow" style="margin:0">'+esc(p.nome)+'</h3>'+(atual?'<span class="pill ok">seu plano</span>':'')+'</div>'+
-          preco+'<div style="margin-top:10px">'+itens+'</div>'+
-          (atual||p.plano==='free'?'':'<button class="btn" style="margin-top:12px" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+'</div>';
-      }).join('');
+          var qtd=(['compartilharRota','fotoPerfil','verManejadores','filtrarPromos'].indexOf(k)<0 && sim)?' <b>'+limTexto(v)+'</b>':'';
+          return '<li class="'+(sim?'sim':'nao')+'"><span>'+(sim?'✓':'✕')+'</span>'+esc(LIMROTULO[k])+qtd+'</li>'; }).join('');
+        return '<div class="plano'+(destaque?' destaque':'')+(atual?' atual':'')+'">'+
+          (destaque&&!atual?'<div class="plano-fita">'+(sugerido?'Recomendado':'Mais completo')+'</div>':'')+
+          '<div class="plano-top"><div class="plano-nome">'+esc(p.nome)+'</div>'+(atual?'<span class="plano-badge">seu plano</span>':'')+'</div>'+
+          '<div class="plano-preco">'+(free?'Grátis':precoFmt(p.precos&&p.precos[PERIODO_SEL]))+'</div>'+
+          (free?'<div class="plano-eco">para sempre</div>':economia(p.precos))+
+          '<ul class="plano-lista">'+itens+'</ul>'+
+          (atual?'<div class="plano-ativo">'+(meu.fim?'Ativo até '+fmtData(meu.fim):'Plano atual')+'</div>'
+                :(free?'<div class="plano-ativo">Plano de entrada</div>'
+                      :'<button class="plano-btn" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>'))+
+          '</div>';
+      }).join('')+'</div>';
     }
-    app(heroFoto('planos','Planos','Escolha o plano que combina com o seu manejo.','JavaStreak')+aviso+per+cards);
+    app(heroFoto('planos','Escolha seu plano','Comece grátis e evolua quando precisar de mais.','JavaStreak')+aviso+per+grade+
+      '<div class="pl-rodape">Pagamento por cartão, boleto ou PIX. Cancele quando quiser.</div>');
   }); };
+function economia(precos){ if(!precos) return '<div class="plano-eco"></div>';
+  var m=Number(precos.MES)||0; if(!m) return '<div class="plano-eco"></div>';
+  if(PERIODO_SEL==='SEM'){ var s=Number(precos.SEM)||0; var d=Math.round((1-(s/(m*6)))*100);
+    return d>0?'<div class="plano-eco">economize '+d+'% · R$ '+(s/6).toFixed(2).replace('.',',')+'/mês</div>':'<div class="plano-eco"></div>'; }
+  if(PERIODO_SEL==='ANO'){ var a=Number(precos.ANO)||0; var d2=Math.round((1-(a/(m*12)))*100);
+    return d2>0?'<div class="plano-eco">economize '+d2+'% · R$ '+(a/12).toFixed(2).replace('.',',')+'/mês</div>':'<div class="plano-eco"></div>'; }
+  return '<div class="plano-eco"></div>'; }
 var PERIODO_SEL='MES';
 window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
 function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
