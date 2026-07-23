@@ -726,7 +726,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1745';
+var APP_VER = 'vJS.230726.1753';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1260,6 +1260,11 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
     var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
     var ehEmp=(meu.plano==='empresa');
     var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
+    var dr=meu.diasRestantes;
+    var avisoVenc = (meu.plano!=='free' && dr!=null && dr<=15)
+      ? ('<div class="pl-aviso"><b>⏳ '+(dr<=0?'Seu plano venceu':'Seu plano vence em '+dr+' dia'+(dr===1?'':'s'))+'</b><br>'+
+         (dr<=0?'Renove para voltar a ter acesso completo.':'Renove para não perder o acesso — o período novo soma ao que resta.')+'</div>')
+      : '';
     var aviso = info ? ('<div class="pl-aviso"><b>🔒 '+esc(LIMROTULO[info.recurso]||'Recurso bloqueado')+'</b><br>Disponível a partir do plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div>') : '';
     var per='<div class="pl-per">'+[['MES','Mensal'],['SEM','Semestral'],['ANO','Anual']].map(function(x){
       return '<button class="'+(PERIODO_SEL===x[0]?'on':'')+'" onclick="setPeriodo(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div>';
@@ -1292,7 +1297,7 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
           '</div>';
       }).join('')+'</div>';
     }
-    app(heroFoto('planos','Escolha seu plano','Comece grátis e evolua quando precisar de mais.','JavaStreak')+aviso+per+grade+
+    app(heroFoto('planos','Escolha seu plano','Comece grátis e evolua quando precisar de mais.','JavaStreak')+avisoVenc+aviso+per+grade+
       '<div class="pl-rodape">Pagamento por cartão, boleto ou PIX. Cancele quando quiser.<br>'+
       '<b>PIX e cartão liberam na hora. Boleto leva de 1 a 3 dias úteis para compensar.</b><br>'+
       'Na tela do Mercado Pago, preencha <b>todos os campos</b> (inclusive e-mail e CPF) para o botão Pagar funcionar.</div>'+
