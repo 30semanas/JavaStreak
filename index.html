@@ -722,7 +722,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1700';
+var APP_VER = 'vJS.230726.1715';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1191,6 +1191,13 @@ var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',ca
  abatesMes:'Abates por mês',trofeusRanking:'Troféus no ranking',compartilharRota:'Compartilhar rota',
  fotoPerfil:'Trocar foto de perfil',verManejadores:'Ver manejadores na rede',filtrarPromos:'Filtrar promoções',
  documentos:'📋 Documentação',propriedades:'🏞️ Propriedades'};
+function sincronizarPagamentos(cb){
+  if(!AUTH.token) return cb&&cb();
+  server('apiSincronizarPagamentos').then(function(r){
+    if(r&&r.aprovados>0){ toast('Pagamento confirmado! Plano ativado ✔'); }
+    cb&&cb();
+  }).catch(function(){ cb&&cb(); });
+}
 function carregarPlano(){ if(!AUTH.token) return;
   server('apiMeuPlano').then(function(p){ MEUPLANO=p; pintarPlano(); })
   .catch(function(e){ console.warn('Plano indisponível:', e&&e.message);
@@ -1247,7 +1254,10 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
       }).join('')+'</div>';
     }
     app(heroFoto('planos','Escolha seu plano','Comece grátis e evolua quando precisar de mais.','JavaStreak')+aviso+per+grade+
-      '<div class="pl-rodape">Pagamento por cartão, boleto ou PIX. Cancele quando quiser.</div>');
+      '<div class="pl-rodape">Pagamento por cartão, boleto ou PIX. Cancele quando quiser.<br>'+
+      '<b>PIX e cartão liberam na hora. Boleto leva de 1 a 3 dias úteis para compensar.</b><br>'+
+      'Na tela do Mercado Pago, preencha <b>todos os campos</b> (inclusive e-mail e CPF) para o botão Pagar funcionar.</div>'+
+      '<div style="text-align:center;margin-top:12px"><button class="btn sec" style="width:auto" onclick="conferirPagamento(this)">🔄 Já paguei — atualizar meu plano</button></div>');
   }); };
 function economia(precos){ if(!precos) return '<div class="plano-eco"></div>';
   var m=Number(precos.MES)||0; if(!m) return '<div class="plano-eco"></div>';
@@ -1261,12 +1271,27 @@ window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
 function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
   var sufixo = PERIODO_SEL==='MES'?'/mês':(PERIODO_SEL==='SEM'?'/semestre':'/ano');
   return 'R$ '+n.toFixed(2).replace('.',',')+'<span>'+sufixo+'</span>'; }
-window.assinar=function(plano){ toast('Gerando cobrança…');
+window.conferirPagamento=function(btn){ btn.disabled=true; btn.textContent='Verificando…';
+  server('apiSincronizarPagamentos').then(function(r){
+    btn.disabled=false; btn.textContent='🔄 Já paguei — atualizar meu plano';
+    if(r&&r.aprovados>0){ toast('Pagamento confirmado! Plano ativado ✔'); carregarPlano(); render(); }
+    else if(r&&r.verificados===0){ toast('Nenhum pagamento pendente encontrado'); }
+    else { toast('Ainda não consta como aprovado. Se pagou por boleto, aguarde a compensação.'); }
+  }).catch(function(e){ btn.disabled=false; btn.textContent='🔄 Já paguei — atualizar meu plano'; toast((e&&e.message)||'Erro'); }); };
+window.assinar=function(plano){
+  toast('Abrindo pagamento…');
   server('apiCriarPagamento',plano,PERIODO_SEL).then(function(r){
-    if(r&&r.checkoutUrl){ window.location.href=r.checkoutUrl; }
-    else toast('Não foi possível abrir o pagamento'); })
+    if(r&&r.checkoutUrl){
+      try{ localStorage.setItem('aguardandoPag','1'); }catch(e){}
+      window.location.href=r.checkoutUrl;
+    } else toast('Não foi possível abrir o pagamento'); })
   .catch(function(e){ if(e&&e.message!=='PLANO') toast((e&&e.message)||'Erro ao gerar cobrança'); }); };
 function iniciarPromoPoll(){
+  // se voltou da tela de pagamento, confere na hora
+  try{ if(/[?&]pago=/.test(location.search)){
+    sincronizarPagamentos(function(){ carregarPlano(); render(); });
+    history.replaceState(null,'',location.pathname);
+  } }catch(e){}
   carregarPlano();
   // Uma única rotina: só busca quando a aba está visível, com intervalo folgado.
   carregarAvisos(); carregarCampanha(); carregarPromos();
