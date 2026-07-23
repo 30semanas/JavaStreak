@@ -590,11 +590,12 @@
     min-width:15px;height:15px;line-height:15px;border-radius:8px;text-align:center;padding:0 3px}
   @media(max-width:520px){ .sn-item{padding:8px 3px;gap:4px} .sn-item img{width:13px;height:13px} .sn-item .lbl{font-size:9px;letter-spacing:0} }
   /* documentos */
-  .doc-linha{display:flex;align-items:flex-start;gap:8px;padding:12px 0;border-bottom:1px solid var(--linha)}
+  .doc-linha{display:flex;align-items:flex-start;gap:10px;padding:15px 0;border-bottom:1px solid var(--linha)}
   .doc-linha:last-of-type{border-bottom:none}
-  .doc-linha b{font-size:14px}
-  .doc-tag{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
-    padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
+  .doc-linha b{font-size:15px}
+  .doc-linha .ib{font-size:19px;padding:7px 9px}
+  .doc-tag{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    padding:3px 10px;border-radius:20px;margin-left:7px;vertical-align:middle}
   .doc-tag.ok{background:#e3f2e5;color:#2e8b3d}
   .doc-tag.perto{background:#fdf0d5;color:#b8863b}
   .doc-tag.venc{background:#fbe3e0;color:#c0392b}
@@ -721,7 +722,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1555';
+var APP_VER = 'vJS.230726.1608';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1351,13 +1352,15 @@ function blocoDesafio(){
     '<span class="cap-marca">🛡️</span></div></div>'; }
 var CAPTCHA_CLICADO=false;
 window.marcarNaoRobo=function(){
-  if(CAPTCHA_CLICADO || !DESAFIO) return;
-  var d=Date.now()-(DESAFIO.emitido||0);
-  if(d<1200){ setTimeout(window.marcarNaoRobo, 1200-d); return; }
+  if(CAPTCHA_CLICADO) return;
+  var c=document.getElementById('capClique'), k=document.getElementById('capCheck'), t=document.getElementById('capTxt');
+  // marca na hora (não depende de a rede ter respondido)
   CAPTCHA_CLICADO=true;
-  var c=document.getElementById('capClique'); if(c) c.className='cap-clique ok';
-  var k=document.getElementById('capCheck'); if(k) k.textContent='✓';
-  var t=document.getElementById('capTxt'); if(t) t.textContent='Verificado';
+  if(c) c.className='cap-clique ok';
+  if(k) k.textContent='✓';
+  if(t) t.textContent='Verificado';
+  // se o desafio ainda não chegou, busca agora para ter o token no envio
+  if(!DESAFIO){ server('apiDesafio').then(function(d){ DESAFIO=d; }).catch(function(){}); }
 };
 var CAPTCHA_TOKEN='', CAPTCHA_MODO='conta';
 function carregarDesafio(){
