@@ -492,6 +492,23 @@
     body.camp-on.map-mode #mapshell{right:250px} }
   @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} .cp-toggle.fechado{right:0} }
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
+.sb-plano{display:none;margin:0 12px 10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:center}
+  .pl-tag{font-size:13px;font-weight:800;color:var(--laranja-claro);text-transform:uppercase;letter-spacing:.5px}
+  .pl-fim{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px}
+  .pl-btn{margin-top:8px;width:100%;padding:8px;border-radius:9px;border:1px solid var(--laranja);background:var(--laranja);color:#fff;font-weight:800;font-size:12px;cursor:pointer}
+  .pl-btn.sec{background:transparent;color:var(--laranja-claro)}
+  .pl-card.atual{border:2px solid var(--ok)}
+  .pl-card.sugerido{border:2px solid var(--laranja);box-shadow:0 8px 24px rgba(232,85,43,.25)}
+.pl-preco{font-size:26px;font-weight:800;color:var(--laranja-esc);margin:8px 0 4px}
+  .pl-preco span{font-size:13px;font-weight:600;color:var(--txt2)}
+  .pl-item{font-size:13px;padding:4px 0;color:var(--txt)}
+  .pl-item.off{color:#b9b3a7;text-decoration:line-through}
+  .trof .rk-on{position:absolute;bottom:52px;left:6px;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px}
+  .prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--linha)}
+  .prow:last-of-type{border-bottom:none}
+  .prow b{font-size:14px}
+  .prow input{margin:0}
+  .prow.alterado{background:rgba(232,85,43,.06);border-radius:8px;padding-left:8px;padding-right:8px}
   .sbcfg{background:none;border:none;color:var(--laranja-claro);font-size:14px;cursor:pointer;padding:0 6px 0 0;opacity:.9}
   .sbcfg:hover{opacity:1;transform:rotate(35deg)}
 </style>
@@ -502,6 +519,7 @@
     <div class="sb-brand"><img src="" id="sbLogo" alt="JavaStreak"></div>
     <div class="sb-user" id="sbUser"></div>
     <nav id="sbNav"></nav>
+    <div class="sb-plano" id="sbPlano"></div>
     <button class="sb-sair" onclick="logout()">Sair</button>
     <div class="sb-ver" id="sbVer"></div>
   </aside>
@@ -570,7 +588,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v22.07-supabase';
+var APP_VER = 'v25-pagamento';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -615,6 +633,7 @@ function server(fn){
   .then(function(j){
     if(!j.ok){
       if(j.error==='NAO_AUTENTICADO'){ setConn(true); sessaoExpirada(); throw new Error('Sessão expirada'); }
+      if(String(j.error||'').indexOf('PLANO_NECESSARIO')===0){ var pp=String(j.error).split('|'); abrirUpgrade(pp[1],pp[2]); throw new Error('PLANO'); }
       throw new Error(j.error || 'Erro no servidor');
     }
     setConn(true); return j.data;
@@ -695,6 +714,7 @@ function buildSidebar(){
     return '<div class="sb-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span>'+n.label+'</span></div>';
   }).join('');
   var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
+  pintarPlano();
   pintarCampanha();
   var u=document.getElementById('sbUser');
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
@@ -858,6 +878,7 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
 function iniciarPromoPoll(){
+  carregarPlano();
   // Uma única rotina: só busca quando a aba está visível, com intervalo folgado.
   carregarAvisos(); carregarCampanha(); carregarPromos();
   if(PROMO_TIMER) return;
@@ -1013,9 +1034,59 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Descri\u00e7\u00e3o</label><textarea id="cp_desc" placeholder="Ex: quem estiver em 1\u00ba lugar \u00e0s 22h do dia 30 leva o pr\u00eamio"></textarea>'+
       '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
       '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf81 Liberar acesso (cortesia)</h3><div class="meta" style="margin-bottom:8px">D\u00ea acesso gratuito por tempo determinado \u2014 para testes ou parceiros.</div>'+
+      '<label>Quem recebe</label><select id="ct_destino" onchange="mudouDestino()"><option value="login">Um usu\u00e1rio espec\u00edfico</option><option value="manejadores">Todos os manejadores</option><option value="empresas">Todas as empresas</option><option value="todos">Todos os usu\u00e1rios</option><option value="novos:7">Cadastrados nos \u00faltimos 7 dias</option><option value="novos:30">Cadastrados nos \u00faltimos 30 dias</option></select>'+
+      '<div id="ct_loginBox"><label>Login do usu\u00e1rio *</label><input id="ct_login" placeholder="login cadastrado"></div>'+
+      '<div id="ct_conta" class="meta" style="margin:4px 0"></div>'+
+      '<div class="two"><div><label>Plano</label><select id="ct_plano"><option value="n2">Veterano</option><option value="n1">Mateiro</option><option value="empresa">Empresa</option></select></div>'+
+      '<div><label>Dias</label><input id="ct_dias" inputmode="numeric" value="30"></div></div>'+
+      '<label>Observa\u00e7\u00e3o</label><input id="ct_obs" placeholder="ex: teste, parceiro, influenciador">'+
+      '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
-    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha();
+    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarParametros(); carregarAssinaturas();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
+function carregarAssinaturas(){ server('apiListarAssinaturas').then(function(l){ var el=document.getElementById('ctList'); if(!el)return;
+  el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div>'+l.map(function(a){
+    return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.login)+'</b> <span class="pill '+(a.vigente?'ok':'gray')+'">'+esc(a.nomePlano)+'</span><div class="meta">'+(a.vigente?'até '+fmtData(a.fim):'encerrado')+(a.obs?' · '+esc(a.obs):'')+'</div></div>'+(a.vigente?'<button class="ib" onclick="encerrarAss(\''+a.id+'\')" title="Encerrar">🚫</button>':'')+'</div>';
+  }).join('')):'<div class="meta">Nenhum acesso concedido ainda.</div>'; }).catch(function(){}); }
+window.mudouDestino=function(){ var d=val('ct_destino'); var box=document.getElementById('ct_loginBox');
+  if(box) box.style.display=(d==='login')?'block':'none';
+  var c=document.getElementById('ct_conta'); if(!c) return;
+  if(d==='login'){ c.textContent=''; return; }
+  c.textContent='Calculando…';
+  server('apiContarDestino',d).then(function(r){ c.innerHTML='<b>'+r.quantidade+'</b> usuário(s) receberão este acesso.'; }).catch(function(){ c.textContent=''; }); };
+window.darCortesia=function(btn){ var d=val('ct_destino');
+  var destino = (d==='login') ? ('login:'+val('ct_login')) : d;
+  if(d==='login' && !val('ct_login')){toast('Informe o login');return;}
+  if(d!=='login' && !confirm('Confirma liberar acesso para TODOS desse grupo?')) return;
+  btn.disabled=true; btn.textContent='Liberando…';
+  server('apiDarCortesia',destino,val('ct_plano'),val('ct_dias'),val('ct_obs'))
+  .then(function(r){ toast('Acesso liberado para '+r.quantidade+' usuário(s) ✔'); btn.disabled=false; btn.textContent='Liberar acesso';
+    ['ct_login','ct_obs'].forEach(function(id){var e=document.getElementById(id); if(e)e.value='';});
+    carregarAssinaturas(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
+window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
+function carregarParametros(){ server('apiListarParametros').then(function(l){ var el=document.getElementById('paramBox'); if(!el)return;
+  PARAMS=l||[];
+  el.innerHTML = PARAMS.map(function(p){
+    var campo = (p.tipo==='numero')
+      ? '<input id="pm_'+p.chave+'" inputmode="numeric" value="'+esc(String(p.valor))+'" style="max-width:110px;text-align:center" oninput="marcarParam(\''+p.chave+'\')">'
+      : '<input id="pm_'+p.chave+'" value="'+esc(String(p.valor||''))+'" oninput="marcarParam(\''+p.chave+'\')">';
+    return '<div class="prow" id="pr_'+p.chave+'"><div class="grow"><b>'+esc(p.nome)+'</b><div class="meta">'+esc(p.ajuda||'')+
+      (p.tipo==='numero'&&p.min!==undefined?' <span style="opacity:.7">(de '+p.min+' a '+p.max+')</span>':'')+'</div></div>'+campo+'</div>';
+  }).join('') + '<button class="btn" id="pmSalvar" style="margin-top:12px" onclick="salvarParametros(this)">Salvar ajustes</button>';
+}).catch(function(e){ var el=document.getElementById('paramBox'); if(el) el.innerHTML='<div class="meta">N\u00e3o foi poss\u00edvel carregar os ajustes.</div>'; }); }
+var PARAMS=[];
+window.marcarParam=function(chave){ var r=document.getElementById('pr_'+chave); if(r) r.classList.add('alterado');
+  var b=document.getElementById('pmSalvar'); if(b) b.textContent='Salvar ajustes \u2022'; };
+window.salvarParametros=function(btn){ var mapa={};
+  PARAMS.forEach(function(p){ var e=document.getElementById('pm_'+p.chave); if(e) mapa[p.chave]=e.value; });
+  btn.disabled=true; btn.textContent='Salvando\u2026';
+  server('apiSalvarParametros',mapa).then(function(){ toast('Ajustes salvos \u2714'); btn.disabled=false; btn.textContent='Salvar ajustes';
+    [].slice.call(document.querySelectorAll('.prow.alterado')).forEach(function(x){ x.classList.remove('alterado'); });
+    carregarParametros(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Salvar ajustes'; toast((e&&e.message)||'Erro'); }); };
 function carregarAvisosAdmin(){ server('apiListarAvisosAdmin').then(function(l){ var el=document.getElementById('avList'); if(!el)return;
   el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div>'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
     return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.titulo)+'</b> <span class="pill '+(ativo?'ok':'gray')+'">'+(ativo?'ativo':'expirado')+'</span><div class="meta">'+esc(a.publico||'Todos')+' \u00b7 '+fmtData(a.criadoEm)+'</div></div><button class="ib" onclick="excluirAviso(\''+a.id+'\')">\ud83d\uddd1\ufe0f</button></div>'; }).join('')) : '<div class="meta">Nenhum aviso enviado ainda.</div>'; }).catch(function(){}); }
@@ -1237,11 +1308,66 @@ window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))retur
    ============================================================ */
 VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de troféu'); loadingBox('Carregando sala…');
   server('apiMinhaSala').then(function(m){ var vis=m.visivel;
-    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
+    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button>'+(t.noRanking?'<span class="rk-on">no ranking</span>':'')+'<button class="btn sm '+(t.noRanking?'':'sec')+'" style="margin:0 8px 8px;width:calc(100% - 16px)" onclick="toggleRanking(\''+t.id+'\','+(t.noRanking?'false':'true')+')">'+(t.noRanking?'✓ Disputando ranking':'🏅 Colocar no ranking')+'</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
     app(heroFoto('trofeus','Minha sala de troféu','Aqui ficam só as suas fotos. Deixe a sala visível para entrar no <b>Ranking</b> e avaliar os troféus dos outros.','Troféus')+
       '<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" id="sala_vis" style="width:auto" '+(vis?'checked':'')+' onchange="toggleSala(this)"> Deixar minha sala visível (entra no ranking e permite avaliar)</label></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus troféus</h3></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'trofeuForm\')">＋ Adicionar</button></div><div style="margin-top:10px">'+mine+'</div></div>');
   }); };
+
+/* ================= PLANOS ================= */
+var MEUPLANO=null;
+var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',canis:'Canis',
+ caesPorCanil:'Cães por canil',transportes:'Meios de transporte',armadilhas:'Armadilhas',
+ abatesMes:'Abates por mês',trofeusRanking:'Troféus no ranking',compartilharRota:'Compartilhar rota',
+ fotoPerfil:'Trocar foto de perfil',verManejadores:'Ver manejadores na rede',filtrarPromos:'Filtrar promoções'};
+function carregarPlano(){ if(!AUTH.token) return; server('apiMeuPlano').then(function(p){ MEUPLANO=p; pintarPlano(); }).catch(function(){}); }
+function pintarPlano(){ var el=document.getElementById('sbPlano'); if(!el||!MEUPLANO) return;
+  var livre=(MEUPLANO.plano==='free');
+  el.style.display='block';
+  el.innerHTML='<div class="pl-tag">'+esc(MEUPLANO.nome)+'</div>'+
+    (MEUPLANO.fim?'<div class="pl-fim">até '+fmtData(MEUPLANO.fim)+(MEUPLANO.origem==='cortesia'?' · cortesia':'')+'</div>':'')+
+    (livre?'<button class="pl-btn" onclick="go(\'planos\')">Ver planos</button>':'<button class="pl-btn sec" onclick="go(\'planos\')">Meu plano</button>'); }
+function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
+window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
+VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
+  Promise.all([server('apiPlanosDisponiveis'), server('apiMeuPlano')]).then(function(res){
+    var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
+    var ehEmp=(meu.plano==='empresa');
+    var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
+    var aviso = info ? ('<div class="card" style="border-left:5px solid var(--laranja)"><h3 style="margin:0 0 4px">🔒 '+esc(LIMROTULO[info.recurso]||'Recurso')+'</h3><div class="meta">Não disponível no seu plano. Libera no plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div></div>') : '';
+    var per = '<div class="segbar" style="margin-bottom:12px"><button class="'+(PERIODO_SEL==='MES'?'on':'')+'" onclick="setPeriodo(\'MES\')">Mensal</button><button class="'+(PERIODO_SEL==='SEM'?'on':'')+'" onclick="setPeriodo(\'SEM\')">Semestral</button><button class="'+(PERIODO_SEL==='ANO'?'on':'')+'" onclick="setPeriodo(\'ANO\')">Anual</button></div>';
+    var cards;
+    if(ehEmp){
+      cards='<div class="card pl-card sugerido"><div class="row"><h3 class="grow" style="margin:0">Empresa</h3>'+(meu.ativo?'<span class="pill ok">ativo</span>':'')+'</div>'+
+        '<div class="meta" style="margin-top:6px">Acesso completo: presença no mapa, promoções relâmpago e ranking.</div>'+
+        '<div class="pl-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
+        (meu.ativo?'<div class="meta">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="btn" style="margin-top:12px" onclick="assinar(\'empresa\')">Assinar</button>')+'</div>';
+    } else {
+      cards = lista.map(function(p){
+        var atual=(p.plano===meu.plano);
+        var itens=Object.keys(LIMROTULO).map(function(k){ var v=p.limites[k]; var sim=(v!==0);
+          return '<div class="pl-item'+(sim?'':' off')+'">'+(sim?'✓':'✕')+' '+esc(LIMROTULO[k])+
+            (['compartilharRota','fotoPerfil','verManejadores','filtrarPromos'].indexOf(k)<0 && sim ? ' <b>'+limTexto(v)+'</b>':'')+'</div>'; }).join('');
+        var preco = (p.plano==='free') ? '<div class="pl-preco">Grátis</div>'
+          : '<div class="pl-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>';
+        return '<div class="card pl-card'+(atual?' atual':'')+(info&&info.precisa===p.plano?' sugerido':'')+'">'+
+          '<div class="row"><h3 class="grow" style="margin:0">'+esc(p.nome)+'</h3>'+(atual?'<span class="pill ok">seu plano</span>':'')+'</div>'+
+          preco+'<div style="margin-top:10px">'+itens+'</div>'+
+          (atual||p.plano==='free'?'':'<button class="btn" style="margin-top:12px" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+'</div>';
+      }).join('');
+    }
+    app(heroFoto('planos','Planos','Escolha o plano que combina com o seu manejo.','JavaStreak')+aviso+per+cards);
+  }); };
+var PERIODO_SEL='MES';
+window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
+function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
+  var sufixo = PERIODO_SEL==='MES'?'/mês':(PERIODO_SEL==='SEM'?'/semestre':'/ano');
+  return 'R$ '+n.toFixed(2).replace('.',',')+'<span>'+sufixo+'</span>'; }
+window.assinar=function(plano){ toast('Gerando cobrança…');
+  server('apiCriarPagamento',plano,PERIODO_SEL).then(function(r){
+    if(r&&r.checkoutUrl){ window.location.href=r.checkoutUrl; }
+    else toast('Não foi possível abrir o pagamento'); })
+  .catch(function(e){ if(e&&e.message!=='PLANO') toast((e&&e.message)||'Erro ao gerar cobrança'); }); };
 VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox('Carregando ranking…');
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
@@ -1258,6 +1384,7 @@ VIEWS.trofeuForm=function(){ setTitulo('Adicionar troféu'); setCrumb('Sala de t
 window.salvarTrofeu=function(btn){ if(!fotoData('tf_foto')){toast('Escolha uma foto');return;} btn.disabled=true; btn.textContent='Enviando…';
   server('apiAddTrofeu',{foto:fotoData('tf_foto'),titulo:val('tf_tit')}).then(function(){ toast('Troféu adicionado ✔'); STATE.stack=['trofeus']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Adicionar à sala'; }); };
 window.excluirTrofeu=function(id){ if(!confirm('Remover este troféu?'))return; server('apiExcluirTrofeu',id).then(function(){ toast('Removido'); render(); }); };
+window.toggleRanking=function(id,ativar){ server('apiSetTrofeuRanking',id,ativar).then(function(){ toast(ativar?'Troféu no ranking ✔':'Removido do ranking'); render(); }).catch(function(e){ if(e&&e.message!=='PLANO') toast(e.message||'Erro'); }); };
 window.toggleSala=function(chk){ server('apiSetSalaVisivel',chk.checked).then(function(){ render(); }); };
 function estrelasRO(media){ media=parseFloat(media)||0; var full=Math.round(media); var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=full?' on':'')+'">★</span>'; return '<span class="stars ro" title="'+media.toFixed(1)+'">'+s+'</span>'; }
 function estrelasVoto(id,minha){ minha=parseInt(minha,10)||0; var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=minha?' on':'')+'" onclick="avaliarTrofeu(\''+id+'\','+i+',this)">★</span>'; return '<div class="stars vote">'+s+'</div>'; }
