@@ -588,7 +588,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'v25-pagamento';
+var APP_VER = 'v25b-planos';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -877,6 +877,60 @@ function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
 var PROMO_TIMER=null;
+/* ================= PLANOS ================= */
+var MEUPLANO=null;
+var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',canis:'Canis',
+ caesPorCanil:'Cães por canil',transportes:'Meios de transporte',armadilhas:'Armadilhas',
+ abatesMes:'Abates por mês',trofeusRanking:'Troféus no ranking',compartilharRota:'Compartilhar rota',
+ fotoPerfil:'Trocar foto de perfil',verManejadores:'Ver manejadores na rede',filtrarPromos:'Filtrar promoções'};
+function carregarPlano(){ if(!AUTH.token) return; server('apiMeuPlano').then(function(p){ MEUPLANO=p; pintarPlano(); }).catch(function(){}); }
+function pintarPlano(){ var el=document.getElementById('sbPlano'); if(!el||!MEUPLANO) return;
+  var livre=(MEUPLANO.plano==='free');
+  el.style.display='block';
+  el.innerHTML='<div class="pl-tag">'+esc(MEUPLANO.nome)+'</div>'+
+    (MEUPLANO.fim?'<div class="pl-fim">até '+fmtData(MEUPLANO.fim)+(MEUPLANO.origem==='cortesia'?' · cortesia':'')+'</div>':'')+
+    (livre?'<button class="pl-btn" onclick="go(\'planos\')">Ver planos</button>':'<button class="pl-btn sec" onclick="go(\'planos\')">Meu plano</button>'); }
+function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
+window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
+VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
+  Promise.all([server('apiPlanosDisponiveis'), server('apiMeuPlano')]).then(function(res){
+    var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
+    var ehEmp=(meu.plano==='empresa');
+    var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
+    var aviso = info ? ('<div class="card" style="border-left:5px solid var(--laranja)"><h3 style="margin:0 0 4px">🔒 '+esc(LIMROTULO[info.recurso]||'Recurso')+'</h3><div class="meta">Não disponível no seu plano. Libera no plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div></div>') : '';
+    var per = '<div class="segbar" style="margin-bottom:12px"><button class="'+(PERIODO_SEL==='MES'?'on':'')+'" onclick="setPeriodo(\'MES\')">Mensal</button><button class="'+(PERIODO_SEL==='SEM'?'on':'')+'" onclick="setPeriodo(\'SEM\')">Semestral</button><button class="'+(PERIODO_SEL==='ANO'?'on':'')+'" onclick="setPeriodo(\'ANO\')">Anual</button></div>';
+    var cards;
+    if(ehEmp){
+      cards='<div class="card pl-card sugerido"><div class="row"><h3 class="grow" style="margin:0">Empresa</h3>'+(meu.ativo?'<span class="pill ok">ativo</span>':'')+'</div>'+
+        '<div class="meta" style="margin-top:6px">Acesso completo: presença no mapa, promoções relâmpago e ranking.</div>'+
+        '<div class="pl-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
+        (meu.ativo?'<div class="meta">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="btn" style="margin-top:12px" onclick="assinar(\'empresa\')">Assinar</button>')+'</div>';
+    } else {
+      cards = lista.map(function(p){
+        var atual=(p.plano===meu.plano);
+        var itens=Object.keys(LIMROTULO).map(function(k){ var v=p.limites[k]; var sim=(v!==0);
+          return '<div class="pl-item'+(sim?'':' off')+'">'+(sim?'✓':'✕')+' '+esc(LIMROTULO[k])+
+            (['compartilharRota','fotoPerfil','verManejadores','filtrarPromos'].indexOf(k)<0 && sim ? ' <b>'+limTexto(v)+'</b>':'')+'</div>'; }).join('');
+        var preco = (p.plano==='free') ? '<div class="pl-preco">Grátis</div>'
+          : '<div class="pl-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>';
+        return '<div class="card pl-card'+(atual?' atual':'')+(info&&info.precisa===p.plano?' sugerido':'')+'">'+
+          '<div class="row"><h3 class="grow" style="margin:0">'+esc(p.nome)+'</h3>'+(atual?'<span class="pill ok">seu plano</span>':'')+'</div>'+
+          preco+'<div style="margin-top:10px">'+itens+'</div>'+
+          (atual||p.plano==='free'?'':'<button class="btn" style="margin-top:12px" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+'</div>';
+      }).join('');
+    }
+    app(heroFoto('planos','Planos','Escolha o plano que combina com o seu manejo.','JavaStreak')+aviso+per+cards);
+  }); };
+var PERIODO_SEL='MES';
+window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
+function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
+  var sufixo = PERIODO_SEL==='MES'?'/mês':(PERIODO_SEL==='SEM'?'/semestre':'/ano');
+  return 'R$ '+n.toFixed(2).replace('.',',')+'<span>'+sufixo+'</span>'; }
+window.assinar=function(plano){ toast('Gerando cobrança…');
+  server('apiCriarPagamento',plano,PERIODO_SEL).then(function(r){
+    if(r&&r.checkoutUrl){ window.location.href=r.checkoutUrl; }
+    else toast('Não foi possível abrir o pagamento'); })
+  .catch(function(e){ if(e&&e.message!=='PLANO') toast((e&&e.message)||'Erro ao gerar cobrança'); }); };
 function iniciarPromoPoll(){
   carregarPlano();
   // Uma única rotina: só busca quando a aba está visível, com intervalo folgado.
@@ -1314,60 +1368,6 @@ VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de trofé
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus troféus</h3></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'trofeuForm\')">＋ Adicionar</button></div><div style="margin-top:10px">'+mine+'</div></div>');
   }); };
 
-/* ================= PLANOS ================= */
-var MEUPLANO=null;
-var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',canis:'Canis',
- caesPorCanil:'Cães por canil',transportes:'Meios de transporte',armadilhas:'Armadilhas',
- abatesMes:'Abates por mês',trofeusRanking:'Troféus no ranking',compartilharRota:'Compartilhar rota',
- fotoPerfil:'Trocar foto de perfil',verManejadores:'Ver manejadores na rede',filtrarPromos:'Filtrar promoções'};
-function carregarPlano(){ if(!AUTH.token) return; server('apiMeuPlano').then(function(p){ MEUPLANO=p; pintarPlano(); }).catch(function(){}); }
-function pintarPlano(){ var el=document.getElementById('sbPlano'); if(!el||!MEUPLANO) return;
-  var livre=(MEUPLANO.plano==='free');
-  el.style.display='block';
-  el.innerHTML='<div class="pl-tag">'+esc(MEUPLANO.nome)+'</div>'+
-    (MEUPLANO.fim?'<div class="pl-fim">até '+fmtData(MEUPLANO.fim)+(MEUPLANO.origem==='cortesia'?' · cortesia':'')+'</div>':'')+
-    (livre?'<button class="pl-btn" onclick="go(\'planos\')">Ver planos</button>':'<button class="pl-btn sec" onclick="go(\'planos\')">Meu plano</button>'); }
-function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
-window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
-VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
-  Promise.all([server('apiPlanosDisponiveis'), server('apiMeuPlano')]).then(function(res){
-    var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
-    var ehEmp=(meu.plano==='empresa');
-    var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
-    var aviso = info ? ('<div class="card" style="border-left:5px solid var(--laranja)"><h3 style="margin:0 0 4px">🔒 '+esc(LIMROTULO[info.recurso]||'Recurso')+'</h3><div class="meta">Não disponível no seu plano. Libera no plano <b>'+esc((lista.filter(function(p){return p.plano===info.precisa;})[0]||{}).nome||info.precisa)+'</b>.</div></div>') : '';
-    var per = '<div class="segbar" style="margin-bottom:12px"><button class="'+(PERIODO_SEL==='MES'?'on':'')+'" onclick="setPeriodo(\'MES\')">Mensal</button><button class="'+(PERIODO_SEL==='SEM'?'on':'')+'" onclick="setPeriodo(\'SEM\')">Semestral</button><button class="'+(PERIODO_SEL==='ANO'?'on':'')+'" onclick="setPeriodo(\'ANO\')">Anual</button></div>';
-    var cards;
-    if(ehEmp){
-      cards='<div class="card pl-card sugerido"><div class="row"><h3 class="grow" style="margin:0">Empresa</h3>'+(meu.ativo?'<span class="pill ok">ativo</span>':'')+'</div>'+
-        '<div class="meta" style="margin-top:6px">Acesso completo: presença no mapa, promoções relâmpago e ranking.</div>'+
-        '<div class="pl-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
-        (meu.ativo?'<div class="meta">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="btn" style="margin-top:12px" onclick="assinar(\'empresa\')">Assinar</button>')+'</div>';
-    } else {
-      cards = lista.map(function(p){
-        var atual=(p.plano===meu.plano);
-        var itens=Object.keys(LIMROTULO).map(function(k){ var v=p.limites[k]; var sim=(v!==0);
-          return '<div class="pl-item'+(sim?'':' off')+'">'+(sim?'✓':'✕')+' '+esc(LIMROTULO[k])+
-            (['compartilharRota','fotoPerfil','verManejadores','filtrarPromos'].indexOf(k)<0 && sim ? ' <b>'+limTexto(v)+'</b>':'')+'</div>'; }).join('');
-        var preco = (p.plano==='free') ? '<div class="pl-preco">Grátis</div>'
-          : '<div class="pl-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>';
-        return '<div class="card pl-card'+(atual?' atual':'')+(info&&info.precisa===p.plano?' sugerido':'')+'">'+
-          '<div class="row"><h3 class="grow" style="margin:0">'+esc(p.nome)+'</h3>'+(atual?'<span class="pill ok">seu plano</span>':'')+'</div>'+
-          preco+'<div style="margin-top:10px">'+itens+'</div>'+
-          (atual||p.plano==='free'?'':'<button class="btn" style="margin-top:12px" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+'</div>';
-      }).join('');
-    }
-    app(heroFoto('planos','Planos','Escolha o plano que combina com o seu manejo.','JavaStreak')+aviso+per+cards);
-  }); };
-var PERIODO_SEL='MES';
-window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
-function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
-  var sufixo = PERIODO_SEL==='MES'?'/mês':(PERIODO_SEL==='SEM'?'/semestre':'/ano');
-  return 'R$ '+n.toFixed(2).replace('.',',')+'<span>'+sufixo+'</span>'; }
-window.assinar=function(plano){ toast('Gerando cobrança…');
-  server('apiCriarPagamento',plano,PERIODO_SEL).then(function(r){
-    if(r&&r.checkoutUrl){ window.location.href=r.checkoutUrl; }
-    else toast('Não foi possível abrir o pagamento'); })
-  .catch(function(e){ if(e&&e.message!=='PLANO') toast((e&&e.message)||'Erro ao gerar cobrança'); }); };
 VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox('Carregando ranking…');
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
