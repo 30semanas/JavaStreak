@@ -626,6 +626,10 @@
   .cap-clique.ok .cap-txt{color:#2e8b3d}
   .cap-marca{font-size:18px;opacity:.5}
   /* visitas e tabela de limites */
+.hist-item{display:flex;align-items:flex-start;gap:10px;padding:13px 0;border-bottom:1px solid var(--linha)}
+  .hist-item:last-of-type{border-bottom:none}
+  .hist-item b{font-size:14.5px}
+  .hist-valor{font-weight:800;font-size:15px;color:var(--txt);white-space:nowrap}
   .vis-selo{display:inline-block;background:rgba(20,30,20,.07);color:var(--txt2);font-size:11px;font-weight:700;
     padding:3px 9px;border-radius:20px;margin:4px 0 6px}
   .lim-wrap{overflow-x:auto;margin-top:4px}
@@ -722,7 +726,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.1715';
+var APP_VER = 'vJS.230726.1728';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1184,6 +1188,41 @@ window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');ret
   .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
 window.excluirProp=function(id){ if(!confirm('Excluir esta propriedade?'))return;
   server('apiExcluirPropriedade',id).then(function(){ toast('Excluída'); render(); }); };
+
+/* ================= HISTÓRICO DE COMPRAS ================= */
+VIEWS.compras=function(){ setTitulo('Minhas compras'); setCrumb('Planos','Compras'); loadingBox('Carregando histórico…');
+  server('apiMeusPagamentos').then(function(d){
+    var pg=(d&&d.pagamentos)||[], asg=(d&&d.assinaturas)||[], res=(d&&d.resumo)||{};
+    var resumo='<div class="dash"><div class="kpi"><b>'+(res.compras||0)+'</b><span>compras</span></div>'+
+      '<div class="kpi"><b>R$ '+Number(res.totalPago||0).toFixed(2).replace('.',',')+'</b><span>total pago</span></div>'+
+      (res.pendentes?'<div class="kpi"><b style="color:var(--laranja-esc)">'+res.pendentes+'</b><span>pendente(s)</span></div>':'')+'</div>';
+
+    var listaPg = pg.length ? pg.map(function(p){
+      var st=String(p.status);
+      var cor = st==='pago'?'ok':(st==='pendente'?'warn':'gray');
+      var rot = st==='pago'?'PAGO':(st==='pendente'?'AGUARDANDO':st.toUpperCase());
+      return '<div class="hist-item"><div class="grow">'+
+        '<div class="row" style="gap:8px"><b>'+esc(p.plano)+' · '+esc(p.periodo)+'</b><span class="pill '+cor+'">'+rot+'</span></div>'+
+        '<div class="meta">'+fmtDataHora(p.criadoEm)+(p.pagoEm?' · pago em '+fmtDataHora(p.pagoEm):'')+'</div>'+
+        (st==='pendente'?'<div class="meta" style="color:var(--laranja-esc)">Aguardando confirmação. Boleto leva de 1 a 3 dias úteis.</div>':'')+
+        '</div><div class="hist-valor">R$ '+Number(p.valor||0).toFixed(2).replace('.',',')+'</div></div>';
+    }).join('') : '<div class="meta" style="padding:12px 0">Nenhuma compra registrada.</div>';
+
+    var listaAs = asg.length ? asg.map(function(a){
+      var origem = a.origem==='cortesia' ? '🎁 Cortesia' : (a.origem==='pagamento'?'💳 Compra':esc(a.origem||'—'));
+      return '<div class="hist-item"><div class="grow">'+
+        '<div class="row" style="gap:8px"><b>'+esc(a.plano)+'</b>'+(a.vigente?'<span class="pill ok">ATIVO</span>':'<span class="pill gray">encerrado</span>')+'</div>'+
+        '<div class="meta">'+origem+' · de '+fmtData(a.inicio)+(a.fim?' até '+fmtData(a.fim):'')+'</div>'+
+        (a.obs?'<div class="meta">'+esc(a.obs)+'</div>':'')+'</div></div>';
+    }).join('') : '<div class="meta" style="padding:12px 0">Nenhum plano registrado.</div>';
+
+    app(heroFoto('compras','Minhas compras','Acompanhe seus pagamentos e o histórico de planos.','Financeiro')+
+      resumo+
+      '<div class="card"><h3 style="margin:0 0 6px">💳 Pagamentos</h3>'+listaPg+
+      (res.pendentes?'<button class="btn sec" style="margin-top:12px" onclick="conferirPagamento(this)">🔄 Já paguei — atualizar</button>':'')+'</div>'+
+      '<div class="card"><h3 style="margin:0 0 6px">📅 Histórico de planos</h3>'+listaAs+'</div>'+
+      '<button class="btn sec" style="margin-top:4px" onclick="go(\'planos\')">Ver planos disponíveis</button>');
+  }).catch(function(e){ if(e&&e.message!=='PLANO') app('<div class="empty">Não foi possível carregar o histórico.</div>'); }); };
 /* ================= PLANOS ================= */
 var MEUPLANO=null;
 var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',canis:'Canis',
@@ -1257,7 +1296,9 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
       '<div class="pl-rodape">Pagamento por cartão, boleto ou PIX. Cancele quando quiser.<br>'+
       '<b>PIX e cartão liberam na hora. Boleto leva de 1 a 3 dias úteis para compensar.</b><br>'+
       'Na tela do Mercado Pago, preencha <b>todos os campos</b> (inclusive e-mail e CPF) para o botão Pagar funcionar.</div>'+
-      '<div style="text-align:center;margin-top:12px"><button class="btn sec" style="width:auto" onclick="conferirPagamento(this)">🔄 Já paguei — atualizar meu plano</button></div>');
+      '<div class="row" style="gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap">'+
+      '<button class="btn sec" style="width:auto" onclick="conferirPagamento(this)">🔄 Já paguei — atualizar</button>'+
+      '<button class="btn sec" style="width:auto" onclick="go(\'compras\')">🧾 Minhas compras</button></div>');
   }); };
 function economia(precos){ if(!precos) return '<div class="plano-eco"></div>';
   var m=Number(precos.MES)||0; if(!m) return '<div class="plano-eco"></div>';
