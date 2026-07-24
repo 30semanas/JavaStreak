@@ -751,7 +751,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2140';
+var APP_VER = 'vJS.230726.2320';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1627,8 +1627,10 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
   server('apiMinhaEmpresa').then(function(e){ STATE.empresa=e;
     if(!e){ app(heroFoto('empresa','Complete o cadastro da sua empresa','Preencha os dados para ativar sua presença na rede.','Empresa')+'<button class="btn" onclick="nav(\'empresaForm\')" style="margin-top:4px">Preencher dados da empresa</button><div style="text-align:center;margin-top:12px"><button class="btn sec" style="width:auto" onclick="diagEmpresa()">🔧 Diagnóstico</button></div>'); STATE.empresa=null; return; }
     var bloq = e.bloqueado==='Sim';
+    var semPlano = !!(MEUPLANO && MEUPLANO.plano==='empresa' && MEUPLANO.apareceNaRede===false);
+    var planoBanner = semPlano ? '<div class="card" style="border-left:5px solid var(--alerta)"><h3 style="margin:0 0 4px;font-size:15px">🔒 Plano Empresa inativo</h3><div class="meta">Sua conta continua ativa e você segue vendo a rede de manejadores e as outras lojas. Para <b>aparecer no mapa</b>, <b>lançar promoções</b> e <b>patrocinar destaque</b>, contrate o plano Empresa.</div><button class="btn" style="margin-top:8px" onclick="go(\'planos\')">Ver planos</button></div>' : '';
     var bloqBanner = bloq ? '<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Sua empresa está bloqueada</b> por denúncias e está em análise pelo administrador. Enquanto isso, não aparece na rede nem lança promoções.</div></div>' : '';
-    app(bloqBanner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
+    app(bloqBanner+planoBanner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
       '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+visitasSelo(e.visitas)+
       '<div class="meta" style="margin-top:6px">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
       (e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+
@@ -1636,12 +1638,13 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       '<button class="btn sec" style="margin-top:10px" onclick="nav(\'empresaForm\')">✏️ Editar dados da empresa</button></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+(bloq?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>')+'</div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+((bloq||semPlano)?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>'))+'</div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🏆 Patrocinar destaque</h3><div class="meta" style="margin-top:2px">Envie uma proposta para aparecer no card da lateral direita ou premiar o ranking. O administrador analisa e coloca no ar.</div></div></div>'+
       (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
-           :'<button class="btn" style="margin-top:10px" onclick="nav(\'patrocinioForm\')">📨 Enviar proposta ao administrador</button><div id="meusPatr" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>')+'</div>');
-    if(!bloq) carregarMeusPatrocinios();
-    if(!bloq) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
+           :(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>'
+           :'<button class="btn" style="margin-top:10px" onclick="nav(\'patrocinioForm\')">📨 Enviar proposta ao administrador</button><div id="meusPatr" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>'))+'</div>');
+    if(!bloq && !semPlano) carregarMeusPatrocinios();
+    if(!bloq && !semPlano) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
   }); };
@@ -1649,12 +1652,18 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
 var PATR_SEL={fila:'ok',no_ar:'warn',encerrado:'gray',recusado:'dan'};
 function patrCard(p,ehAdmin){
   var cor=PATR_SEL[p.status]||'gray';
+  var precos = (p.precoAtual||p.precoPromo)
+    ? ((p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>')
+    : '';
+  var foto = p.fotoUrl ? '<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-top:6px">' : '';
   var linhas='<div class="meta" style="margin-top:4px">'+
+    (p.produto?'🛍️ <b>'+esc(p.produto)+'</b><br>':'')+precos+
     (p.premio?'🎁 '+esc(p.premio)+'<br>':'')+
     (p.descricao?esc(p.descricao)+'<br>':'')+
     (p.valorProposto?'💰 Valor proposto: R$ '+esc(p.valorProposto)+'<br>':'')+
-    '⏱️ '+esc(p.duracaoDias||7)+' dia(s) no ar · enviada em '+fmtData(p.criadoEm)+
-    (p.obsAdmin?'<br>📝 <b>Administrador:</b> '+esc(p.obsAdmin):'')+'</div>';
+    (p.status==='no_ar'&&p.duracaoDias?'⏱️ '+esc(p.duracaoDias)+' dia(s) no ar<br>':'')+
+    'Enviada em '+fmtData(p.criadoEm)+
+    (p.obsAdmin?'<br>📝 <b>Administrador:</b> '+esc(p.obsAdmin):'')+'</div>'+foto;
   var cab='<div class="row"><div class="grow"><h3 style="font-size:15px;margin:0">'+esc(p.titulo||'(sem título)')+'</h3>'+
     '<div style="margin-top:4px"><span class="pill '+cor+'">'+esc(p.statusNome||p.status)+'</span> <span class="pill gray">'+esc(p.tipoNome||p.tipo)+'</span></div></div></div>';
   var acoes='';
@@ -1663,7 +1672,7 @@ function patrCard(p,ehAdmin){
       '<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'+
       (p.status==='no_ar'
         ? '<button class="btn sm sec grow" onclick="tirarPatrocinioDoAr(\''+p.id+'\')">⏹️ Tirar do ar</button>'
-        : '<button class="btn sm grow" onclick="patrocinioNoAr(\''+p.id+'\','+(parseInt(p.duracaoDias,10)||7)+')">▶️ Colocar no ar</button>')+
+        : '<button class="btn sm grow" onclick="patrocinioNoAr(\''+p.id+'\')">▶️ Colocar no ar</button>')+
       (p.status==='fila' ? '<button class="btn sm sec grow" style="background:#8a3a2c" onclick="recusarPatrocinio(\''+p.id+'\')">✖️ Recusar</button>' : '')+
       ((p.status==='encerrado'||p.status==='recusado') ? '<button class="btn sm sec grow" onclick="republicarPatrocinio(\''+p.id+'\')">↩️ Voltar para a fila</button>' : '')+
       '</div>';
@@ -1679,28 +1688,51 @@ window.cancelarPatrocinio=function(id){ if(!confirm('Cancelar esta proposta?'))r
   server('apiCancelarPatrocinio',id).then(function(){ toast('Proposta cancelada'); carregarMeusPatrocinios(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 VIEWS.patrocinioForm=function(){ setTitulo('Proposta de patrocínio'); setCrumb('Empresa','Patrocínio');
   app('<div class="card"><h3 style="margin:0 0 4px">🏆 Proposta de patrocínio</h3>'+
-    '<div class="meta" style="margin-bottom:10px">Descreva o que você quer patrocinar. A proposta entra numa fila e o administrador entra em contato para combinar os detalhes antes de colocar no ar.</div>'+
-    '<label>O que você quer patrocinar *</label><select id="pt_tipo"><option value="destaque">Destaque na lateral (card fixo)</option><option value="ranking">Prêmio do ranking</option></select>'+
-    '<label>Título que aparece no destaque *</label><input id="pt_tit" placeholder="Ex: Prêmio do mês — 1º lugar do ranking">'+
-    '<label>Prêmio / oferta</label><input id="pt_pre" placeholder="Ex: R$ 500 em produtos">'+
-    '<label>Descrição</label><textarea id="pt_desc" placeholder="Ex: quem estiver em 1º lugar às 22h do dia 30 leva o prêmio"></textarea>'+
-    '<div class="two"><div><label>Dias no ar</label><input id="pt_dias" inputmode="numeric" value="7"></div>'+
-    '<div><label>Valor que você oferece (R$)</label><input id="pt_valor" inputmode="decimal" placeholder="opcional"></div></div>'+
+    '<div class="meta" style="margin-bottom:10px">Escolha o que quer patrocinar. A proposta entra na fila e o administrador entra em contato antes de colocar no ar. <b>O tempo em que o destaque fica no ar é definido pelo administrador.</b></div>'+
+    '<label>O que você quer patrocinar *</label><select id="pt_tipo" onchange="trocarTipoPatrocinio()">'+
+      '<option value="destaque">Destacar um produto ou serviço meu</option>'+
+      '<option value="ranking">Premiar o 1º lugar do ranking</option></select>'+
+    '<label>Título que aparece no destaque *</label><input id="pt_tit" placeholder="Ex: Ração Javali Pro com 20% off">'+
+    '<div id="pt_boxDestaque">'+
+      '<label>Produto ou serviço destacado *</label><input id="pt_produto" placeholder="Ex: Ração Javali Pro 20kg">'+
+      '<div class="two"><div><label>Preço atual (R$)</label><input id="pt_pAtual" inputmode="decimal" placeholder="opcional"></div>'+
+      '<div><label>Preço no destaque (R$)</label><input id="pt_pPromo" inputmode="decimal" placeholder="opcional"></div></div>'+
+      '<label>Foto do produto ou serviço</label><input id="pt_foto" type="file" accept="image/*"><img id="pt_prev" class="foto-prev">'+
+    '</div>'+
+    '<div id="pt_boxRanking" style="display:none">'+
+      '<label>Prêmio para o 1º do ranking *</label><input id="pt_pre" placeholder="Ex: R$ 500 em produtos da loja">'+
+    '</div>'+
+    '<label>Descrição</label><textarea id="pt_desc" placeholder="Detalhes da oferta ou da premiação"></textarea>'+
+    '<label>Valor que você oferece pelo patrocínio (R$)</label><input id="pt_valor" inputmode="decimal" placeholder="opcional — o administrador negocia com você">'+
     '<label>Contato para o administrador</label><input id="pt_contato" placeholder="WhatsApp ou e-mail">'+
     '<button class="btn" onclick="enviarPatrocinio(this)">Enviar proposta</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
-  var e=STATE.empresa||{}; setVal('pt_contato', e.whatsapp||e.telefone||e.email||''); };
-window.enviarPatrocinio=function(btn){ if(!val('pt_tit')){ toast('Informe o título do destaque'); return; }
+  var e=STATE.empresa||{}; setVal('pt_contato', e.whatsapp||e.telefone||e.email||'');
+  bindFoto('pt_foto','pt_prev'); trocarTipoPatrocinio(); };
+window.trocarTipoPatrocinio=function(){ var t=val('pt_tipo');
+  var d=document.getElementById('pt_boxDestaque'), r=document.getElementById('pt_boxRanking');
+  if(d) d.style.display = (t==='destaque')?'block':'none';
+  if(r) r.style.display = (t==='ranking')?'block':'none'; };
+window.enviarPatrocinio=function(btn){ var t=val('pt_tipo');
+  if(!val('pt_tit')){ toast('Informe o título do destaque'); return; }
+  if(t==='destaque' && !val('pt_produto')){ toast('Informe o produto ou serviço a destacar'); return; }
+  if(t==='ranking' && !val('pt_pre')){ toast('Informe o prêmio para o 1º do ranking'); return; }
   btn.disabled=true; btn.textContent='Enviando…';
-  server('apiCriarPatrocinio',{tipo:val('pt_tipo'),titulo:val('pt_tit'),premio:val('pt_pre'),descricao:val('pt_desc'),
-    duracaoDias:val('pt_dias'),valorProposto:val('pt_valor'),contato:val('pt_contato')})
+  server('apiCriarPatrocinio',{tipo:t,titulo:val('pt_tit'),
+    premio:(t==='ranking'?val('pt_pre'):''),
+    produto:(t==='destaque'?val('pt_produto'):''),
+    precoAtual:(t==='destaque'?val('pt_pAtual'):''),
+    precoPromo:(t==='destaque'?val('pt_pPromo'):''),
+    foto:(t==='destaque'?fotoData('pt_foto'):''),
+    descricao:val('pt_desc'),valorProposto:val('pt_valor'),contato:val('pt_contato')})
   .then(function(){ toast('Proposta enviada ✔ Ela está na fila do administrador.'); STATE.stack=['empresa']; render(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Enviar proposta'; toast((e&&e.message)||'Erro'); }); };
 
 VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa'); setCrumb('Empresa','Editar');
   app('<div class="card"><label>Nome da empresa *</label><input id="em_nome" value="'+esc(e.nome||'')+'">'+
     '<label>Segmento *</label><select id="em_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
-    '<label>Descrição</label><textarea id="em_desc" placeholder="O que sua empresa oferece">'+esc(e.descricao||'')+'</textarea>'+
+    '<label>Descrição curta (aparece no mapa)</label><textarea id="em_desc" placeholder="Uma linha sobre a empresa">'+esc(e.descricao||'')+'</textarea>'+
+    '<label>Produtos e serviços (aparece para quem visita)</label><textarea id="em_vitrine" style="min-height:120px" placeholder="Liste o que você oferece. Ex:&#10;- Ração e suplementos&#10;- Manutenção de armadilhas&#10;- Adestramento de cães de rastreio">'+esc(e.vitrine||'')+'</textarea>'+
     '<div class="two"><div><label>Telefone</label><input id="em_tel" value="'+esc(e.telefone||'')+'"></div><div><label>WhatsApp</label><input id="em_wa" value="'+esc(e.whatsapp||'')+'" placeholder="DDD+número"></div></div>'+
     '<label>E-mail</label><input id="em_email" value="'+esc(e.email||'')+'">'+
     '<label>Cidade</label><input id="em_cidade" value="'+esc(e.cidade||'')+'">'+
@@ -1714,7 +1746,7 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
   if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
 window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),foto:fotoData('em_foto')};
+  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),vitrine:val('em_vitrine'),foto:fotoData('em_foto')};
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
 window.diagEmpresa=function(){ server('apiDiagEmpresa').then(function(r){
   var msg='Login: '+r.login+'\nTipo: '+r.tipo+'\nusuarioId: '+r.usuarioId+'\nEmpresas c/ meu usuário: '+r.empresasComMeuUsuario+' (total '+r.totalEmpresas+')\nColunas alinhadas: '+(r.alinhado?'SIM ✅':'NÃO ⚠️');
@@ -2018,8 +2050,9 @@ function carregarPatrociniosAdm(){ var f=val('pa_filtro')||'fila';
     el.innerHTML=(l&&l.length)? l.map(function(p){ return patrCard(p,true); }).join('')
       : '<div class="meta">Nenhuma proposta '+(f==='fila'?'na fila':'nesta situação')+'.</div>';
   }).catch(function(e){ var el=document.getElementById('patrBox'); if(el) el.innerHTML='<div class="meta">Erro ao carregar: '+esc((e&&e.message)||'')+'</div>'; }); }
-window.patrocinioNoAr=function(id,dias){
-  var d=prompt('Por quantos dias esta proposta fica no ar?', dias||7); if(d===null) return;
+window.patrocinioNoAr=function(id){
+  var d=prompt('Você define o tempo no ar. Por quantos dias?', 7); if(d===null) return;
+  if(!parseInt(d,10)){ toast('Informe um número de dias'); return; }
   server('apiPatrocinioNoAr',id,d).then(function(){ toast('Patrocínio no ar ✔'); carregarCampanha(); carregarCampanhasAdmin(); carregarPatrociniosAdm(); })
   .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 window.tirarPatrocinioDoAr=function(id){ if(!confirm('Tirar este patrocínio do ar?'))return;
@@ -2062,10 +2095,10 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
   var map=L.map('netMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
   addBase(map);
   ROUTEMAP=map; var layer=L.featureGroup().addTo(map);
-  (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).addTo(layer).bindPopup(netPopEmpresa(e)); });
+  (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).addTo(layer).bindPopup(function(){ return netPopEmpresa(e); }); });
   (d.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]);
     if(m.eu){ L.marker([la,ln],{icon:avatarIcon(m,52,true)}).addTo(layer).bindPopup('<div class="pop"><h4>📍 Você está aqui</h4></div>'); }
-    else { L.marker([la,ln],{icon:avatarIcon(m)}).addTo(layer).bindPopup(netPopManej(m)); } });
+    else { L.marker([la,ln],{icon:avatarIcon(m)}).addTo(layer).bindPopup(function(){ return netPopManej(m); }); } });
   if(STATE.tipo==='empresa' && STATE.empresa){ var ela=coord(STATE.empresa.lat), eln=coord(STATE.empresa.lng); if(ptOk(ela,eln)){ pts.push([ela,eln]); L.marker([ela,eln],{icon:avatarIcon({tipo:'empresa',fotoUrl:STATE.empresa.fotoUrl},52,true)}).addTo(layer).bindPopup('<div class="pop"><h4>📍 Sua empresa</h4></div>'); } }
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:14}); }catch(e){} } },150);
   var itens=(d.empresas||[]).map(function(e){return netCard(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}),e.nome,e.segmento,e.cidade,e.whatsapp,e.telefone,e.email);})
@@ -2080,15 +2113,17 @@ function visitasSelo(n){ n=parseInt(n,10)||0;
   return '<div class="vis-selo">👁️ '+n+' '+(n===1?'visita':'visitas')+'</div>'; }
 function netPopEmpresa(e){ var w=waLink(e.whatsapp); regVisita('empresa',e.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4>'+visitasSelo(e.visitas)+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div></div>'; }
 function netPopManej(m){ var w=waLink(m.whatsapp); regVisita('manejador',m.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+visitasSelo(m.visitas)+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'manejador\',\''+m.id+'\')">🚩 Denunciar</button></div></div>'; }
-window.verSalaDe=function(id){ var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
+window.verSalaDe=function(id){ regVisita('manejador',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
 window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
-window.verLoja=function(id){ var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
+window.verLoja=function(id){ regVisita('empresa',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiEmpresaPublica',id).then(function(e){ if(!e){ p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">Loja</h3><button class="ib" onclick="fecharSala()">✕</button></div><div class="empty">Loja indisponível.</div></div>'; return; }
     var w=waLink(e.whatsapp);
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏪 '+esc(e.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+
       '<div style="text-align:center;margin:8px 0"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
+      visitasSelo(e.visitas)+
+      (e.vitrine?'<div class="card" style="margin:8px 0;background:#fff8f0;border-color:#f0d9c0"><h3 style="font-size:14px;margin:0 0 4px">\ud83d\udecd\ufe0f Produtos e serviços</h3><div class="meta" style="white-space:pre-wrap">'+esc(e.vitrine)+'</div></div>':'')+
       '<div class="meta">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       (w?'<a class="btn sm" style="margin-top:8px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+
@@ -2157,8 +2192,11 @@ function pintarCampanha(){ var el=document.getElementById('campPanel'), body=doc
   if(tg){ tg.style.display='block'; tg.className='cp-toggle'+(CAMP_OCULTA?' fechado':'');
     tg.textContent = CAMP_OCULTA ? '🏆' : '›';
     tg.title = CAMP_OCULTA ? 'Mostrar campanha' : 'Ocultar campanha'; }
-  body.innerHTML='<span class="cp-tag">🏆 Campanha</span>'+
+  var tag = (c.tipo==='destaque') ? '⚡ Destaque' : '🏆 Campanha';
+  body.innerHTML='<span class="cp-tag">'+tag+'</span>'+
     '<h4>'+esc(c.titulo||'')+'</h4>'+
+    (c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:10px;margin-bottom:10px;object-fit:cover;max-height:150px">':'')+
+    ((c.precoAtual||c.precoPromo)?'<p>'+(c.precoAtual?'<span class="preco-old">R$ '+esc(c.precoAtual)+'</span> ':'')+(c.precoPromo?'<span class="preco-new">R$ '+esc(c.precoPromo)+'</span>':'')+'</p>':'')+
     (c.descricao?'<p>'+esc(c.descricao)+'</p>':'')+
     (c.patrocinador?'<div class="cp-sep"></div><p>Patrocínio<br><b style="color:#fff;font-size:14px">'+esc(c.patrocinador)+'</b></p>':'')+
     (c.premio?'<span class="cp-premio">🎁 '+esc(c.premio)+'</span>':'')+
@@ -3060,6 +3098,8 @@ function renderAgenda(){ var itens=AGENDA||[];
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
 var MAPFILTER={ espera:true, armadilha:true, busca:true, rede:true };
+/* Empresa nunca desenha camadas de manejo, mesmo que venha dado do servidor. */
+function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.rede=true; } }
 var NETDATA=null;
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 function addBase(map, def){
@@ -3082,7 +3122,7 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
-    MAPDATA=d;
+    MAPDATA=d; ajustarFiltroPorPerfil();
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
     var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
@@ -3103,14 +3143,18 @@ function posicionarMapShell(){ var s=document.getElementById('mapshell'), t=docu
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  var defs=[ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'], ['rede','🌐 Rede','#e8552b'] ];
+  // Empresa não tem ceva, armadilha nem rota — só a rede.
+  var defs = (STATE.tipo==='empresa')
+    ? [ ['rede','🌐 Rede','#e8552b'] ]
+    : [ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'], ['rede','🌐 Rede','#e8552b'] ];
   return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
 }
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
   var perfil='';
   if(STATE.tipo!=='empresa' && STATE.manejador){ var vis=(STATE.manejador.visivelNetwork==='Sim');
     perfil='<span class="chip'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')" title="Configurar meu perfil na rede">'+(vis?'👁️ Visível na rede':'🔒 Oculto na rede')+'</span>'; }
-  b.innerHTML='<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>'+chipsFiltro()+perfil+
+  var resumo = (STATE.tipo==='empresa') ? '' : '<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>';
+  b.innerHTML=resumo+chipsFiltro()+perfil+
     '<span class="chip busca-chip"><input id="mapBusca" placeholder="🔎 Buscar amigo ou loja" oninput="buscarNoMapa(this.value)" autocomplete="off"><div id="mapBuscaRes"></div></span>'; }
 window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; buildMapBar(); desenharMapa(); };
 window.buscarNoMapa=function(q){ var box=document.getElementById('mapBuscaRes'); if(!box) return;
@@ -3178,10 +3222,10 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
   if(MAPFILTER.rede && NETDATA){
     (NETDATA.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return;
-      add(L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).bindPopup(netPopEmpresa(e)),la,ln); });
+      add(L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).bindPopup(function(){ return netPopEmpresa(e); }),la,ln); });
     (NETDATA.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       if(m.eu){ add(L.marker([la,ln],{icon:avatarIcon(m,52,true)}).bindPopup('<div class="pop"><h4>📍 Você está aqui</h4></div>'),la,ln); }
-      else { add(L.marker([la,ln],{icon:avatarIcon(m)}).bindPopup(netPopManej(m)),la,ln); } });
+      else { add(L.marker([la,ln],{icon:avatarIcon(m)}).bindPopup(function(){ return netPopManej(m); }),la,ln); } });
   }
   var info=document.getElementById('mapCount'); if(info) info.textContent = pts.length? (pts.length+' ponto(s)') : 'Nada com esse filtro (ou sem coordenadas)';
   try{
