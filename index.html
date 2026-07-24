@@ -501,6 +501,7 @@
   #campPanel.fechado .cp-body{display:none}
   .cp-toggle.fechado{right:0}
   .cp-body{color:#fff;padding-top:8px}
+  .cp-data{display:block;margin-top:3px;font-size:11.5px;font-weight:600;opacity:.82}
   .cp-body .cp-tag{display:inline-block;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;
     letter-spacing:.7px;text-transform:uppercase;padding:5px 11px;border-radius:20px;margin-bottom:12px;
     box-shadow:0 4px 12px rgba(232,85,43,.4)}
@@ -817,7 +818,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.1103';
+var APP_VER = 'vJS.240726.1204';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1215,7 +1216,11 @@ VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.em
   var s=document.getElementById('l_senha'); if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
 };
 window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
-function aplicarAuth(r){ STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
+function aplicarAuth(r){
+  // O token é guardado AQUI, e não em cada chamada. O cadastro não salvava e a
+  // conta nova nascia sem sessão: tudo depois falhava com "não autenticado".
+  if(r && r.token) salvarToken(r.token);
+  STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
@@ -1240,6 +1245,13 @@ function aplicaMask(v, mask){ if(!mask) return soDig(v);
   }
   return out; }
 function maskCPF(v){ return aplicaMask(v,'000.000.000-00'); }
+function maskCNPJ(v){ return aplicaMask(v,'00.000.000/0000-00'); }
+window.mCNPJ=function(el){ var p=el.selectionStart, antes=el.value.length;
+  el.value=maskCNPJ(el.value); el.setSelectionRange(p+(el.value.length-antes),p+(el.value.length-antes)); };
+/* Turnstile só aceita cada token uma vez: depois de um erro é preciso renovar. */
+var CAPTCHA_WIDGET=null;
+function resetarCaptcha(){ CAPTCHA_TOKEN='';
+  try{ if(window.turnstile && CAPTCHA_WIDGET!==null) window.turnstile.reset(CAPTCHA_WIDGET); }catch(e){} }
 window.mCPF=function(el){ var p=el.selectionStart, antes=el.value.length;
   el.value=maskCPF(el.value); el.setSelectionRange(p+(el.value.length-antes),p+(el.value.length-antes)); };
 window.mTel=function(el){ var sel=document.getElementById(el.dataset.pais||'');
@@ -1600,7 +1612,7 @@ function iniciarPromoPoll(){
 }
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
-  server('apiLogin',login,senha).then(function(r){ salvarToken(r.token); aplicarAuth(r); })
+  server('apiLogin',login,senha).then(function(r){ aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Entrar'; }); };
 
 window.sairCadastro=function(){ STATE.stack=['login']; render(); };
@@ -1708,7 +1720,7 @@ function montarTurnstile(siteKey){
   var box=document.getElementById('capBox'); if(!box) return;
   box.innerHTML='<div id="tsWidget" class="ts-box"></div>';
   window.onTurnstileOk=function(tk){ CAPTCHA_TOKEN=tk; };
-  function render(){ if(window.turnstile){ window.turnstile.render('#tsWidget',{sitekey:siteKey,callback:window.onTurnstileOk,theme:'light'}); } }
+  function render(){ if(window.turnstile){ CAPTCHA_WIDGET=window.turnstile.render('#tsWidget',{sitekey:siteKey,callback:window.onTurnstileOk,theme:'light'}); } }
   if(window.turnstile) return render();
   var s=document.createElement('script');
   s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -1738,18 +1750,21 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
     telefone:telCompleto('f_tel'),whatsapp:telCompleto('f_wa'),
     endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),
     aceiteTermo:true, versaoTermo:TERMO_VERSAO,
-    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioEmitido:DESAFIO&&DESAFIO.emitido})
-  .then(function(r){ aplicarAuth(r); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; carregarDesafio(); }); };
+    captcha:CAPTCHA_TOKEN})
+  .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha(); }); };
 VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb('Criar conta','Empresa');
   app('<div class="card"><h3>Dados de acesso</h3>'+
-    '<label>Login *</label><input id="fe_login" autocomplete="username" placeholder="usuário ou e-mail">'+
-    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div></div>'+
+    '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
+    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
+    '<label>CNPJ</label><input id="fe_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)">'+
+    '</div>'+
     '<div class="card"><h3>Dados da empresa</h3>'+
     '<label>Nome da empresa *</label><input id="fe_nome">'+
     '<label>Segmento *</label><select id="fe_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><textarea id="fe_desc" placeholder="O que sua empresa oferece"></textarea>'+
-    '<div class="two"><div><label>Telefone</label><input id="fe_tel"></div><div><label>WhatsApp</label><input id="fe_wa" placeholder="DDD+número"></div></div>'+
+    campoTel('fe_tel','Telefone')+
+    campoTel('fe_wa','WhatsApp')+
     '<label>E-mail</label><input id="fe_email" type="email">'+
     '<label>Cidade</label><input id="fe_cidade">'+
     '<label>Endereço / sede</label><input id="fe_end">'+
@@ -1779,9 +1794,9 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
     cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),
     instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto'),
     aceiteTermo:true, versaoTermo:TERMO_VERSAO,
-    captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioEmitido:DESAFIO&&DESAFIO.emitido})
-  .then(function(r){ aplicarAuth(r); })
-  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; carregarDesafio(); }); };
+    captcha:CAPTCHA_TOKEN, cnpj:val('fe_cnpj')})
+  .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
+  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao();
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
 
@@ -1904,6 +1919,7 @@ window.enviarPatrocinio=function(btn){ var t=val('pt_tipo');
 VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa'); setCrumb('Empresa','Editar');
   app('<div class="card"><label>Nome da empresa *</label><input id="em_nome" value="'+esc(e.nome||'')+'">'+
     '<label>Segmento *</label><select id="em_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
+    '<label>CNPJ</label><input id="em_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)" value="'+esc(e.cnpj||'')+'">'+
     '<label>Descrição curta (aparece no mapa)</label><textarea id="em_desc" placeholder="Uma linha sobre a empresa">'+esc(e.descricao||'')+'</textarea>'+
     '<label>Produtos e serviços (aparece para quem visita)</label><textarea id="em_vitrine" style="min-height:120px" placeholder="Liste o que você oferece. Ex:&#10;- Ração e suplementos&#10;- Manutenção de armadilhas&#10;- Adestramento de cães de rastreio">'+esc(e.vitrine||'')+'</textarea>'+
     '<div class="two"><div><label>Telefone</label><input id="em_tel" value="'+esc(e.telefone||'')+'"></div><div><label>WhatsApp</label><input id="em_wa" value="'+esc(e.whatsapp||'')+'" placeholder="DDD+número"></div></div>'+
@@ -1919,7 +1935,7 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
   if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
 window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),vitrine:val('em_vitrine'),foto:fotoData('em_foto')};
+  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),vitrine:val('em_vitrine'),cnpj:val('em_cnpj'),foto:fotoData('em_foto')};
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
 window.diagEmpresa=function(){ server('apiDiagEmpresa').then(function(r){
   var msg='Login: '+r.login+'\nTipo: '+r.tipo+'\nusuarioId: '+r.usuarioId+'\nEmpresas c/ meu usuário: '+r.empresasComMeuUsuario+' (total '+r.totalEmpresas+')\nColunas alinhadas: '+(r.alinhado?'SIM ✅':'NÃO ⚠️');
@@ -2454,7 +2470,23 @@ window.marcarLida=function(id){ if(!isLida(id)){ PROMO_LIDAS.push(id); salvarLid
 window.desmarcarLida=function(id){ var i=PROMO_LIDAS.indexOf(id); if(i>=0){ PROMO_LIDAS.splice(i,1); salvarLidas(); } render(); };
 var INTERESSES=[];
 var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
-function fmtRestante(iso){ var ms=new Date(iso)-new Date(); if(ms<=0) return 'expirada'; var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return (h?h+'h ':'')+m+'min'; }
+/* Antes somava horas indefinidamente: uma campanha de 22 dias virava "536h".
+   Agora usa a maior unidade que faz sentido. */
+function fmtRestante(iso){
+  var ms=new Date(iso)-new Date();
+  if(isNaN(ms)) return '';
+  if(ms<=0) return 'encerrada';
+  var min=Math.floor(ms/60000), h=Math.floor(min/60), d=Math.floor(h/24);
+  if(d>=1) return d+' dia'+(d===1?'':'s')+((h%24)?' e '+(h%24)+'h':'');
+  if(h>=1) return h+'h'+((min%60)?' '+(min%60)+'min':'');
+  return min+'min';
+}
+/* Data e hora do encerramento, para não restar dúvida. */
+function fmtPrazo(iso){
+  var dt=new Date(iso); if(isNaN(dt)) return '';
+  var p=function(n){ return (n<10?'0':'')+n; };
+  return p(dt.getDate())+'/'+p(dt.getMonth()+1)+'/'+dt.getFullYear()+' às '+p(dt.getHours())+':'+p(dt.getMinutes());
+}
 function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(function(r){ PROMOS=r||{recebe:true,promos:[]}; }).catch(function(){}); }
 var AVISOS=[];
 var CAMPANHA=null;
@@ -2480,7 +2512,21 @@ function pintarCampanha(){ var el=document.getElementById('campPanel'), body=doc
     (c.descricao?'<p>'+esc(c.descricao)+'</p>':'')+
     (c.patrocinador?'<div class="cp-sep"></div><p>Patrocínio<br><b style="color:#fff;font-size:14px">'+esc(c.patrocinador)+'</b></p>':'')+
     (c.premio?'<span class="cp-premio">🎁 '+esc(c.premio)+'</span>':'')+
-    (c.encerraEm?'<span class="cp-time">⏳ encerra em '+fmtRestante(c.encerraEm)+'</span>':''); }
+    (c.encerraEm?'<span class="cp-time" id="cpPrazo">'+prazoCampanha(c.encerraEm)+'</span>':'');
+  agendarRelogioCampanha(); }
+function prazoCampanha(iso){
+  return '⏳ encerra em '+fmtRestante(iso)+'<span class="cp-data">📅 '+fmtPrazo(iso)+'</span>';
+}
+/* Um único relógio para a página inteira, atualizando só o texto do prazo. */
+var CAMP_RELOGIO=null;
+function agendarRelogioCampanha(){
+  if(CAMP_RELOGIO) return;
+  CAMP_RELOGIO=setInterval(function(){
+    var el=document.getElementById('cpPrazo');
+    if(!el || !CAMPANHA || !CAMPANHA.encerraEm) return;
+    el.innerHTML=prazoCampanha(CAMPANHA.encerraEm);
+  }, 60000);
+}
 var AVISO_LIDOS=(function(){ try{ return JSON.parse(localStorage.getItem('avisoLidos')||'[]'); }catch(e){ return []; } })();
 function salvarAvisoLidos(){ try{ localStorage.setItem('avisoLidos', JSON.stringify(AVISO_LIDOS)); }catch(e){} }
 function avisoLido(id){ return AVISO_LIDOS.indexOf(id)>=0; }
