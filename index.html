@@ -762,7 +762,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.0310';
+var APP_VER = 'vJS.230726.2255';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -2278,8 +2278,10 @@ function carregarPromos(){ if(!AUTH.token) return; server('apiPromocoes').then(f
 var AVISOS=[];
 var CAMPANHA=null;
 function carregarCampanha(){ if(!AUTH.token) return; server('apiCampanhaAtiva').then(function(c){ CAMPANHA=c||null; pintarCampanha(); }).catch(function(){ CAMPANHA=null; pintarCampanha(); }); }
-var CAMP_OCULTA=(function(){ try{ return localStorage.getItem('campOculta')==='1'; }catch(e){ return false; } })();
-window.toggleCampanha=function(){ CAMP_OCULTA=!CAMP_OCULTA; try{ localStorage.setItem('campOculta', CAMP_OCULTA?'1':'0'); }catch(e){} pintarCampanha(); };
+/* O destaque reaparece a cada carregamento: fechar vale só para a sessão atual.
+   Antes ficava guardado em localStorage e o patrocinador nunca mais era visto. */
+var CAMP_OCULTA=false;
+window.toggleCampanha=function(){ CAMP_OCULTA=!CAMP_OCULTA; pintarCampanha(); };
 function pintarCampanha(){ var el=document.getElementById('campPanel'), body=document.getElementById('cpBody'), tg=document.getElementById('cpToggle');
   if(!el||!body) return;
   if(!CAMPANHA || !AUTH.token){ el.className=''; body.innerHTML=''; if(tg) tg.style.display='none'; document.body.classList.remove('camp-on'); return; }
