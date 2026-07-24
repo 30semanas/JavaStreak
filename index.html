@@ -712,6 +712,10 @@
   .mod-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;color:var(--txt)}
   .mod-bar{height:8px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden}
   .mod-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#2e8b3d,#57b968);min-width:2px;transition:width .4s}
+  .resumo-plat .rp-item{display:flex;gap:11px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--linha)}
+  .resumo-plat .rp-item:first-of-type{border-top:none}
+  .resumo-plat .rp-ic{font-size:21px;flex:0 0 auto;line-height:1.3;width:26px;text-align:center}
+  .resumo-plat .rp-item b{font-size:14px;display:block;margin-bottom:1px}
   .blog-lista{display:flex;flex-direction:column}
   .blog-item{display:block;width:100%;text-align:left;padding:11px 2px;background:none;border:none;
     border-top:1px solid var(--linha);cursor:pointer;font-family:inherit;transition:background .12s}
@@ -828,7 +832,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.1644';
+var APP_VER = 'vJS.240726.2048';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1656,8 +1660,37 @@ window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=v
   server('apiConfirmarReset',STATE.emailReset,c,s1)
   .then(function(){ toast('Senha alterada! Faça login.'); STATE.stack=['login']; render(); })
   .catch(function(x){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((x&&x.message)||'Erro'); }); };
+/* Resumo do que a plataforma faz, mostrado no topo do cadastro para a pessoa
+   entender o que está criando. Um texto para cada tipo de conta. */
+function resumoPlataforma(tipo){
+  var itens = (tipo==='empresa')
+    ? [['🗺️','Apareça no mapa','Sua loja no mapa da rede, encontrada pelos manejadores da sua região.'],
+       ['⚡','Promoções relâmpago','Publique ofertas com validade curta que chegam aos manejadores por perto.'],
+       ['🏆','Patrocine destaques','Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.'],
+       ['🏪','Sua vitrine','Descreva seus produtos e serviços; quem visita sua loja vê tudo reunido.'],
+       ['📊','Veja quem te procura','Acompanhe quantas visitas seu perfil recebe.']]
+    : [['🌽','Espera com ceva','Cadastre cevas, o alimento usado e acompanhe o nível do tratadouro.'],
+       ['🧭','Rotas de caça','Grave por GPS suas rotas de aproximação e espreita, com marcações no caminho.'],
+       ['🐕','Cães e canil','Controle sua matilha por função, com saúde, vacinas e idade de cada cão.'],
+       ['🪤','Armadilhas','Registre suas armadilhas de captura com localização e tipo.'],
+       ['🎯','Abates e troféus','Registre abates, monte sua sala de troféus e dispute o ranking.'],
+       ['🗺️','Rede e mapa','Veja outros manejadores e as lojas parceiras no mapa da sua região.']];
+  var cor = tipo==='empresa' ? '#ee8a2e' : 'var(--verde)';
+  var titulo = tipo==='empresa'
+    ? 'O que sua empresa pode fazer aqui'
+    : 'O que você pode fazer no JavaStreak';
+  return '<div class="card resumo-plat" style="border-top:4px solid '+cor+'">'+
+    '<h3 style="margin:0 0 2px">'+esc(titulo)+'</h3>'+
+    '<div class="meta" style="margin-bottom:10px">Veja o que a plataforma oferece antes de criar sua conta.</div>'+
+    itens.map(function(x){
+      return '<div class="rp-item"><span class="rp-ic">'+x[0]+'</span>'+
+        '<div><b>'+esc(x[1])+'</b><div class="meta">'+esc(x[2])+'</div></div></div>';
+    }).join('')+'</div>';
+}
+
 VIEWS.registrar=function(){ setTitulo('Criar conta de manejador'); setCrumb('Criar conta');
-  app('<div class="card"><h3>Dados de acesso</h3>'+
+  app(resumoPlataforma('manejador')+
+    '<div class="card"><h3>Dados de acesso</h3>'+
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="meta" style="margin:-6px 0 8px">Seu e-mail será seu login e será usado para recuperar a senha.</div>'+
     '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password"></div>'+
@@ -1764,7 +1797,8 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha(); }); };
 VIEWS.registrarEmpresa=function(){ setTitulo('Criar conta de empresa'); setCrumb('Criar conta','Empresa');
-  app('<div class="card"><h3>Dados de acesso</h3>'+
+  app(resumoPlataforma('empresa')+
+    '<div class="card"><h3>Dados de acesso</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
     '<label>CNPJ</label><input id="fe_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)">'+
