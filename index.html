@@ -765,7 +765,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2309';
+var APP_VER = 'vJS.230726.2338';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -811,7 +811,9 @@ function server(fn){
   .then(function(j){
     if(!j.ok){
       if(j.error==='NAO_AUTENTICADO'){ setConn(true); sessaoExpirada(); throw new Error('Sessão expirada'); }
-      if(String(j.error||'').indexOf('PLANO_NECESSARIO')===0){ var pp=String(j.error).split('|'); abrirUpgrade(pp[1],pp[2]); throw new Error('PLANO'); }
+      if(String(j.error||'').indexOf('PLANO_NECESSARIO')===0){ var pp=String(j.error).split('|');
+        if(!SUPRIMIR_UPGRADE) abrirUpgrade(pp[1],pp[2]);
+        var er=new Error('PLANO'); er.plano=true; er.chave=pp[1]; throw er; }
       throw new Error(j.error || 'Erro no servidor');
     }
     setConn(true); return j.data;
@@ -828,6 +830,20 @@ function limparDadosSessao(){
   NETDATA=null; MAPDATA=null; MEUPLANO=null; CACHE={}; EDIT=null;
   PROMOS={recebe:true,promos:[]}; AVISOS=[]; CAMPANHA=null; VISITADOS={};
   try{ pintarCampanha(); }catch(e){}
+}
+/* Lista opcional de formulário: se o plano não libera, devolve vazio em vez de
+   jogar o usuário para a tela de planos. Sem isso um único item bloqueado
+   derrubava o formulário inteiro (Promise.all rejeita no primeiro erro). */
+var SUPRIMIR_UPGRADE=0;
+function serverOpc(fn){
+  var args=Array.prototype.slice.call(arguments,1);
+  SUPRIMIR_UPGRADE++;
+  return server.apply(null,[fn].concat(args))
+    .then(function(r){ SUPRIMIR_UPGRADE--; return r; })
+    .catch(function(e){ SUPRIMIR_UPGRADE--;
+      if(e && e.plano){ var v=[]; v.bloqueadoPorPlano=true; return v; }
+      return [];
+    });
 }
 function sessaoExpirada(){ salvarToken(''); limparDadosSessao(); AUTH.manejador=null; STATE.manejador=null; toast('Sessão expirada, entre novamente'); STATE.stack=['login']; render(); }
 function setConn(ok){ var d=document.getElementById('connDot'); if(!d)return; d.className='dot '+(ok?'on':'off'); d.title=ok?'Conectado':'Sem conexão'; }
@@ -3068,7 +3084,7 @@ VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadi
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
-  Promise.all([ server('apiListarCevas'), server('apiListarTransportes'), server('apiListarArmadilhas'), server('apiListarTodosCaes'), server('apiListarCanis'), server('apiListarRotas'), server('apiListarPropriedades').catch(function(){return [];}) ])
+  Promise.all([ serverOpc('apiListarCevas'), serverOpc('apiListarTransportes'), serverOpc('apiListarArmadilhas'), serverOpc('apiListarTodosCaes'), serverOpc('apiListarCanis'), serverOpc('apiListarRotas'), serverOpc('apiListarPropriedades') ])
   .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3]; ABATEOPTS.canis=res[4]; ABATEOPTS.rotas=res[5]; ABATEOPTS.props=res[6];
     app('<div class="card"><label>Tipo de manejo *</label><select id="ab_tipo" onchange="renderAbateCtx()">'+
         TIPOS_MANEJO.map(function(t){return '<option value="'+t+'">'+rotuloManejo(t)+'</option>';}).join('')+'</select>'+
@@ -3091,12 +3107,18 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
     renderAbateCtx();
   }); };
 function rotuloManejo(t){ return {'Espera':'Espera (com ceva)','Cães':'Meu canil','Espreita':'Rotas de manejo','Armadilha':'Armadilha'}[t]||t; }
+function avisoModalidade(chave,nome){
+  return '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0">'+
+    '<div class="meta">🔒 <b>'+esc(nome)+'</b> não está incluída no seu plano atual. '+
+    'Você pode registrar abates das outras modalidades normalmente.</div>'+
+    '<button class="btn sm" style="margin-top:8px;width:auto" onclick="abrirUpgrade(\''+chave+'\',\'n1\')">Ver planos</button></div>'; }
 function renderAbateCtx(){ var t=val('ab_tipo'), el=document.getElementById('abateCtx'); if(!el) return; var h='';
   if(t==='Espera'){
     h='<label>Ceva *</label><select id="ab_ceva" onchange="carregarAlimentosCeva()"><option value="">Selecione…</option>'+
       ABATEOPTS.cevas.map(function(c){return '<option value="'+c.id+'">'+esc(c.nome||'Ceva')+'</option>';}).join('')+'</select>'+
       '<label>Alimento na ceva</label><select id="ab_alim"><option value="">—</option></select>';
   } else if(t==='Cães'){
+    if((ABATEOPTS.canis||[]).bloqueadoPorPlano){ el.innerHTML=avisoModalidade('canis','Caçada com cães'); return; }
     h='<label>Matilha (canil) *</label><select id="ab_canil" onchange="renderCaesDaMatilha()"><option value="">Selecione…</option>'+
       (ABATEOPTS.canis||[]).map(function(k){return '<option value="'+k.id+'">'+esc(k.nome||'Canil')+'</option>';}).join('')+'</select>'+
       '<label>Cães na caçada *</label><div class="checks" id="ab_caes"><div class="meta">Selecione a matilha acima para listar os cães.</div></div>';
