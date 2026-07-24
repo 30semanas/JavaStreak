@@ -163,6 +163,12 @@
   body.logged.menu-open #overlay{opacity:1;pointer-events:auto}
   .sb-brand{padding:12px 10px;display:flex;justify-content:center;border-bottom:1px solid rgba(255,255,255,.12)}
   .sb-brand img{width:100%;max-width:200px;height:auto;max-height:200px;object-fit:contain;border-radius:8px}
+  .bino{width:17px;height:auto;vertical-align:-3px;margin-right:5px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+  .sb-status{display:flex;flex-wrap:wrap;gap:5px;padding:0 16px 9px;text-transform:none;letter-spacing:0}
+  .sb-status span{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;
+    border-radius:20px;background:rgba(255,255,255,.09);color:#cdd8bd}
+  .sb-status span.on{background:rgba(46,139,61,.28);color:#bfe6c6}
+  .sb-status img.bino{width:14px;margin-right:0}
   .sb-user{padding:9px 16px;font-size:12px;color:#b7c3a5;border-bottom:1px solid rgba(255,255,255,.08);text-transform:uppercase;letter-spacing:.3px}
   #sbNav{flex:1;padding:8px}
   .sb-item{display:flex;align-items:center;gap:12px;padding:11px 14px;margin:7px 6px;border-radius:7px;cursor:pointer;position:relative;
@@ -570,7 +576,7 @@
   .plano-lista li.sim span{color:#2e8b3d}
   .plano-lista li.nao{color:#a9a294}
   .plano-lista li.nao span{color:#cfc6b6}
-  .plano-lista li b{margin-left:auto;font-weight:800;color:var(--laranja-esc)}
+  .plano-lista li b{margin-left:auto;font-weight:800;color:#2e8b3d}
   .plano-btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--laranja);color:#fff;
     font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 4px 14px rgba(232,85,43,.32);transition:filter .15s}
   .plano-btn:hover{filter:brightness(1.08)}
@@ -765,7 +771,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2338';
+var APP_VER = 'vJS.240726.1027';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -933,8 +939,31 @@ function buildSidebar(){
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
     var cfg=(tipo==='empresa')?'':'<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>';
     u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span><span class="sb-plano-inline" id="sbPlano"></span>'; }
+  pintarStatusUsuario();
   buildTopNav(root, tipo);
 }
+/* Visitas + situação de compartilhamento, logo abaixo do nome no menu lateral. */
+function pintarStatusUsuario(){
+  var alvo=document.getElementById('sbStatus'); 
+  if(!alvo){ var u=document.getElementById('sbUser'); if(!u) return;
+    alvo=document.createElement('div'); alvo.className='sb-status'; alvo.id='sbStatus';
+    u.parentNode.insertBefore(alvo, u.nextSibling); }
+  if(STATE.tipo==='empresa'){
+    var e=STATE.empresa||{};
+    alvo.innerHTML='<span><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(e.visitas,10)||0)+'</span>';
+    return;
+  }
+  var m=STATE.manejador||{};
+  var salaAberta=(m.salaVisivel==='Sim');
+  var perfilNaRede=(m.visivelNetwork==='Sim');
+  var n=SALAS_COMPART_QTD;
+  alvo.innerHTML=
+    '<span title="Visitas ao seu perfil"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(m.visitas,10)||0)+'</span>'+
+    '<span class="'+(salaAberta?'on':'')+'" title="Sala de troféus">'+(salaAberta?'🏆 Sala pública':'🏆 Sala oculta')+'</span>'+
+    '<span class="'+(perfilNaRede?'on':'')+'" title="Perfil na rede">'+(perfilNaRede?'🌐 Perfil na rede':'🌐 Fora da rede')+'</span>'+
+    (n>0?'<span class="on" title="Pessoas que veem sua sala">🤝 '+n+' convidado'+(n===1?'':'s')+'</span>':'');
+}
+var SALAS_COMPART_QTD=0;
 function buildTopNav(root, tipo){
   var tn=document.getElementById('topnav'); if(!tn) return;
   var base=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR;
@@ -1355,7 +1384,8 @@ var LIMROTULO={cevas:'Cevas',rotas:'Rotas',marcacoesPorRota:'Pontos por rota',ca
  caesPorCanil:'Cães por canil',transportes:'Meios de transporte',armadilhas:'Armadilhas',
  abatesMes:'Abates por mês',trofeusRanking:'Troféus no ranking',compartilharRota:'Compartilhar rota',
  fotoPerfil:'Trocar foto de perfil',verManejadores:'Ver manejadores na rede',filtrarPromos:'Filtrar promoções',
- documentos:'📋 Documentação',propriedades:'🏞️ Propriedades'};
+ documentos:'Documentação',propriedades:'Propriedades',
+ compartilharSala:'Compartilhar sala de troféus'};
 function sincronizarPagamentos(cb){
   if(!AUTH.token) return cb&&cb();
   server('apiSincronizarPagamentos').then(function(r){
@@ -2231,13 +2261,14 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
 var VISITADOS={};
 function regVisita(tipo,id){ if(!id) return; var k=tipo+':'+id; if(VISITADOS[k]) return; VISITADOS[k]=1;
   server('apiRegistrarVisita',tipo,id).catch(function(){}); }
+var BINOCULO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAfCAYAAABXscv8AAAR/klEQVR42q2Ze5BkV33fP79z7r19u3t6enres7Oa2adeu3qsBMtTYk0VcQQ2DuDFVCj/ZZwEl22wg6tCxbDaVMp2lYlTpspVccpJxXEc2wiHYLChMEZCBglJIIK0O1pJu9qd3Z3Xzqu7b3ff5zknf3TPMiwrgZ3cql/NnTM9957P7/f9/c7vnBaAkydP6kceecT87sf/2Xs7cfrLRW6nZqZH4vpQ+bHNZueVShiKCNbirHaEzaj3vlarfSTQ1s3NzV7JVfiH//7U5x49dnR2+3NPPneN/7dLPnPypDp75zU5wQlOPPywERFOnTolR44syMn3P2IFHP+fLtmBP/Vr7/wlhfyBLVJ6cYbnBxy9fY7JsWHWt9qAIAACzkGeF+RpD89EHDi0nxcXi+RPPvPtqBToCzY3XymS7LwYsxUq1apV6aiS1/PiLKpP1dzMrVN316p+vTE6cm3uvrmn/tvDp9m391DwgQ//orvzwY9HztrXnLRzp5TIaevcYErSH/5HOQCQf/drDx0NguC5g5PiJNm0SYG6uBW4dmzd+37qTcxMjBB1YjxPoZRCKSVaiWjPQ3Bu+cLz3H3fPeorT2zwp3/+bRojAcZkYAx5ami3YhwOpST2ldiJsXJ1dDzg0G1T+IG32Im6urBSam5vs7G68nKp5H/q1tsO+gcPH8i3k/Dv3/3B080/+8+/fuDoHfvKn/3qrzx/+rT8kIceffSUB/DYY49x4sQJTpzAipy2P44D+ORHf+rP3nSk8YGGbBS+r71nLsI3n28SBsLtB8Z5z7veiKcVShRKCZ5WaK0QwPM9mtttLr74PSfVWR7/1gU3XPet1hpPK6lWSpIkTjY2IxEcSik87awfes7mmXiSq4pvqA+VqI1N0+3mfOnL36Mbpzz4xj0cf8N9W2cXXt5+9ttn5w4enPUfeugtz8y/5fiHwvCnn0uS/96AOvCulsgPO8W5U+qxh1HrRxbcyZMn4bGzwomHjYhcV4t89IMPzMwdmHxhdqhbH/Ji1yrq8sjXN1jedHie5vCs5r0/eYQ7Du2l00tQSn3/BdZRWEM5DHny6TMsrUfs2zuBLVKSOCUzgvY89s6MMr933G03O7SjGM/TokTwPQ/f19bXgjZdibevMnfoVqsmDsup3/5rt7K4yv69w7qkhWhrA5Onbn5uWqojo52trdbFWoUZJyIzs431Bx84+pXlKyvLTz+70Dh2313Lr3vzW782dugDZ14rhQDkt/7Ne3+u7Jk/j1ZfsVOTdfWdi45zl3NEl7HWUvLhp982zb/80DvRDjytcMZgCkOeG5RSfOOpBb77whL3Hh5FJesk3TbbaUjsaqSFIcstB+Ymecfb78V6GlcYvMBDexrlaZTWKN8nTTPOfPUL7Nk/TzBxB6c++UWarcQVxjhnCgk8Lb1eYhVWDVVDxFg8DYXNmbulzAfef5zmtUVWFi8yOjVrj77ujX/05UfPLLdbrXuOHt6b3XnHLU+O3T3/xyLvaZ46dUqdPn3ayu994uSnNtY3/vXWyitmZHxSP3GmDf4YKA8RsBaOHQ75+Z89ztREA2csvV5KL0mJk5yoHXHu4jp3H24wVKxCkdCjwWpcZWM7wVpHybcUheXO2+d401uPEpR8VOCBA+dc3woDoklaEV///F9yx73HWFh0fPavXiQs+yRxQjUM8LWiFyeusM457YkojbHWtVodq6XJJ3/9IfbvGeL8c0951UqJ8sxdZIVjbn6KIslY24xeGQpK75+4/yPfce6Ukt/7zff9r+cXLrynu7ViVLmhz16MGZvah3MOEcgKuHN/hem6YeHlVbRWJFneV0AccejAHn7yHa9nKLuKNjF+dYSXN6s8/p1rNOMSnufRGHIc3iNMjlW47eBehioBglAYgzUO4yzWOkxhEM/jypVlVhZf5O7Xv5kvfe0qSys9gkpImiSEnkdhCrLCgtakWQaAUopOp0dVN/nlf/EObplpuCf+7ks2N557/QMPyNjEMBtrkd2/b9Lf2IjWnn9h6Z53f+j3r3lplo+urbcwSSZpt0OS9R9mrUVEUMoR9Sz7JoSajjBO8JXBkGCDjNtvP0De2eLiyhq1oZA8Dfjrx69Q6FECv78+bUSK6ILhPnpMjEeUK+NkWY4xDmMMeWEpCkNRGLK8Q6VWZyOCs2fPMTY6zEvnOyR5SpKktERQIjhrsUBuLS7P0FrhHCyudvmvf/IV3vbgPbLeG9FPP/FNLqxb5manKFdC3Y6T7MzC4tSV5a3f+BmRj3nGOi1AY7jMRlcRlnR/YR0srloJ3dgwOlLjzUcbRO0eaZqSxxZK4zQaNV566QxZr83ecoNvPr1MLnVCX+GcAxECDwrnc/ZyxtR4m+GhKiJQGEsvTok6Cb04JU4yenFKYRydTHPxmQXGpucp0g6ttsMPfALfJ00STJ5RWEuSF4N3WQoEXynOn18D73nqwzVSV+LZ/3OOZtewubnN2l90PBHc8FD5Z/7mb37l33pKpFsulwh1QSnX/cbgenPR73ocQqdX8Mw3zrPdjjHGgTEcOz5L3Is5f3GVkeGAiysxV1ZTJmdmKEyOiEJEcICvoZMGLK6mjI60eeI7F0iznE43IU1zcmNw1mGdwzmw1hJtdYjtKpaAvJdCpnFBCWstSSfqF2kFZdEYa7GFRTlFr5uwd7rB6maPNBeUzVhZ26bIMxDEWitxkk1/8bNnpj3fUytZXvDy8pYLysO0o4KJGbfT9w3SoA9RWGF4uIpSAiZnYnKC1bVNlq61CMuTXF3cxlJHlCBWEOnb4EFoLSxtGo4BV5c3WdtoIbJTCHevU+AQ8txB1O3XhjzHFI4sTckRxDlw/brRMwWhpxBrydMYk8ak7RYPHD/KZ5ZWII8RQGtNfbiKsxatNSQJXrlcWhgfrbO9vsr4SJmVrS5FnuP5pZ2Z4CmhXPLYMzNCmhqUQJzkhJUKVy+t0WzHJIVj9Vqb0sjEgFehBqm040xPCVHcL6yT4zUuXFolDAOMMbv7soFThFIQUPIgKhwZghhLTgFKY9MMC1S0IzOWrBj0xc6g/YBvP3eR5e2E2nCVrbUm1UoJrYWwVHJKiSusXZk4PLviiVZPT4yPcG1lSE2OBMxOKpK8h18qg+tPrFLWeJ7CeUMMD1VQWlE1jlJYpttL8D2NVppunFMd964rR3YcIP3ti1JClis6PcvM5AjW7ihtRy19JygFDoXv+ZQC6BWKzOZg6Rc7ACVoZ+mmOaIUDsETh7VgnKMx1qDZ6jE5VmbP9CgzUw2Gh0IXlEp5ueSV1jbaf3H69COZ/oljMxulytDPazH10Yqxk5Pjst5M8YIhRByFFeanAg7N1fH9EhMTo9TrNarVMpVqha2tFoEkzM+OsbpdUB4aIyxXf2CXsgPXX11gz7jHcFXx3LkrlEo+IsKgdcbzNZ6nCXwfZw3OFWi/wvZ2TO4cTik8z0OrvsKcCKI1YeBTK5dwSoHKGanBvfceIaTjxibGmRhvSKM+JPtvGfeS1JwJ/PAXapO3F+o3/sPfdpVSX7j7yH7mZ4bt8Vsr7J0I6HaaZIUi0I75mTJhKaBcKvVb4Z39qOtX5iQzJEmGs4YkTfv5tUsFIoKo/j4CURQGyqFPWAooBT5hGFAOA8JyiXJYohwGVMoltNaIKMIwoEAojMNYR+EchQOnNH4QUAlD/CDAeAGJhEzvneKeY3e7mp/ZobInteG6NLebgGm3o/iRtbWtf/qR03/aO3v2rPYArl5r/uHQ/okPjw+PiCu67sEjFTGmQ0bK3HSZ+dn+bjDNc0RwRWFJ04whY0REcWm5jQ5KCNButbhlTlMUxfUC+IPpwPWIh2FApRzgALXbWQKe74OJKQdlcvFBNOVAg1L4g3riaYVxQiEKlCLNjfMC4c1vuFU805W815TNuHz1b7/29LMlT7XyYuHrZ8+vfRVIGg2qCwsLmfe2+fnw0//la8/95q++84+C6dovbq9t5CZP/ENTPoSBGx2rUy75rCxdE08L1lpRYinylE4UMT01ShD4xL2E2ckJzi5GOGe/DzRIBTUwEUfJFxAohwFD1fB6J6eU9KWtFH7gI3nE2GiN1S1NyfMoBx4iioqvyfKcxFiMKFcYi8kKNEZOvHWeIonM5ZX19mrLnfvio9970hizDXQBF2h9l1Pm0vY2q0DhnUsW9cTExNATT73wieAtR+8fHt573+qVJYwVZhoVOTw/xZUry2xubbssy7OomyStKIlLnlTGRpPKkbvu9Ganx8iSiMnRkMvXMnrdDpXK0PVGaKe0iyg8VVAfUhSmYHioTKNeHShitwP6qaISj+mpCRaXrlHSHlprCmNcN3PEuRHrLKEyEioIq5qpyWrvqecuvvDK5a3l9WZyOcuyJSBRSnVEZENEVrOiWMcQAQXgBKhVKlR7PWr7bxnd93PvPv7x6bHhNygtpcCTZOHFq1cf+9aLFzZbvXy7lRa9pOgXYSWlWiXwfufjP/vWleWl2gsL59z87KjkusFLy4rZ+dvJ0gSlVb+yC6A8Qol439tnWFqPWDh3hfpwpa8AUYjqf05rTdyNGPZjitIUn//igktyR2EKcUWOdhblDIXJk7QoIh2ouMCtXlhqXujF2RoQAW3fV+08t01gHVgDWkAMZDsO8AC/14MA5OKVrfbv/MGXf3duT+NoOfSmF5e2dJIaB3iAP1isrYgUIphWJ+09e2ax8a6fOPLGaOuaGwqc7NtfI85jmq1N6iPjmCIb5H+/LhyYE2rDFbKlbRr1KmHo7+oA+oXVoCi5iOk9t7i/+9Y1ut1MtAbTjUyeZZ1eljY7Sd7a6qXt3LrWAOwasO4pFVts11q6A/hrwBbQARIgB+zAnNA/UvEALwwJrA2qWZbVgSlg3PNUBYu2WIdFbH+uWinlgXWTY7X6p0//84+ZeNNPW8sMlz2x5Uk+//erRHmd4cYkIgprDbftybnr4BCze6d5+tmXsYUZbLkd1lqMtRirSKJ1t286lI24zl9+7lk2W91oO2ovt3tJ1MtNdwASAdsCm6JUG0istfEg15vAxk3AC8AMzg8t4PQA3gKmKCiMMUmlQlvrcL0oihVr3bp1ru0cses/KAa6zrmW56moHaUvzc2OlI/ff+SISyOLK1RZJRzaP0WaxaTdJmN1j/tvLTM3GTA5MUpWGK5cWQNweW4oTCFZVrhuLyeJNrll3JOuG+F/f+HZ5ouXVi9d3th+OUqyjdy6bWBdhKsCl4FlYNs513bObQErwBVgaeCA6AbJX4/8jgkQDhSodv1UgN51v5MCweB+x3F+6Hm+Lunyf/zEyf90676JgysXzxpleloJSHkSXWlQqZTJC4uxwu237nXffOoFNjaaohQkSUanm5BnGbUyTI1WWItU7398/rsL5xfX1wfR64nQdo4m0B5A7QQjArYHtgO8E+0daLML2u46QXYygJLdp8Q3mLrhfgc+AMqe540URRG87ujegx/7Vw99amK0Onrp/EtmY31dLa1uoYIah287zJ7pcXf3nfPqwqVlvvHkGeIkY32z3SuMZbgaekGg8zx37efPb64//syFy0BLRLo4t+W+D50ObDd4ayDzdBBpczOp32DXj9FlAHSjA3gVR+xWhwZKQL2k9XRqjH/fkdnbPvoL/+Qj++Ym97XaHaJOTKVcYnK8zuRYje8+/0r2x595fPHS1a2t1c1ua6OZdD2lpFYreb2kSNM07w7yNlJKda21vUE08wFcMoBtDsC7A/Dd+W1+BLT7oe8FboC+GTw3ccLutKiVtN6TGlNXiskPf/DBtx8/duD+Rn1owjknzWa3+fWnzq3+z796+lKS2uau9HIDgAiIPaViFFFR2HSXhHeDtwaf7Q3Gd4Pbm+X47mjfAO9+YPX5MZxwoxq8XangA4Hv+8N5no8Cw8BUtexPFYUtp7lxg/8LtBaxlgxczzm6QKwUmbXXgXckvCP17gB6p/pnN4n2jnFjjt8E/Ad+l1f7suQmkf9R6bDjEL9RrVajNB0pimIUaHieqmqtJM+L3NrrUbO7ctQOxvIBeG9gu6HzG6BfLcdfM+KvBvta4zcriOpVxvUuU2GIbxMqGVQG9aI0cJLaFa3d4MnA0leJtHsVmbsfAev4MUB/HCXcCM8umJutGDJ4uexKl52ldOdv5oZl60Zp3yzK/yCZv9b1fwEJFmosC96p1AAAAABJRU5ErkJggg==';
 function visitasSelo(n){ n=parseInt(n,10)||0;
-  return '<div class="vis-selo">👁️ '+n+' '+(n===1?'visita':'visitas')+'</div>'; }
+  return '<div class="vis-selo"><img src="'+BINOCULO+'" class="bino" alt="">'+n+' '+(n===1?'visita':'visitas')+'</div>'; }
 function netPopEmpresa(e){ var w=waLink(e.whatsapp); regVisita('empresa',e.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4>'+visitasSelo(e.visitas)+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div></div>'; }
 function netPopManej(m){ var w=waLink(m.whatsapp); regVisita('manejador',m.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+visitasSelo(m.visitas)+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'manejador\',\''+m.id+'\')">🚩 Denunciar</button></div></div>'; }
 window.verSalaDe=function(id){ regVisita('manejador',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
-    p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
+    p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.porConvite?'<div class="meta" style="margin:6px 0;padding:7px 10px;background:rgba(46,139,61,.12);border-radius:8px">🤝 Esta sala está oculta ao público. Você a vê porque foi convidado.</div>':'')+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
 window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
 window.verLoja=function(id){ regVisita('empresa',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiEmpresaPublica',id).then(function(e){ if(!e){ p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">Loja</h3><button class="ib" onclick="fecharSala()">✕</button></div><div class="empty">Loja indisponível.</div></div>'; return; }
@@ -2416,8 +2447,50 @@ VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de trofé
     var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button>'+(t.noRanking?'<span class="rk-on">no ranking</span>':'')+'<button class="btn sm '+(t.noRanking?'':'sec')+'" style="margin:0 8px 8px;width:calc(100% - 16px)" onclick="toggleRanking(\''+t.id+'\','+(t.noRanking?'false':'true')+')">'+(t.noRanking?'✓ Disputando ranking':'🏅 Colocar no ranking')+'</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
     app(heroFoto('trofeus','Minha sala de troféu','Aqui ficam só as suas fotos. Deixe a sala visível para entrar no <b>Ranking</b> e avaliar os troféus dos outros.','Troféus')+
       '<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" id="sala_vis" style="width:auto" '+(vis?'checked':'')+' onchange="toggleSala(this)"> Deixar minha sala visível (entra no ranking e permite avaliar)</label></div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🤝 Quem pode ver minha sala</h3><div class="meta" style="margin-top:2px">Convide alguém pelo e-mail. A pessoa vê suas fotos <b>mesmo com a sala oculta</b>.</div></div></div>'+
+        '<div id="salaCompartBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus troféus</h3></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'trofeuForm\')">＋ Adicionar</button></div><div style="margin-top:10px">'+mine+'</div></div>');
+    carregarSalaCompart();
   }); };
+
+/* ===== COMPARTILHAR A SALA (Veterano) ===== */
+function carregarSalaCompart(){
+  var box=document.getElementById('salaCompartBox'); if(!box) return;
+  var podeCompartilhar = !!(MEUPLANO && MEUPLANO.limites && MEUPLANO.limites.compartilharSala !== 0);
+  if(!podeCompartilhar){
+    box.innerHTML='<div class="meta">🔒 Compartilhar a sala está disponível no plano <b>Veterano</b>.</div>'+
+      '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="abrirUpgrade(\'compartilharSala\',\'n2\')">Ver planos</button>';
+    SALAS_COMPART_QTD=0; pintarStatusUsuario(); return;
+  }
+  serverOpc('apiMinhasSalasCompartilhadas').then(function(l){
+    l=l||[]; SALAS_COMPART_QTD=l.length; pintarStatusUsuario();
+    var lim=(MEUPLANO.limites.compartilharSala===-1)?'ilimitado':MEUPLANO.limites.compartilharSala;
+    box.innerHTML=
+      '<div class="row" style="gap:6px"><input id="sc_login" placeholder="e-mail do manejador" style="margin:0" '+
+        'onkeydown="if(event.key===\'Enter\')compartilharSala(this)">'+
+        '<button class="btn sm" style="width:auto;margin:0" onclick="compartilharSala(this)">Convidar</button></div>'+
+      '<div class="meta" style="margin-top:6px">'+l.length+' de '+lim+' convidado(s).</div>'+
+      (l.length? '<div style="margin-top:8px">'+l.map(function(x){
+        return '<div class="row" style="gap:8px;padding:7px 0;border-top:1px solid var(--linha)">'+
+          '<img src="'+esc(avatarUrl({tipo:'manejador',fotoUrl:x.fotoUrl}))+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover">'+
+          '<div class="grow"><b style="font-size:13.5px">'+esc(x.nome)+'</b><div class="meta">'+esc(x.login)+'</div></div>'+
+          '<button class="ib" title="Remover" onclick="descompartilharSala(\''+x.id+'\')">🗑️</button></div>'; }).join('')+'</div>'
+        : '<div class="meta" style="margin-top:6px">Ninguém convidado ainda.</div>');
+  });
+}
+window.compartilharSala=function(btn){
+  var v=val('sc_login'); if(!v){ toast('Informe o e-mail'); return; }
+  if(btn && btn.tagName==='BUTTON'){ btn.disabled=true; }
+  server('apiCompartilharSala', v)
+    .then(function(r){ toast('Convite criado: '+r.nome+' já pode ver sua sala ✔'); carregarSalaCompart(); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); })
+    .then(function(){ if(btn && btn.tagName==='BUTTON') btn.disabled=false; });
+};
+window.descompartilharSala=function(id){
+  if(!confirm('Remover o acesso desta pessoa à sua sala?')) return;
+  server('apiDescompartilharSala', id).then(function(){ toast('Acesso removido'); carregarSalaCompart(); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); });
+};
 
 VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox('Carregando ranking…');
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
