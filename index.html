@@ -751,7 +751,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2036';
+var APP_VER = 'vJS.230726.2140';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1636,11 +1636,67 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       '<button class="btn sec" style="margin-top:10px" onclick="nav(\'empresaForm\')">✏️ Editar dados da empresa</button></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+(bloq?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>')+'</div>');
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+(bloq?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>')+'</div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🏆 Patrocinar destaque</h3><div class="meta" style="margin-top:2px">Envie uma proposta para aparecer no card da lateral direita ou premiar o ranking. O administrador analisa e coloca no ar.</div></div></div>'+
+      (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
+           :'<button class="btn" style="margin-top:10px" onclick="nav(\'patrocinioForm\')">📨 Enviar proposta ao administrador</button><div id="meusPatr" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>')+'</div>');
+    if(!bloq) carregarMeusPatrocinios();
     if(!bloq) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
   }); };
+/* ===== PATROCÍNIO — lado da empresa ===== */
+var PATR_SEL={fila:'ok',no_ar:'warn',encerrado:'gray',recusado:'dan'};
+function patrCard(p,ehAdmin){
+  var cor=PATR_SEL[p.status]||'gray';
+  var linhas='<div class="meta" style="margin-top:4px">'+
+    (p.premio?'🎁 '+esc(p.premio)+'<br>':'')+
+    (p.descricao?esc(p.descricao)+'<br>':'')+
+    (p.valorProposto?'💰 Valor proposto: R$ '+esc(p.valorProposto)+'<br>':'')+
+    '⏱️ '+esc(p.duracaoDias||7)+' dia(s) no ar · enviada em '+fmtData(p.criadoEm)+
+    (p.obsAdmin?'<br>📝 <b>Administrador:</b> '+esc(p.obsAdmin):'')+'</div>';
+  var cab='<div class="row"><div class="grow"><h3 style="font-size:15px;margin:0">'+esc(p.titulo||'(sem título)')+'</h3>'+
+    '<div style="margin-top:4px"><span class="pill '+cor+'">'+esc(p.statusNome||p.status)+'</span> <span class="pill gray">'+esc(p.tipoNome||p.tipo)+'</span></div></div></div>';
+  var acoes='';
+  if(ehAdmin){
+    acoes='<div class="meta" style="margin-top:6px">🏪 <b>'+esc(p.empresaNome||'(empresa)')+'</b>'+(p.contato?' · 📞 '+esc(p.contato):'')+'</div>'+
+      '<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">'+
+      (p.status==='no_ar'
+        ? '<button class="btn sm sec grow" onclick="tirarPatrocinioDoAr(\''+p.id+'\')">⏹️ Tirar do ar</button>'
+        : '<button class="btn sm grow" onclick="patrocinioNoAr(\''+p.id+'\','+(parseInt(p.duracaoDias,10)||7)+')">▶️ Colocar no ar</button>')+
+      (p.status==='fila' ? '<button class="btn sm sec grow" style="background:#8a3a2c" onclick="recusarPatrocinio(\''+p.id+'\')">✖️ Recusar</button>' : '')+
+      ((p.status==='encerrado'||p.status==='recusado') ? '<button class="btn sm sec grow" onclick="republicarPatrocinio(\''+p.id+'\')">↩️ Voltar para a fila</button>' : '')+
+      '</div>';
+  } else if(p.status==='fila'){
+    acoes='<div class="row" style="margin-top:8px"><button class="btn sm sec grow" onclick="cancelarPatrocinio(\''+p.id+'\')">🗑️ Cancelar proposta</button></div>';
+  }
+  return '<div class="card" style="margin-bottom:8px;border-left:5px solid '+(p.status==='no_ar'?'#ee8a2e':'var(--linha)')+'">'+cab+linhas+acoes+'</div>';
+}
+function carregarMeusPatrocinios(){ server('apiMeusPatrocinios').then(function(l){ var el=document.getElementById('meusPatr'); if(!el)return;
+  el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Suas propostas:</div>'+l.map(function(p){return patrCard(p,false);}).join(''))
+    :'<div class="meta">Nenhuma proposta enviada ainda.</div>'; }).catch(function(){ var el=document.getElementById('meusPatr'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar as propostas.</div>'; }); }
+window.cancelarPatrocinio=function(id){ if(!confirm('Cancelar esta proposta?'))return;
+  server('apiCancelarPatrocinio',id).then(function(){ toast('Proposta cancelada'); carregarMeusPatrocinios(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+VIEWS.patrocinioForm=function(){ setTitulo('Proposta de patrocínio'); setCrumb('Empresa','Patrocínio');
+  app('<div class="card"><h3 style="margin:0 0 4px">🏆 Proposta de patrocínio</h3>'+
+    '<div class="meta" style="margin-bottom:10px">Descreva o que você quer patrocinar. A proposta entra numa fila e o administrador entra em contato para combinar os detalhes antes de colocar no ar.</div>'+
+    '<label>O que você quer patrocinar *</label><select id="pt_tipo"><option value="destaque">Destaque na lateral (card fixo)</option><option value="ranking">Prêmio do ranking</option></select>'+
+    '<label>Título que aparece no destaque *</label><input id="pt_tit" placeholder="Ex: Prêmio do mês — 1º lugar do ranking">'+
+    '<label>Prêmio / oferta</label><input id="pt_pre" placeholder="Ex: R$ 500 em produtos">'+
+    '<label>Descrição</label><textarea id="pt_desc" placeholder="Ex: quem estiver em 1º lugar às 22h do dia 30 leva o prêmio"></textarea>'+
+    '<div class="two"><div><label>Dias no ar</label><input id="pt_dias" inputmode="numeric" value="7"></div>'+
+    '<div><label>Valor que você oferece (R$)</label><input id="pt_valor" inputmode="decimal" placeholder="opcional"></div></div>'+
+    '<label>Contato para o administrador</label><input id="pt_contato" placeholder="WhatsApp ou e-mail">'+
+    '<button class="btn" onclick="enviarPatrocinio(this)">Enviar proposta</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  var e=STATE.empresa||{}; setVal('pt_contato', e.whatsapp||e.telefone||e.email||''); };
+window.enviarPatrocinio=function(btn){ if(!val('pt_tit')){ toast('Informe o título do destaque'); return; }
+  btn.disabled=true; btn.textContent='Enviando…';
+  server('apiCriarPatrocinio',{tipo:val('pt_tipo'),titulo:val('pt_tit'),premio:val('pt_pre'),descricao:val('pt_desc'),
+    duracaoDias:val('pt_dias'),valorProposto:val('pt_valor'),contato:val('pt_contato')})
+  .then(function(){ toast('Proposta enviada ✔ Ela está na fila do administrador.'); STATE.stack=['empresa']; render(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Enviar proposta'; toast((e&&e.message)||'Erro'); }); };
+
 VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa'); setCrumb('Empresa','Editar');
   app('<div class="card"><label>Nome da empresa *</label><input id="em_nome" value="'+esc(e.nome||'')+'">'+
     '<label>Segmento *</label><select id="em_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
@@ -1687,7 +1743,11 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<div><label>Pr\u00eamio</label><input id="cp_pre" placeholder="Ex: R$ 500 em produtos"></div></div>'+
       '<label>Descri\u00e7\u00e3o</label><textarea id="cp_desc" placeholder="Ex: quem estiver em 1\u00ba lugar \u00e0s 22h do dia 30 leva o pr\u00eamio"></textarea>'+
       '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
-      '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div></div>'+
+      '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div>'+
+      '<div class="row" style="margin-top:10px"><button class="btn sec grow" onclick="diagCampanha(this)">🔧 Por que o destaque não aparece?</button></div><div id="cpDiag" style="margin-top:8px"></div></div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcec Fila de patrocínios</h3><div class="meta">Propostas enviadas pelas empresas. Colocar no ar cria a campanha da lateral e tira a anterior.</div></div><button class="ib" onclick="carregarPatrociniosAdm()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<label>Mostrar</label><select id="pa_filtro" onchange="carregarPatrociniosAdm()"><option value="fila">Na fila</option><option value="no_ar">No ar</option><option value="encerrado">Encerradas</option><option value="recusado">Recusadas</option><option value="todos">Todas</option></select>'+
+      '<div id="patrBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83c\udfa7 Suporte ao cliente</h3><div class="meta">Canais de contato e chamados recebidos.</div></div><button class="ib" onclick="carregarChamados()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<div class="two"><div><label>Telefone</label><input id="sp_tel" placeholder="(00) 0000-0000"></div>'+
       '<div><label>WhatsApp</label><input id="sp_wa" placeholder="DDD+n\u00famero"></div></div>'+
@@ -1714,7 +1774,7 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
-    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarParametros(); carregarAssinaturas(); carregarTermoAdm(); carregarLimites(); carregarPagsAdm(); carregarSuporteAdm(); carregarChamados();
+    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarPatrociniosAdm(); carregarParametros(); carregarAssinaturas(); carregarTermoAdm(); carregarLimites(); carregarPagsAdm(); carregarSuporteAdm(); carregarChamados();
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 function carregarAssinaturas(){ server('apiListarAssinaturas').then(function(l){ var el=document.getElementById('ctList'); if(!el)return;
   el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div><div class="lista-rolagem">'+l.map(function(a){
@@ -1952,6 +2012,39 @@ window.criarCampanha=function(btn){ if(!val('cp_tit')){ toast('Informe o título
     carregarCampanha(); carregarCampanhasAdmin(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Ativar campanha'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarCampanha=function(id){ if(!confirm('Encerrar esta campanha?'))return; server('apiEncerrarCampanha',id).then(function(){ toast('Campanha encerrada'); carregarCampanha(); carregarCampanhasAdmin(); }); };
+/* ===== PATROCÍNIO — lado do administrador ===== */
+function carregarPatrociniosAdm(){ var f=val('pa_filtro')||'fila';
+  server('apiAdminPatrocinios',f).then(function(l){ var el=document.getElementById('patrBox'); if(!el)return;
+    el.innerHTML=(l&&l.length)? l.map(function(p){ return patrCard(p,true); }).join('')
+      : '<div class="meta">Nenhuma proposta '+(f==='fila'?'na fila':'nesta situação')+'.</div>';
+  }).catch(function(e){ var el=document.getElementById('patrBox'); if(el) el.innerHTML='<div class="meta">Erro ao carregar: '+esc((e&&e.message)||'')+'</div>'; }); }
+window.patrocinioNoAr=function(id,dias){
+  var d=prompt('Por quantos dias esta proposta fica no ar?', dias||7); if(d===null) return;
+  server('apiPatrocinioNoAr',id,d).then(function(){ toast('Patrocínio no ar ✔'); carregarCampanha(); carregarCampanhasAdmin(); carregarPatrociniosAdm(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.tirarPatrocinioDoAr=function(id){ if(!confirm('Tirar este patrocínio do ar?'))return;
+  server('apiTirarPatrocinioDoAr',id).then(function(){ toast('Patrocínio encerrado'); carregarCampanha(); carregarCampanhasAdmin(); carregarPatrociniosAdm(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.recusarPatrocinio=function(id){ var obs=prompt('Motivo (a empresa vai ver esta mensagem):',''); if(obs===null) return;
+  server('apiRecusarPatrocinio',id,obs).then(function(){ toast('Proposta recusada'); carregarPatrociniosAdm(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.republicarPatrocinio=function(id){ server('apiRepublicarPatrocinio',id).then(function(){ toast('Voltou para a fila'); carregarPatrociniosAdm(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.diagCampanha=function(btn){ var el=document.getElementById('cpDiag'); if(el) el.innerHTML='<div class="loading"><div class="spin"></div></div>';
+  server('apiDiagCampanha').then(function(r){ if(!el)return;
+    var linhas='<div class="meta">'+
+      'Campanhas cadastradas: <b>'+r.totalCampanhas+'</b><br>'+
+      'Marcadas como ativas: <b>'+r.marcadasAtivas+'</b><br>'+
+      'Já expiradas (data de encerramento no passado): <b>'+r.expiradas+'</b><br>'+
+      'Empresas cadastradas: <b>'+r.totalEmpresas+'</b><br>'+
+      'Propostas na fila: <b>'+r.propostasNaFila+'</b> · no ar: <b>'+r.propostasNoAr+'</b></div>';
+    var veredito = r.aparecendoAgora
+      ? '<div class="card" style="border-left:5px solid var(--ok);margin:8px 0 0"><div class="meta">✅ O servidor está entregando a campanha <b>'+esc(r.campanha.titulo||'')+'</b>. Se o card não aparece na sua tela, ele foi apenas recolhido — clique na aba laranja 🏆 na borda direita.</div></div>'
+      : '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0 0"><div class="meta">⚠️ Nenhuma campanha ativa neste momento.'+
+        (r.marcadasAtivas>0?' Existe campanha marcada como ativa, mas com data de encerramento já vencida.':' Crie uma campanha acima ou coloque uma proposta da fila no ar.')+
+        ' <b>Não é preciso ter empresa cadastrada</b> — o patrocinador é apenas um texto.</div></div>';
+    el.innerHTML=linhas+veredito;
+  }).catch(function(e){ if(el) el.innerHTML='<div class="meta">Erro: '+esc((e&&e.message)||'')+'</div>'; }); };
 window.excluirAviso=function(id){ if(!confirm('Remover este aviso?'))return; server('apiExcluirAviso',id).then(function(){ carregarAvisosAdmin(); }); };
 window.resolverDen=function(donoTipo,donoId,acao){ server('apiResolverDenuncia',donoTipo,donoId,acao).then(function(){ toast(acao==='liberar'?'Perfil liberado ✔':'Mantido bloqueado'); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
