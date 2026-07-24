@@ -163,12 +163,22 @@
   body.logged.menu-open #overlay{opacity:1;pointer-events:auto}
   .sb-brand{padding:12px 10px;display:flex;justify-content:center;border-bottom:1px solid rgba(255,255,255,.12)}
   .sb-brand img{width:100%;max-width:200px;height:auto;max-height:200px;object-fit:contain;border-radius:8px}
-  .bino{width:17px;height:auto;vertical-align:-3px;margin-right:5px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
-  .sb-status{display:flex;flex-wrap:wrap;gap:5px;padding:0 16px 9px;text-transform:none;letter-spacing:0}
-  .sb-status span{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;
-    border-radius:20px;background:rgba(255,255,255,.09);color:#cdd8bd}
-  .sb-status span.on{background:rgba(46,139,61,.28);color:#bfe6c6}
-  .sb-status img.bino{width:14px;margin-right:0}
+  .bino{width:26px;height:auto;vertical-align:-6px;margin-right:6px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+  /* Dois botões de mesma largura, clicáveis, com o estado escrito embaixo. */
+  .sb-status{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 16px 11px;
+    text-transform:none;letter-spacing:0}
+  .sb-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:9px 6px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.07);color:#cdd8bd;cursor:pointer;text-align:center;
+    font-family:inherit;transition:background .15s,border-color .15s}
+  .sb-btn:hover{background:rgba(255,255,255,.13)}
+  .sb-btn .topo{display:flex;align-items:center;justify-content:center;gap:2px;
+    font-size:16px;font-weight:800;line-height:1;color:#f0ede6}
+  .sb-btn .topo img.bino{width:24px;margin:0}
+  .sb-btn .estado{font-size:10.5px;font-weight:700;letter-spacing:.2px;opacity:.85}
+  .sb-btn.on{background:rgba(46,139,61,.30);border-color:rgba(46,139,61,.55);color:#bfe6c6}
+  .sb-btn.on .estado{opacity:1}
+  .sb-btn[disabled]{opacity:.5;cursor:default}
   .sb-user{padding:9px 16px;font-size:12px;color:#b7c3a5;border-bottom:1px solid rgba(255,255,255,.08);text-transform:uppercase;letter-spacing:.3px}
   #sbNav{flex:1;padding:8px}
   .sb-item{display:flex;align-items:center;gap:12px;padding:11px 14px;margin:7px 6px;border-radius:7px;cursor:pointer;position:relative;
@@ -242,6 +252,9 @@
     body.logged #sidebar{transform:translateX(0)}
     /* desloca a página inteira; o conteúdo continua centralizado no espaço restante */
     body.logged{padding-left:250px}
+    /* Com o destaque aberto, o conteúdo centraliza entre o menu e o card,
+       em vez de centralizar na tela toda e ficar por baixo dele. */
+    body.logged.camp-on{padding-right:250px}
     body.logged header, body.logged .wrap, body.logged #topnav, body.logged #topbarLine{margin-left:auto;margin-right:auto}
     body.logged #sidebar{left:0}
     body.logged .fab{left:50%}
@@ -498,9 +511,15 @@
   .cp-body .cp-time{display:block;margin-top:14px;font-size:12.5px;font-weight:800;color:#fff;
     background:rgba(232,85,43,.85);border-radius:10px;padding:8px;text-align:center;box-shadow:0 4px 14px rgba(232,85,43,.3)}
   .cp-body .cp-sep{height:1px;background:rgba(255,255,255,.13);margin:14px 0}
-  @media(min-width:1200px){ body.camp-on .wrap, body.camp-on #topnav, body.camp-on #topbarLine{margin-right:250px}
-    body.camp-on.map-mode #mapshell{right:250px} }
+  /* O espaço do destaque agora é padding no body (ver body.logged.camp-on),
+     para o conteúdo continuar centralizando entre o menu e o card.
+     margin-right anulava o "margin:0 auto" e empurrava tudo para a esquerda. */
+  @media(min-width:901px){ body.camp-on.map-mode #mapshell{right:250px} }
+  @media(max-width:900px) and (min-width:721px){ body.camp-on.map-mode #mapshell{right:210px} }
   @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} .cp-toggle.fechado{right:0} }
+  @media(min-width:901px){ body.logged.camp-on{padding-right:250px} }
+  @media(max-width:900px) and (min-width:721px){ body.logged.camp-on{padding-right:210px} }
+  @media(max-width:720px){ body.logged.camp-on{padding-right:0} }
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
 .sb-plano{display:none;margin:0 12px 10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:center}
   .pl-tag{font-size:13px;font-weight:800;color:var(--laranja-claro);text-transform:uppercase;letter-spacing:.5px}
@@ -771,7 +790,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.1027';
+var APP_VER = 'vJS.240726.1043';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -933,36 +952,66 @@ function buildSidebar(){
       '<span>'+n.label+'</span>'+(bloq?'<span class="sb-lock">🔒</span>':'')+'</div>';
   }).join('');
   var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
-  pintarPlano();
   pintarCampanha();
   var u=document.getElementById('sbUser');
   if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
     var cfg=(tipo==='empresa')?'':'<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>';
     u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span><span class="sb-plano-inline" id="sbPlano"></span>'; }
+  pintarPlano();          // depois de recriar o bloco, senão o selo é apagado
   pintarStatusUsuario();
   buildTopNav(root, tipo);
 }
 /* Visitas + situação de compartilhamento, logo abaixo do nome no menu lateral. */
+/* Dois botões abaixo do nome. Cada um mostra um número e o próprio estado,
+   e alterna a configuração ali mesmo — sem precisar abrir tela nenhuma.
+   Esquerda: visitas ao perfil + visibilidade na rede.
+   Direita: sala de troféus + se está pública. */
 function pintarStatusUsuario(){
-  var alvo=document.getElementById('sbStatus'); 
+  var alvo=document.getElementById('sbStatus');
   if(!alvo){ var u=document.getElementById('sbUser'); if(!u) return;
     alvo=document.createElement('div'); alvo.className='sb-status'; alvo.id='sbStatus';
     u.parentNode.insertBefore(alvo, u.nextSibling); }
+
   if(STATE.tipo==='empresa'){
     var e=STATE.empresa||{};
-    alvo.innerHTML='<span><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(e.visitas,10)||0)+'</span>';
+    alvo.style.gridTemplateColumns='1fr';
+    alvo.innerHTML='<div class="sb-btn on" title="Visitas à sua loja">'+
+      '<span class="topo"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(e.visitas,10)||0)+'</span>'+
+      '<span class="estado">visitas</span></div>';
     return;
   }
+
   var m=STATE.manejador||{};
-  var salaAberta=(m.salaVisivel==='Sim');
-  var perfilNaRede=(m.visivelNetwork==='Sim');
-  var n=SALAS_COMPART_QTD;
+  var naRede=(m.visivelNetwork==='Sim');
+  var sala=(m.salaVisivel==='Sim');
+  alvo.style.gridTemplateColumns='1fr 1fr';
   alvo.innerHTML=
-    '<span title="Visitas ao seu perfil"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(m.visitas,10)||0)+'</span>'+
-    '<span class="'+(salaAberta?'on':'')+'" title="Sala de troféus">'+(salaAberta?'🏆 Sala pública':'🏆 Sala oculta')+'</span>'+
-    '<span class="'+(perfilNaRede?'on':'')+'" title="Perfil na rede">'+(perfilNaRede?'🌐 Perfil na rede':'🌐 Fora da rede')+'</span>'+
-    (n>0?'<span class="on" title="Pessoas que veem sua sala">🤝 '+n+' convidado'+(n===1?'':'s')+'</span>':'');
+    '<button class="sb-btn'+(naRede?' on':'')+'" onclick="alternarPerfilRede()" '+
+      'title="'+(naRede?'Você aparece no mapa da rede. Toque para ocultar.':'Você está fora do mapa. Toque para aparecer.')+'">'+
+      '<span class="topo"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(m.visitas,10)||0)+'</span>'+
+      '<span class="estado">'+(naRede?'visível':'oculto')+'</span></button>'+
+    '<button class="sb-btn'+(sala?' on':'')+'" onclick="alternarSalaVisivel()" '+
+      'title="'+(sala?'Sua sala está pública. Toque para ocultar.':'Sua sala está oculta. Toque para publicar.')+'">'+
+      '<span class="topo">🏆 '+SALAS_COMPART_QTD+'</span>'+
+      '<span class="estado">'+(sala?'visível':'oculta')+'</span></button>';
 }
+window.alternarSalaVisivel=function(){
+  var m=STATE.manejador||{}; var novo=(m.salaVisivel!=='Sim');
+  m.salaVisivel = novo?'Sim':'Não'; pintarStatusUsuario();          // resposta imediata
+  server('apiSetSalaVisivel', novo)
+    .then(function(){ toast(novo?'Sala de troféu visível ✔':'Sala de troféu oculta');
+      if(STATE.stack[STATE.stack.length-1]==='trofeus') render(); })
+    .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
+};
+window.alternarPerfilRede=function(){
+  var m=STATE.manejador||{}; var novo=(m.visivelNetwork!=='Sim');
+  if(novo && !m.latNetwork){ toast('Defina o ponto do seu perfil no mapa antes de aparecer na rede'); go('perfilManejador'); return; }
+  m.visivelNetwork = novo?'Sim':'Não'; pintarStatusUsuario();
+  server('apiSetVisivelNetwork', novo)
+    .then(function(r){ if(r && r.visivel===false && novo){ m.visivelNetwork='Não'; pintarStatusUsuario(); toast(r.motivo||'Não foi possível aparecer na rede'); return; }
+      toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede'); NETDATA=null; })
+    .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
+};
 var SALAS_COMPART_QTD=0;
 function buildTopNav(root, tipo){
   var tn=document.getElementById('topnav'); if(!tn) return;
@@ -1408,7 +1457,8 @@ function pintarPlano(){ if(!MEUPLANO) return;
   if(ic && ICONS.porteira) ic.src=ICONS.porteira;
   if(b&&t){ var pago=(MEUPLANO.plano!=='free') && !semPlanoEmp;
     b.className='sb-planos'+(pago?' pago':'');
-    t.innerHTML = pago ? ('<b>'+esc(MEUPLANO.nome)+'</b><small>seu plano</small>') : '<b>Ver planos</b><small>desbloqueie mais</small>';
+    // O rótulo é sempre "Ver planos": quem indica o plano é o selo ao lado do nome.
+    t.innerHTML = '<b>Ver planos</b><small>'+(pago?'comparar e renovar':'desbloqueie mais')+'</small>';
     b.title=MEUPLANO.fim?('Ativo até '+fmtData(MEUPLANO.fim)):'Escolha seu plano'; } }
 function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
 window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
@@ -2509,7 +2559,9 @@ window.salvarTrofeu=function(btn){ if(!fotoData('tf_foto')){toast('Escolha uma f
   server('apiAddTrofeu',{foto:fotoData('tf_foto'),titulo:val('tf_tit')}).then(function(){ toast('Troféu adicionado ✔'); STATE.stack=['trofeus']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Adicionar à sala'; }); };
 window.excluirTrofeu=function(id){ if(!confirm('Remover este troféu?'))return; server('apiExcluirTrofeu',id).then(function(){ toast('Removido'); render(); }); };
 window.toggleRanking=function(id,ativar){ server('apiSetTrofeuRanking',id,ativar).then(function(){ toast(ativar?'Troféu no ranking ✔':'Removido do ranking'); render(); }).catch(function(e){ if(e&&e.message!=='PLANO') toast(e.message||'Erro'); }); };
-window.toggleSala=function(chk){ server('apiSetSalaVisivel',chk.checked).then(function(){ render(); }); };
+window.toggleSala=function(chk){ var v=!!chk.checked;
+  if(STATE.manejador) STATE.manejador.salaVisivel = v?'Sim':'Não';
+  server('apiSetSalaVisivel',v).then(function(){ pintarStatusUsuario(); render(); }); };
 function estrelasRO(media){ media=parseFloat(media)||0; var full=Math.round(media); var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=full?' on':'')+'">★</span>'; return '<span class="stars ro" title="'+media.toFixed(1)+'">'+s+'</span>'; }
 function estrelasVoto(id,minha){ minha=parseInt(minha,10)||0; var s=''; for(var i=1;i<=5;i++) s+='<span class="star'+(i<=minha?' on':'')+'" onclick="avaliarTrofeu(\''+id+'\','+i+',this)">★</span>'; return '<div class="stars vote">'+s+'</div>'; }
 window.avaliarTrofeu=function(id,nota,el){ var cont=el.parentNode; var stars=cont.querySelectorAll('.star');
