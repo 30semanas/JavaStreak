@@ -676,11 +676,14 @@
     overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
   .sup-canal .val{font-size:12.5px;color:var(--txt2)}
   /* abas da administracao */
-  .adm-abas{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
-  .adm-abas::-webkit-scrollbar{height:0}
-  .adm-aba{flex:0 0 auto;padding:9px 14px;border-radius:20px;border:1px solid var(--linha);
-    background:var(--card);color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .adm-abas{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 12px}
+  .adm-aba{flex:1 1 auto;min-width:120px;max-width:100%;padding:9px 12px;border-radius:20px;
+    border:1px solid var(--linha);background:var(--card);color:var(--txt2);
+    font-size:13px;font-weight:600;cursor:pointer;text-align:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
+  .adm-aba:hover{border-color:var(--laranja)}
   .adm-aba.on{background:var(--verde);color:#fff;border-color:var(--verde)}
+  @media(max-width:520px){ .adm-abas{gap:5px} .adm-aba{min-width:calc(50% - 3px);font-size:12.5px;padding:9px 8px} }
   .adm-sec{display:none}
   .adm-sec.on{display:block}
   .sup-resposta{margin-top:8px;padding:10px;background:#eef6ef;border-left:3px solid #2e8b3d;border-radius:8px;
@@ -762,7 +765,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2255';
+var APP_VER = 'vJS.230726.2309';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -821,7 +824,12 @@ function server(fn){
     toast('Erro: '+msg); throw e;
   });
 }
-function sessaoExpirada(){ salvarToken(''); AUTH.manejador=null; STATE.manejador=null; toast('Sessão expirada, entre novamente'); STATE.stack=['login']; render(); }
+function limparDadosSessao(){
+  NETDATA=null; MAPDATA=null; MEUPLANO=null; CACHE={}; EDIT=null;
+  PROMOS={recebe:true,promos:[]}; AVISOS=[]; CAMPANHA=null; VISITADOS={};
+  try{ pintarCampanha(); }catch(e){}
+}
+function sessaoExpirada(){ salvarToken(''); limparDadosSessao(); AUTH.manejador=null; STATE.manejador=null; toast('Sessão expirada, entre novamente'); STATE.stack=['login']; render(); }
 function setConn(ok){ var d=document.getElementById('connDot'); if(!d)return; d.className='dot '+(ok?'on':'off'); d.title=ok?'Conectado':'Sem conexão'; }
 
 /* ============================================================
@@ -1651,7 +1659,8 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
     captcha:CAPTCHA_TOKEN, desafioSal:DESAFIO&&DESAFIO.sal, desafioProva:DESAFIO&&DESAFIO.prova, desafioEmitido:DESAFIO&&DESAFIO.emitido})
   .then(function(r){ aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; carregarDesafio(); }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao();
+  AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
 
 /* ============================================================
    MINHA EMPRESA (LOJISTA) + NETWORK
@@ -3215,8 +3224,13 @@ function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=
 VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').innerHTML=''; app('');
   document.body.classList.add('map-mode'); posicionarMapShell();
   document.getElementById('mapBar').innerHTML=''; document.getElementById('mapPanel').classList.remove('open'); document.getElementById('mapPanel').innerHTML=''; document.getElementById('cevaPanel').classList.remove('open'); document.getElementById('cevaPanel').innerHTML=''; document.getElementById('mapCount').textContent='Carregando…';
+  // Zera antes de buscar: NETDATA é global e sobrevive à troca de usuário.
+  // Sem isso o mapa desenhava os pinos da sessão anterior e eles sumiam ao
+  // chegar a resposta nova — a "piscada". Também evitava mostrar a rede de
+  // outra conta para quem não tem direito de vê-la.
+  NETDATA=null;
   server('apiMapaDados').catch(function(){ return {cevas:[],abates:[],armadilhas:[],transportes:[],caes:[],rotas:[],marcacoes:[],ultimoAlimento:{}}; }).then(function(d){
-    server('apiNetworkMapa').then(function(n){ NETDATA=n; desenharMapa(); }).catch(function(){ NETDATA=null; });
+    server('apiNetworkMapa').then(function(n){ NETDATA=n; desenharMapa(); }).catch(function(){ NETDATA=null; desenharMapa(); });
     d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
     d._transN={}; d.transportes.forEach(function(t){d._transN[t.id]=t.tipo+(t.identificacao?' - '+t.identificacao:'');});
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
