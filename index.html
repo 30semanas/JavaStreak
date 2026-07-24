@@ -702,6 +702,16 @@
     overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
   .sup-canal .val{font-size:12.5px;color:var(--txt2)}
   /* abas da administracao */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:8px}
+  .kpi{background:var(--fundo2,#faf7f2);border:1px solid var(--linha);border-radius:12px;padding:12px}
+  .kpi .kv{font-size:26px;font-weight:800;color:var(--laranja-esc,#b8531f);line-height:1}
+  .kpi .kr{font-size:12.5px;font-weight:700;color:var(--txt);margin-top:5px}
+  .kpi .ks{font-size:11px;color:var(--txt2);margin-top:2px}
+  .painel-h{font-size:13.5px;margin:16px 0 8px;color:var(--txt)}
+  .mod{margin-bottom:9px}
+  .mod-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;color:var(--txt)}
+  .mod-bar{height:8px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden}
+  .mod-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#2e8b3d,#57b968);min-width:2px;transition:width .4s}
   .blog-lista{display:flex;flex-direction:column}
   .blog-item{display:block;width:100%;text-align:left;padding:11px 2px;background:none;border:none;
     border-top:1px solid var(--linha);cursor:pointer;font-family:inherit;transition:background .12s}
@@ -818,7 +828,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.1204';
+var APP_VER = 'vJS.240726.1632';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -1952,6 +1962,8 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'liberar\')">\u2705 Liberar perfil</button><button class="btn sm sec grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'manter\')">\u26d4 Manter bloqueado</button></div></div>';
     }).join('') : '<div class="empty"><div class="big">\ud83d\udea9</div>Nenhuma den\u00fancia no momento.</div>';
     app('<div class="hero-bloco"><h2>\ud83d\udee1\ufe0f Administra\u00e7\u00e3o</h2><p>Envie avisos aos usu\u00e1rios e analise as den\u00fancias.</p></div>'+
+      '<div class="card" id="painelCard"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcca Painel da plataforma</h3></div><button class="ib" onclick="carregarPainel()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<div id="painelBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><h3 style="margin:0 0 8px">\ud83d\udce2 Enviar aviso</h3>'+
       '<label>T\u00edtulo *</label><input id="av_tit" placeholder="Ex: Nova fun\u00e7\u00e3o dispon\u00edvel">'+
       '<label>Mensagem *</label><textarea id="av_msg" placeholder="Escreva o comunicado"></textarea>'+
@@ -1981,6 +1993,8 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<h3 style="margin:16px 0 6px">\ud83d\udcec Chamados</h3><div id="chamBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83e\uddfe Pagamentos dos clientes</h3><div class="meta">Resolva aqui quem pagou e n\u00e3o teve o plano liberado.</div></div><button class="ib" onclick="carregarPagsAdm()" title="Atualizar">\ud83d\udd04</button></div><div id="pagAdm"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcb3 Pagamento (Mercado Pago)</h3><div class="meta" style="margin-bottom:8px">Verifica a conta e quais meios de pagamento est\u00e3o dispon\u00edveis.</div><button class="btn sec" onclick="diagMP(this)">Verificar configura\u00e7\u00e3o</button><div id="mpDiag" style="margin-top:10px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcb0 Preços dos planos</h3><div class="meta">Valores cobrados em cada período. Mínimo de R$ 1,00 por exigência do Mercado Pago.</div>'+
+      '<div id="precoBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf9a\ufe0f Acessos de cada plano</h3><div class="meta" style="margin-bottom:8px">Defina o que cada plano libera. Use <b>-1</b> para ilimitado e <b>0</b> para bloquear.</div><div id="limBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udd11 Redefinir senha de usu\u00e1rio</h3><div class="meta" style="margin-bottom:8px">Gera uma senha nova. Informe-a ao usu\u00e1rio por um canal seguro.</div>'+
       '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
@@ -2004,7 +2018,7 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
    em seções e mostrados um grupo por vez. Cada grupo carrega os próprios
    dados só quando é aberto pela primeira vez. */
 var ADM_SECOES=[
-  {k:'denuncias',  nome:'🚩 Denúncias',  titulos:['🚩 Denúncias'], load:[]},
+  {k:'denuncias',  nome:'📊 Painel',     titulos:['📊 Painel da plataforma','🚩 Denúncias'], load:['carregarPainel']},
   {k:'avisos',     nome:'📢 Avisos',     titulos:['📢 Enviar aviso'], load:['carregarAvisosAdmin']},
   {k:'artigos',    nome:'📰 Artigos',    titulos:['📰 Artigos do blog'], load:['carregarArtigosAdm']},
   {k:'campanha',   nome:'🏆 Patrocínio', titulos:['🏆 Campanha de premiação','📬 Fila de patrocínios'],
@@ -2012,8 +2026,8 @@ var ADM_SECOES=[
   {k:'suporte',    nome:'🎧 Suporte',    titulos:['🎧 Suporte ao cliente'], load:['carregarSuporteAdm','carregarChamados']},
   {k:'pagamentos', nome:'🧾 Pagamentos', titulos:['🧾 Pagamentos dos clientes','💳 Pagamento (Mercado Pago)'],
                    load:['carregarPagsAdm']},
-  {k:'planos',     nome:'🎚️ Planos',     titulos:['🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
-                   load:['carregarLimites','carregarAssinaturas']},
+  {k:'planos',     nome:'🎚️ Planos',     titulos:['💰 Preços dos planos','🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
+                   load:['carregarParametros','carregarLimites','carregarAssinaturas']},
   {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📜 Termos de uso e privacidade'],
                    load:['carregarParametros','carregarTermoAdm']}
 ];
@@ -2245,26 +2259,35 @@ window.adminReset=function(btn){ var l=val('rp_login');
     if(el) el.innerHTML='<div class="card" style="border-left:5px solid var(--ok);margin:0"><div class="meta">Senha de <b>'+esc(r.login)+'</b> redefinida para:</div><div style="font-size:22px;font-weight:800;letter-spacing:3px;color:var(--laranja-esc);margin-top:6px">'+esc(r.senha)+'</div><div class="meta" style="margin-top:6px">Anote agora — não será exibida de novo.</div></div>';
     setVal('rp_senha',''); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((e&&e.message)||'Erro'); }); };
-function carregarParametros(){ server('apiListarParametros').then(function(l){ var el=document.getElementById('paramBox'); if(!el)return;
+function carregarParametros(){ server('apiListarParametros').then(function(l){
   PARAMS=l||[];
-  el.innerHTML = PARAMS.map(function(p){
+  var caixaPreco=document.getElementById('precoBox'), caixaGeral=document.getElementById('paramBox');
+  var linha=function(p){
     var campo = (p.tipo==='numero')
       ? '<input id="pm_'+p.chave+'" inputmode="numeric" value="'+esc(String(p.valor))+'" style="max-width:110px;text-align:center" oninput="marcarParam(\''+p.chave+'\')">'
       : '<input id="pm_'+p.chave+'" value="'+esc(String(p.valor||''))+'" oninput="marcarParam(\''+p.chave+'\')">';
     return '<div class="prow" id="pr_'+p.chave+'"><div class="grow"><b>'+esc(p.nome)+'</b><div class="meta">'+esc(p.ajuda||'')+
       (p.tipo==='numero'&&p.min!==undefined?' <span style="opacity:.7">(de '+p.min+' a '+p.max+')</span>':'')+'</div></div>'+campo+'</div>';
-  }).join('') + '<button class="btn" id="pmSalvar" style="margin-top:12px" onclick="salvarParametros(this)">Salvar ajustes</button>';
-}).catch(function(e){ var el=document.getElementById('paramBox'); if(el) el.innerHTML='<div class="meta">N\u00e3o foi poss\u00edvel carregar os ajustes.</div>'; }); }
+  };
+  var btn=function(id){ return '<button class="btn" id="'+id+'" style="margin-top:12px" onclick="salvarParametros(this)">Salvar</button>'; };
+  var precos=PARAMS.filter(function(p){ return p.grupo==='preco'; });
+  var gerais=PARAMS.filter(function(p){ return p.grupo!=='preco'; });
+  if(caixaPreco) caixaPreco.innerHTML = precos.map(linha).join('') + btn('pmSalvarPreco');
+  if(caixaGeral) caixaGeral.innerHTML = gerais.map(linha).join('') + btn('pmSalvar');
+}).catch(function(e){
+  ['precoBox','paramBox'].forEach(function(id){ var el=document.getElementById(id);
+    if(el) el.innerHTML='<div class="meta">N\u00e3o foi poss\u00edvel carregar: '+esc((e&&e.message)||'')+'</div>'; });
+}); }
 var PARAMS=[];
 window.marcarParam=function(chave){ var r=document.getElementById('pr_'+chave); if(r) r.classList.add('alterado');
   var b=document.getElementById('pmSalvar'); if(b) b.textContent='Salvar ajustes \u2022'; };
 window.salvarParametros=function(btn){ var mapa={};
   PARAMS.forEach(function(p){ var e=document.getElementById('pm_'+p.chave); if(e) mapa[p.chave]=e.value; });
   btn.disabled=true; btn.textContent='Salvando\u2026';
-  server('apiSalvarParametros',mapa).then(function(){ toast('Ajustes salvos \u2714'); btn.disabled=false; btn.textContent='Salvar ajustes';
+  server('apiSalvarParametros',mapa).then(function(){ toast('Ajustes salvos \u2714'); btn.disabled=false; btn.textContent='Salvar';
     [].slice.call(document.querySelectorAll('.prow.alterado')).forEach(function(x){ x.classList.remove('alterado'); });
     carregarParametros(); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Salvar ajustes'; toast((e&&e.message)||'Erro'); }); };
+  .catch(function(e){ btn.disabled=false; btn.textContent='Salvar'; toast((e&&e.message)||'Erro'); }); };
 function carregarAvisosAdmin(){ server('apiListarAvisosAdmin').then(function(l){ var el=document.getElementById('avList'); if(!el)return;
   el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Avisos enviados:</div><div class="lista-rolagem">'+l.map(function(a){ var ativo=new Date(a.expiraEm)>new Date();
     return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.titulo)+'</b> <span class="pill '+(ativo?'ok':'gray')+'">'+(ativo?'ativo':'expirado')+'</span><div class="meta">'+esc(a.publico||'Todos')+' \u00b7 '+fmtData(a.criadoEm)+'</div></div><button class="ib" onclick="excluirAviso(\''+a.id+'\')">\ud83d\uddd1\ufe0f</button></div>'; }).join('')) : '<div class="meta">Nenhum aviso enviado ainda.</div>'; }).catch(function(){}); }
@@ -2292,6 +2315,34 @@ window.criarCampanha=function(btn){ if(!val('cp_tit')){ toast('Informe o título
     carregarCampanha(); carregarCampanhasAdmin(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Ativar campanha'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarCampanha=function(id){ if(!confirm('Encerrar esta campanha?'))return; server('apiEncerrarCampanha',id).then(function(){ toast('Campanha encerrada'); carregarCampanha(); carregarCampanhasAdmin(); }); };
+/* ===== PAINEL DA PLATAFORMA ===== */
+function carregarPainel(){
+  var el=document.getElementById('painelBox'); if(!el) return;
+  server('apiPainelAdmin').then(function(d){
+    el=document.getElementById('painelBox'); if(!el) return;
+    var kpi=function(valor,rot,sub){ return '<div class="kpi"><div class="kv">'+valor+'</div><div class="kr">'+rot+'</div>'+(sub?'<div class="ks">'+sub+'</div>':'')+'</div>'; };
+    var barra=function(nome,pct,qtd){
+      return '<div class="mod"><div class="mod-top"><span>'+esc(nome)+'</span><span>'+pct+'% · '+qtd+'</span></div>'+
+        '<div class="mod-bar"><div class="mod-fill" style="width:'+pct+'%"></div></div></div>'; };
+    var pl=d.planos||{};
+    var nomes={free:'Novato',n1:'Mateiro',n2:'Veterano',empresa:'Empresa'};
+    var planoHtml=['free','n1','n2','empresa'].map(function(k){
+      var q=pl[k]||0; var pct=d.cadastrados?Math.round(q*100/d.cadastrados):0;
+      return barra(nomes[k]+' ('+q+')', pct, q+' usuário'+(q===1?'':'s')); }).join('');
+    el.innerHTML=
+      '<div class="kpis">'+
+        kpi(d.cadastrados,'Cadastrados', d.manejadores+' manej. · '+d.empresas+' empresas')+
+        kpi(d.ativos,'Com sessão ativa', d.pctAtivos+'% · últimos 30 dias')+
+        kpi(d.adocaoMedia+'%','Adoção média', 'dos '+d.totalModulos+' módulos')+
+        kpi(d.pctEngajados+'%','Já usaram algo', d.engajados+' de '+d.manejadores+' manejadores')+
+      '</div>'+
+      '<h4 class="painel-h">Distribuição por plano</h4>'+planoHtml+
+      '<h4 class="painel-h">Adoção por módulo <span class="meta" style="font-weight:400">(quantos manejadores já usaram)</span></h4>'+
+      (d.porModulo||[]).map(function(m){ return barra(m.nome, m.pct, m.usuarios); }).join('');
+  }).catch(function(e){ var el=document.getElementById('painelBox');
+    if(el) el.innerHTML='<div class="meta">Não foi possível carregar: '+esc((e&&e.message)||'')+'</div>'; });
+}
+
 /* ===== ARTIGOS — administração ===== */
 function carregarArtigosAdm(){
   server('apiAdminArtigos').then(function(l){ var el=document.getElementById('artAdmBox'); if(!el) return;
