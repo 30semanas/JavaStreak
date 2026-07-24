@@ -665,13 +665,24 @@
   /* suporte */
 .rec-aviso{background:#fdf0d5;border:1px solid #e8d5a8;color:#8a6a20;border-radius:10px;
     padding:10px 12px;font-size:12.5px;line-height:1.5;margin:8px 0}
-  .sup-canais{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-  .sup-canal{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid var(--linha);border-radius:12px;
+  .sup-canais{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+  .sup-canal{display:flex;align-items:flex-start;gap:11px;padding:13px;border:1px solid var(--linha);border-radius:12px;
+    min-width:0;overflow:hidden;
     text-decoration:none;color:var(--txt);background:#fff;transition:border-color .15s,transform .15s}
   .sup-canal:hover{border-color:var(--laranja);transform:translateY(-2px)}
-  .sup-canal .ic{font-size:24px}
-  .sup-canal b{font-size:13px}
-  .sup-canal div{font-size:13px;line-height:1.4}
+  .sup-canal .ic{font-size:24px;flex:0 0 auto;line-height:1.2}
+  .sup-canal b{font-size:13px;display:block;margin-bottom:2px}
+  .sup-canal div{font-size:13px;line-height:1.4;min-width:0;flex:1 1 auto;
+    overflow-wrap:anywhere;word-break:break-word;hyphens:auto}
+  .sup-canal .val{font-size:12.5px;color:var(--txt2)}
+  /* abas da administracao */
+  .adm-abas{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+  .adm-abas::-webkit-scrollbar{height:0}
+  .adm-aba{flex:0 0 auto;padding:9px 14px;border-radius:20px;border:1px solid var(--linha);
+    background:var(--card);color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .adm-aba.on{background:var(--verde);color:#fff;border-color:var(--verde)}
+  .adm-sec{display:none}
+  .adm-sec.on{display:block}
   .sup-resposta{margin-top:8px;padding:10px;background:#eef6ef;border-left:3px solid #2e8b3d;border-radius:8px;
     font-size:13px;line-height:1.5;color:var(--txt)}
 </style>
@@ -751,7 +762,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.230726.2320';
+var APP_VER = 'vJS.240726.0310';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -864,6 +875,7 @@ var NAV_MANEJADOR=[
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
   {v:'promocoes', label:'Promoções',         emoji:'⚡'},
+  {v:'suporte',   label:'Suporte',           emoji:'🎧'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
@@ -940,9 +952,29 @@ function fab(html){ var f=document.getElementById('fab'); f.innerHTML=html; f.st
 /* ============================================================
    HELPERS
    ============================================================ */
-function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"'`\/]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','/':'&#47;'}[c]; }); }
+/* Para uso DENTRO de handler inline entre aspas simples, ex.:
+   onclick="verFoto('<AQUI>')"
+   Dois contextos aninhados: primeiro string JS, depois atributo HTML.
+   A ordem importa — escapar JS antes e HTML depois. */
+function escJs(s){
+  var j = String(s==null?'':s)
+    .replace(/\\/g,'\\\\')      // barra invertida
+    .replace(/'/g,"\\'")        // fecha a string JS
+    .replace(/[\r\n\u2028\u2029]/g,'');
+  return j.replace(/&/g,'&amp;')  // agora o contexto de atributo HTML
+          .replace(/"/g,'&quot;') // fecharia o atributo
+          .replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;');
+}
 /* Converte qualquer link do Drive para o endpoint de thumbnail (exibível em <img>) */
-function imgSrc(u){ if(!u) return ''; u=String(u); var m=u.match(/[?&]id=([^&]+)/)||u.match(/\/d\/([^\/?]+)/); return m ? ('https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000') : u; }
+function imgSrc(u){ if(!u) return ''; u=String(u).trim();
+  // Só http(s) e data:image. Bloqueia javascript:, data:text/html, vbscript:, blob: etc.
+  var seguro = /^https?:\/\//i.test(u) || /^data:image\/(png|jpe?g|gif|webp|avif);base64,/i.test(u);
+  if(!seguro) return '';
+  var m=u.match(/[?&]id=([^&]+)/)||u.match(/\/d\/([^\/?]+)/);
+  return m ? ('https://drive.google.com/thumbnail?id='+encodeURIComponent(m[1])+'&sz=w1000') : u; }
 function toast(msg){
   // 'PLANO' é um sinal interno (o app já abriu a tela de planos) — não vira aviso
   var m=String(msg==null?'':msg);
@@ -1260,9 +1292,9 @@ VIEWS.suporte=function(){ setTitulo('Suporte'); setCrumb('Suporte'); loadingBox(
   Promise.all([server('apiSuporteInfo'), server('apiMeusChamados').catch(function(){return [];})])
   .then(function(res){ var s=res[0]||{}, ch=res[1]||[];
     var canais='';
-    if(s.telefone) canais+='<a class="sup-canal" href="tel:'+esc(String(s.telefone).replace(/\D/g,''))+'"><span class="ic">📞</span><div><b>Telefone</b><br>'+esc(s.telefone)+'</div></a>';
-    if(s.whatsapp) canais+='<a class="sup-canal" target="_blank" href="'+esc(waLink(s.whatsapp)||'#')+'"><span class="ic">💬</span><div><b>WhatsApp</b><br>'+esc(s.whatsapp)+'</div></a>';
-    if(s.email) canais+='<a class="sup-canal" href="mailto:'+esc(s.email)+'"><span class="ic">✉️</span><div><b>E-mail</b><br>'+esc(s.email)+'</div></a>';
+    if(s.telefone) canais+='<a class="sup-canal" href="tel:'+esc(String(s.telefone).replace(/\D/g,''))+'"><span class="ic">📞</span><div><b>Telefone</b><span class="val">'+esc(s.telefone)+'</span></div></a>';
+    if(s.whatsapp) canais+='<a class="sup-canal" target="_blank" href="'+esc(waLink(s.whatsapp)||'#')+'"><span class="ic">💬</span><div><b>WhatsApp</b><span class="val">'+esc(s.whatsapp)+'</span></div></a>';
+    if(s.email) canais+='<a class="sup-canal" href="mailto:'+esc(s.email)+'"><span class="ic">✉️</span><div><b>E-mail</b><span class="val">'+esc(s.email)+'</span></div></a>';
     if(!canais) canais='<div class="meta">Canais de contato ainda não cadastrados.</div>';
 
     var lista = ch.length ? ch.map(function(c){
@@ -1313,13 +1345,14 @@ function carregarPlano(){ if(!AUTH.token) return;
     MEUPLANO={plano:'free',nome:'Novato',ativo:true,fim:'',origem:'',limites:{},precos:{}}; pintarPlano(); }); }
 function pintarPlano(){ if(!MEUPLANO) return;
   var el=document.getElementById('sbPlano');
-  if(el){ var livre=(MEUPLANO.plano==='free');
+  var semPlanoEmp = !!MEUPLANO.semPlano;
+  if(el){ var livre=(MEUPLANO.plano==='free')||semPlanoEmp;
     el.className='sb-plano-inline'+(livre?'':' pago');
     el.title=(MEUPLANO.fim?'Ativo até '+fmtData(MEUPLANO.fim):'Plano '+MEUPLANO.nome);
     el.textContent=MEUPLANO.nome; el.onclick=function(){ go('planos'); }; }
   var b=document.getElementById('sbPlanosBtn'), t=document.getElementById('sbPlanoTxt'), ic=document.getElementById('sbPlanoIco');
   if(ic && ICONS.porteira) ic.src=ICONS.porteira;
-  if(b&&t){ var pago=(MEUPLANO.plano!=='free');
+  if(b&&t){ var pago=(MEUPLANO.plano!=='free') && !semPlanoEmp;
     b.className='sb-planos'+(pago?' pago':'');
     t.innerHTML = pago ? ('<b>'+esc(MEUPLANO.nome)+'</b><small>seu plano</small>') : '<b>Ver planos</b><small>desbloqueie mais</small>';
     b.title=MEUPLANO.fim?('Ativo até '+fmtData(MEUPLANO.fim)):'Escolha seu plano'; } }
@@ -1533,12 +1566,11 @@ function carregarDesafio(){
       setTimeout(function(){ if(b.scrollHeight<=b.clientHeight+10) checouTermo(b); },60); }
     TERMO_VERSAO=t.versao; }).catch(function(){});
   server('apiCaptchaConfig').then(function(c){
-    CAPTCHA_MODO=c.modo;
-    if(c.modo==='turnstile'){ montarTurnstile(c.siteKey); }
-    else { server('apiDesafio').then(function(d){ DESAFIO=d; CAPTCHA_CLICADO=false;
-      var t=document.getElementById('capTxt'); if(t) t.textContent=d.texto||'Não sou um robô'; }).catch(function(){}); }
+    CAPTCHA_MODO='turnstile';
+    if(c.siteKey){ montarTurnstile(c.siteKey); }
+    else { avisoCaptchaAusente('A verificação anti-robô ainda não foi configurada no servidor.'); }
   }).catch(function(){
-    server('apiDesafio').then(function(d){ DESAFIO=d; CAPTCHA_CLICADO=false; }).catch(function(){});
+    avisoCaptchaAusente('Não foi possível carregar a verificação de segurança.');
   });
 }
 function montarTurnstile(siteKey){
@@ -1552,11 +1584,15 @@ function montarTurnstile(siteKey){
   s.async=true; s.defer=true; s.onload=render;
   document.head.appendChild(s);
 }
+function avisoCaptchaAusente(msg){
+  var box=document.getElementById('capBox'); if(!box) return;
+  box.innerHTML='<div class="card" style="border-left:5px solid var(--alerta);margin:0">'+
+    '<div class="meta">🔒 '+esc(msg)+' O cadastro fica indisponível até o administrador configurar. '+
+    'Já tem conta? <b onclick="nav(\'login\')" style="color:var(--laranja);cursor:pointer">Entrar</b>.</div></div>'; }
 function validaComum(){
   var ac=document.getElementById('f_aceite');
   if(!ac || !ac.checked){ toast('Role e aceite os termos de uso para continuar'); return false; }
-  if(CAPTCHA_MODO==='turnstile'){ if(!CAPTCHA_TOKEN){ toast('Confirme a verificação de segurança'); return false; } }
-  else if(!CAPTCHA_CLICADO){ toast('Marque "Não sou um robô" para continuar'); return false; }
+  if(!CAPTCHA_TOKEN){ toast('Confirme a verificação de segurança'); return false; }
   return true; }
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
@@ -1631,7 +1667,7 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
     var planoBanner = semPlano ? '<div class="card" style="border-left:5px solid var(--alerta)"><h3 style="margin:0 0 4px;font-size:15px">🔒 Plano Empresa inativo</h3><div class="meta">Sua conta continua ativa e você segue vendo a rede de manejadores e as outras lojas. Para <b>aparecer no mapa</b>, <b>lançar promoções</b> e <b>patrocinar destaque</b>, contrate o plano Empresa.</div><button class="btn" style="margin-top:8px" onclick="go(\'planos\')">Ver planos</button></div>' : '';
     var bloqBanner = bloq ? '<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Sua empresa está bloqueada</b> por denúncias e está em análise pelo administrador. Enquanto isso, não aparece na rede nem lança promoções.</div></div>' : '';
     app(bloqBanner+planoBanner+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
-      '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+visitasSelo(e.visitas)+
+      '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+' '+seloPlanoEmpresa(semPlano)+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+visitasSelo(e.visitas)+
       '<div class="meta" style="margin-top:6px">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
       (e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+
       (e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.whatsapp?'💬 '+esc(e.whatsapp)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+
@@ -1648,6 +1684,11 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
   }); };
+function seloPlanoEmpresa(semPlano){
+  return semPlano
+    ? '<span class="pill gray" style="vertical-align:middle;font-size:11px">Free</span>'
+    : '<span class="pill ok" style="vertical-align:middle;font-size:11px">Plano Empresa</span>'; }
+
 /* ===== PATROCÍNIO — lado da empresa ===== */
 var PATR_SEL={fila:'ok',no_ar:'warn',encerrado:'gray',recusado:'dan'};
 function patrCard(p,ehAdmin){
@@ -1806,8 +1847,64 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
-    carregarAvisosAdmin(); carregarCampanhasAdmin(); carregarEmpresasCampanha(); carregarPatrociniosAdm(); carregarParametros(); carregarAssinaturas(); carregarTermoAdm(); carregarLimites(); carregarPagsAdm(); carregarSuporteAdm(); carregarChamados();
+    montarAbasAdmin();   // agrupa em abas e carrega só a aba aberta
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
+/* ===== ABAS DA ADMINISTRAÇÃO =====
+   Nada do conteúdo muda: os cards que já existiam são apenas agrupados
+   em seções e mostrados um grupo por vez. Cada grupo carrega os próprios
+   dados só quando é aberto pela primeira vez. */
+var ADM_SECOES=[
+  {k:'denuncias',  nome:'🚩 Denúncias',  titulos:['🚩 Denúncias'], load:[]},
+  {k:'avisos',     nome:'📢 Avisos',     titulos:['📢 Enviar aviso'], load:['carregarAvisosAdmin']},
+  {k:'campanha',   nome:'🏆 Patrocínio', titulos:['🏆 Campanha de premiação','📬 Fila de patrocínios'],
+                   load:['carregarCampanhasAdmin','carregarEmpresasCampanha','carregarPatrociniosAdm']},
+  {k:'suporte',    nome:'🎧 Suporte',    titulos:['🎧 Suporte ao cliente'], load:['carregarSuporteAdm','carregarChamados']},
+  {k:'pagamentos', nome:'🧾 Pagamentos', titulos:['🧾 Pagamentos dos clientes','💳 Pagamento (Mercado Pago)'],
+                   load:['carregarPagsAdm']},
+  {k:'planos',     nome:'🎚️ Planos',     titulos:['🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
+                   load:['carregarLimites','carregarAssinaturas']},
+  {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📜 Termos de uso e privacidade'],
+                   load:['carregarParametros','carregarTermoAdm']}
+];
+var ADM_TAB='denuncias', ADM_PRONTO={};
+function montarAbasAdmin(){
+  var app=document.getElementById('app'); if(!app) return;
+  var filhos=Array.prototype.slice.call(app.children);
+  var mapa={}; ADM_SECOES.forEach(function(sc){ mapa[sc.k]=[]; });
+  var atual=null;
+  filhos.forEach(function(el){
+    if(el.classList && el.classList.contains('hero-bloco')) return;   // fica sempre visível
+    var txt=(el.textContent||'').replace(/\s+/g,' ');
+    for(var i=0;i<ADM_SECOES.length;i++){
+      if(ADM_SECOES[i].titulos.some(function(t){ return txt.indexOf(t)===0 || txt.indexOf(t)>=0 && txt.indexOf(t)<40; })){ atual=ADM_SECOES[i].k; break; }
+    }
+    if(atual) mapa[atual].push(el);
+  });
+  var barra=document.createElement('div'); barra.className='adm-abas';
+  barra.innerHTML=ADM_SECOES.map(function(sc){
+    return '<button class="adm-aba" data-k="'+sc.k+'" onclick="admAba(\''+sc.k+'\')">'+sc.nome+'</button>'; }).join('');
+  var hero=app.querySelector('.hero-bloco');
+  if(hero && hero.nextSibling) app.insertBefore(barra, hero.nextSibling); else app.appendChild(barra);
+  ADM_SECOES.forEach(function(sc){
+    var box=document.createElement('div'); box.className='adm-sec'; box.id='admsec_'+sc.k;
+    mapa[sc.k].forEach(function(el){ box.appendChild(el); });
+    app.appendChild(box);
+  });
+  ADM_PRONTO={}; admAba(ADM_TAB);
+}
+window.admAba=function(k){
+  ADM_TAB=k;
+  ADM_SECOES.forEach(function(sc){
+    var box=document.getElementById('admsec_'+sc.k); if(box) box.classList.toggle('on', sc.k===k);
+  });
+  Array.prototype.slice.call(document.querySelectorAll('.adm-aba')).forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-k')===k); });
+  if(!ADM_PRONTO[k]){ ADM_PRONTO[k]=1;
+    var sc=ADM_SECOES.filter(function(x){ return x.k===k; })[0];
+    if(sc) sc.load.forEach(function(fn){ try{ window[fn]? window[fn]() : eval(fn+'()'); }catch(e){} });
+  }
+};
+
 function carregarAssinaturas(){ server('apiListarAssinaturas').then(function(l){ var el=document.getElementById('ctList'); if(!el)return;
   el.innerHTML=(l&&l.length)?('<div class="meta" style="margin-bottom:6px">Acessos concedidos:</div><div class="lista-rolagem">'+l.map(function(a){
     return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow"><b>'+esc(a.login)+'</b> <span class="pill '+(a.vigente?'ok':'gray')+'">'+esc(a.nomePlano)+'</span><div class="meta">'+(a.vigente?'até '+fmtData(a.fim):'encerrado')+(a.obs?' · '+esc(a.obs):'')+'</div></div>'+(a.vigente?'<button class="ib" onclick="encerrarAss(\''+a.id+'\')" title="Encerrar">🚫</button>':'')+'</div>';
@@ -2114,7 +2211,7 @@ function visitasSelo(n){ n=parseInt(n,10)||0;
 function netPopEmpresa(e){ var w=waLink(e.whatsapp); regVisita('empresa',e.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4>'+visitasSelo(e.visitas)+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div></div>'; }
 function netPopManej(m){ var w=waLink(m.whatsapp); regVisita('manejador',m.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+visitasSelo(m.visitas)+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'manejador\',\''+m.id+'\')">🚩 Denunciar</button></div></div>'; }
 window.verSalaDe=function(id){ regVisita('manejador',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
-  server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
+  server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
 window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
 window.verLoja=function(id){ regVisita('empresa',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
@@ -2221,7 +2318,7 @@ function renderPromoPanel(){
   document.getElementById('promoPanel').innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🔔 Avisos</h3><button class="ib" onclick="fecharPromos()">✕</button></div>'+
     '<div class="meta" style="margin:6px 0 10px">Comunicados da administração. As promoções relâmpago ficam na aba <b>Promoções</b>.</div>'+lista+lidosHtml+'</div>'; }
 function promoCard(p,lida){ var readBtn = lida ? '<button class="lnk-den" style="color:#6f9a5f;text-decoration:none" onclick="desmarcarLida(\''+p.id+'\')">↩️ Não lido</button>' : '<button class="btn sm" style="width:auto;margin:0;background:#3a5a34" onclick="marcarLida(\''+p.id+'\')">✓ Marcar como lido</button>';
-  return '<div class="card"'+(lida?' style="opacity:.72"':'')+'>'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
+  return '<div class="card"'+(lida?' style="opacity:.72"':'')+'>'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:8px" onclick="verFoto(\''+escJs(imgSrc(p.fotoUrl))+'\')">':'')+
   '<h3 style="margin:0 0 2px">📣 '+esc(p.autorNome||'')+'</h3>'+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+
   '<div style="margin-top:6px">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
   '<div class="meta" style="margin-top:4px">'+(p.distKm!=null?'📍 ~'+p.distKm.toFixed(1)+' km · ':'')+'⏳ expira em '+fmtRestante(p.expiraEm)+'</div>'+
@@ -2236,7 +2333,7 @@ VIEWS.promocoes=function(){ setTitulo('Promoções'); setCrumb('Promoções'); l
     var minhaHtml='';
     if(ehEmp && minhas.length){ minhaHtml = minhas.map(function(p){
       return '<div class="card" style="border-left:5px solid var(--laranja)">'+
-        '<div class="row" style="align-items:flex-start">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:74px;height:74px;object-fit:cover;border-radius:12px;margin-right:12px;flex:none" onclick="verFoto(\''+esc(imgSrc(p.fotoUrl))+'\')">':'')+
+        '<div class="row" style="align-items:flex-start">'+(p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:74px;height:74px;object-fit:cover;border-radius:12px;margin-right:12px;flex:none" onclick="verFoto(\''+escJs(imgSrc(p.fotoUrl))+'\')">':'')+
         '<div class="grow"><span class="hf-tag" style="background:var(--laranja);color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:800;letter-spacing:.5px">No ar</span>'+
         '<h3 style="margin:6px 0 2px">'+esc(p.descricao||'Promoção')+'</h3>'+
         '<div>'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new">R$ '+esc(p.precoPromo)+'</span>':'')+'</div>'+
@@ -2289,7 +2386,7 @@ window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))retur
    ============================================================ */
 VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de troféu'); loadingBox('Carregando sala…');
   server('apiMinhaSala').then(function(m){ var vis=m.visivel;
-    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button>'+(t.noRanking?'<span class="rk-on">no ranking</span>':'')+'<button class="btn sm '+(t.noRanking?'':'sec')+'" style="margin:0 8px 8px;width:calc(100% - 16px)" onclick="toggleRanking(\''+t.id+'\','+(t.noRanking?'false':'true')+')">'+(t.noRanking?'✓ Disputando ranking':'🏅 Colocar no ranking')+'</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
+    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button>'+(t.noRanking?'<span class="rk-on">no ranking</span>':'')+'<button class="btn sm '+(t.noRanking?'':'sec')+'" style="margin:0 8px 8px;width:calc(100% - 16px)" onclick="toggleRanking(\''+t.id+'\','+(t.noRanking?'false':'true')+')">'+(t.noRanking?'✓ Disputando ranking':'🏅 Colocar no ranking')+'</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
     app(heroFoto('trofeus','Minha sala de troféu','Aqui ficam só as suas fotos. Deixe a sala visível para entrar no <b>Ranking</b> e avaliar os troféus dos outros.','Troféus')+
       '<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" id="sala_vis" style="width:auto" '+(vis?'checked':'')+' onchange="toggleSala(this)"> Deixar minha sala visível (entra no ranking e permite avaliar)</label></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus troféus</h3></div><button class="btn sm" style="width:auto;margin:0" onclick="nav(\'trofeuForm\')">＋ Adicionar</button></div><div style="margin-top:10px">'+mine+'</div></div>');
@@ -2299,7 +2396,7 @@ VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox(
   server('apiRankingTrofeus').then(function(r){ var pode=r.podeVotar; var ehEmp=(STATE.tipo==='empresa');
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
       var estrelas = (pode && !t.ehMeu) ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>');
-      return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+esc(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span>'+(t.saiEm?'<br><span class="sai">⏳ sai em '+fmtRestante(t.saiEm)+'</span>':'')+'</div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
+      return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span>'+(t.saiEm?'<br><span class="sai">⏳ sai em '+fmtRestante(t.saiEm)+'</span>':'')+'</div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
     var aviso = ehEmp ? '<div class="meta">Você pode ver o ranking; a avaliação é feita pelos manejadores.</div>'
       : (pode ? '<div class="meta">Toque nas estrelas para dar sua nota (1–5).</div>' : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Deixe sua sala visível (em Sala de troféu) para poder avaliar.</div></div>');
     app(heroFoto('ranking','Ranking de troféus','Os melhores das últimas 24 horas — o mais bem avaliado no topo.','Ranking')+aviso+'<div class="card">'+g+'</div>');
@@ -2742,7 +2839,7 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
   }, function(err){ toast('GPS: '+err.message); }, {enableHighAccuracy:true,maximumAge:1000,timeout:20000}); };
 
 /* ----- Marcações de ponto (abate, referência, aviso… com foto) ----- */
-function marcaPopup(m){ return '<div class="pop"><h4>'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h4><div class="meta">'+(m.descricao?esc(m.descricao):'')+(m.dataHora?'<br>'+fmtDataHora(m.dataHora):'')+'</div>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px" onclick="verFoto(\''+esc(imgSrc(m.fotoUrl))+'\')">':'')+'</div>'; }
+function marcaPopup(m){ return '<div class="pop"><h4>'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h4><div class="meta">'+(m.descricao?esc(m.descricao):'')+(m.dataHora?'<br>'+fmtDataHora(m.dataHora):'')+'</div>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px" onclick="verFoto(\''+escJs(imgSrc(m.fotoUrl))+'\')">':'')+'</div>'; }
 window.abrirMark=function(ctx,pos){ var P=pos||LASTPOS; if(!P){ toast('Aguardando posição do GPS…'); return; } MARKCTX=ctx; MARKPOS={ lat:+(+P.lat).toFixed(6), lng:+(+P.lng).toFixed(6) };
   var sel=document.getElementById('mk_tipo'); sel.innerHTML=TIPOS_MARCA.map(function(t){return '<option value="'+t[0]+'">'+t[1]+' '+t[0]+'</option>';}).join('');
   document.getElementById('mk_desc').value=''; document.getElementById('mk_foto').value=''; var pv=document.getElementById('mk_prev'); pv.style.display='none'; pv.src='';
@@ -2790,7 +2887,7 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
     (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(ptOk(la,ln)) L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(mk).bindPopup(marcaPopup(m)); });
     var el=document.getElementById('rdPontos'); if(!el) return;
     el.innerHTML=(ms&&ms.length)? ms.map(function(m){ return '<div class="card"><div class="row">'+
-      (m.fotoUrl?'<img class="thumb" style="width:54px;height:54px;cursor:zoom-in" onclick="verFoto(\''+esc(imgSrc(m.fotoUrl))+'\')" src="'+esc(imgSrc(m.fotoUrl))+'">':'<div class="ic" style="width:54px;height:54px;font-size:24px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeMarca(m.tipo)+'</div>')+
+      (m.fotoUrl?'<img class="thumb" style="width:54px;height:54px;cursor:zoom-in" onclick="verFoto(\''+escJs(imgSrc(m.fotoUrl))+'\')" src="'+esc(imgSrc(m.fotoUrl))+'">':'<div class="ic" style="width:54px;height:54px;font-size:24px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeMarca(m.tipo)+'</div>')+
       '<div class="grow"><h3 style="font-size:15px">'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h3><div class="meta">'+(m.descricao?esc(m.descricao)+'<br>':'')+fmtDataHora(m.dataHora)+'</div></div><button class="ib" onclick="delItem(\'marcacao\',\''+m.id+'\')" title="Excluir">🗑️</button></div></div>'; }).join('')
       : '<div class="empty">Nenhum ponto ainda. Toque em <b>Guiar</b> e use <b>📍 Marcar ponto</b> no caminho para enriquecer esta rota.</div>';
   }).catch(function(){});
@@ -3261,9 +3358,9 @@ window.fecharFoto=function(){ document.getElementById('lightbox').classList.remo
 function timelineCevaHtml(abs,d){
   return '<div class="tl">'+abs.map(function(a){
     var atr=d.alimentoTipo[a.alimentoId]||'—';
-    var foto = a.fotoUrl ? '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="verFoto(\''+esc(imgSrc(a.fotoUrl))+'\')">📷 Ver foto do abate</button>' : '';
+    var foto = a.fotoUrl ? '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="verFoto(\''+escJs(imgSrc(a.fotoUrl))+'\')">📷 Ver foto do abate</button>' : '';
     return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="row">'+
-      (a.fotoUrl?'<img class="thumb" style="width:52px;height:52px;cursor:zoom-in" onclick="verFoto(\''+esc(imgSrc(a.fotoUrl))+'\')" src="'+esc(imgSrc(a.fotoUrl))+'">':'')+
+      (a.fotoUrl?'<img class="thumb" style="width:52px;height:52px;cursor:zoom-in" onclick="verFoto(\''+escJs(imgSrc(a.fotoUrl))+'\')" src="'+esc(imgSrc(a.fotoUrl))+'">':'')+
       '<div class="grow"><div class="dt">'+fmtDataHora(a.dataHora)+'</div><div class="meta">'+
       esc(a.quantidade||'1')+' animal(is)'+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>🌽 Atrativo: <b>'+esc(atr)+'</b>'+(a.obs?'<br>'+esc(a.obs):'')+'</div></div></div>'+foto+'</div></div>';
   }).join('')+'</div>';
