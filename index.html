@@ -847,7 +847,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.2334';
+var APP_VER = 'vJS.240726.2349';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -855,12 +855,26 @@ try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }ca
    t('chave') devolve o texto no idioma atual; se faltar, cai no português.
    Telas ainda não traduzidas seguem funcionando (texto direto em pt). */
 var IDIOMAS = { pt:'Português', en:'English', es:'Español' };
-var LANG = 'pt';
+/* Idioma inicial: 1) escolha manual salva; 2) idioma do aparelho; 3) português.
+   Antes de logar isso já deixa o app no idioma do celular automaticamente. */
+function idiomaDoAparelho(){
+  try{
+    var navs = navigator.languages || [navigator.language || navigator.userLanguage || 'pt'];
+    for(var i=0;i<navs.length;i++){ var c=String(navs[i]||'').slice(0,2).toLowerCase();
+      if(c==='pt'||c==='en'||c==='es') return c; }
+  }catch(e){}
+  return 'pt';
+}
+var LANG = idiomaDoAparelho();
 try{ var _l=localStorage.getItem('lang'); if(_l && IDIOMAS[_l]) LANG=_l; }catch(e){}
 function setLang(l){ if(!IDIOMAS[l]) return; LANG=l; try{ localStorage.setItem('lang', l); }catch(e){}
   aplicarLangHtml();
   // Se o usuário está logado, guarda a preferência na conta (segue em qualquer aparelho).
-  if(AUTH.token){ server('apiSalvarIdioma', l).catch(function(){}); }
+  if(AUTH.token){
+    server('apiSalvarIdioma', l)
+      .then(function(){ /* salvo na conta */ })
+      .catch(function(){ toast('Não foi possível salvar o idioma na sua conta agora.'); });
+  }
   render(); }  // render() chama traduzirFixos() no fim
 /* Aplica o idioma da conta ao entrar. A conta MANDA: ao trocar de conta no mesmo
    navegador, o idioma da nova conta sobrescreve o que estava no localStorage.
@@ -1663,7 +1677,12 @@ var FRASES = {
     '🌽 Alimento':'🌽 Feed',
     '🌽 Atrativo:':'🌽 Attractant:',
     'Visitas':'Visits',
-    'oculto':'hidden'
+    'oculto':'hidden',
+    'Bem-vindo,':'Welcome,',
+    'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.':'Use the side menu to navigate: feeder, routes, dogs, traps, takes, calendar and map.',
+    'comparar e renovar':'compare and renew',
+    'desbloqueie mais':'unlock more',
+    'oculta':'hidden'
   },
   es:{
     'Idioma':'Idioma',
@@ -2435,7 +2454,12 @@ var FRASES = {
     '🌽 Alimento':'🌽 Alimento',
     '🌽 Atrativo:':'🌽 Atrayente:',
     'Visitas':'Visitas',
-    'oculto':'oculto'
+    'oculto':'oculto',
+    'Bem-vindo,':'Bienvenido,',
+    'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.':'Usa el menú lateral para navegar: comedero, rutas, perros, trampas, abates, agenda y mapa.',
+    'comparar e renovar':'comparar y renovar',
+    'desbloqueie mais':'desbloquea más',
+    'oculta':'oculta'
   }
 };
 
@@ -2630,6 +2654,7 @@ function moduloBloqueado(v){
 }
 function buildSidebar(){
   var lg=document.getElementById('sbLogo'); if(lg && lg.getAttribute('src')!==LOGO) lg.src=LOGO;
+  var _s=document.getElementById('lblSair'); if(_s) _s.textContent='Sair';   // volta ao fonte pt; traduzirFixos traduz depois se preciso
   var nav=document.getElementById('sbNav'); if(!nav) return;
   var tipo=STATE.tipo||'manejador';
   var root=STATE.stack[0]||(tipo==='empresa'?'empresa':'inicio');
@@ -2655,12 +2680,13 @@ function buildSidebar(){
 }
 /* Traduz o que é montado FORA do app(): menus lateral e superior, botão Sair,
    botões de status. O app() já traduz o conteúdo; isto cobre a moldura. */
+/* Traduz a moldura inteira (menu lateral e barra superior), montada fora do app().
+   Cobrir os containers completos pega planos, status, Sair e o que for repintado. */
 function traduzirFixos(){
   if(LANG==='pt') return;
-  ['sbNav','topnav','sbStatus','menuLateral','sbUser'].forEach(function(id){
+  ['sidebar','topnav'].forEach(function(id){
     var el=document.getElementById(id); if(el) traduzirDOM(el);
   });
-  var sair=document.getElementById('lblSair'); if(sair && FRASES[LANG] && FRASES[LANG][sair.textContent.trim()]) sair.textContent=FRASES[LANG][sair.textContent.trim()];
 }
 /* Visitas + situação de compartilhamento, logo abaixo do nome no menu lateral. */
 /* Dois botões abaixo do nome. Cada um mostra um número e o próprio estado,
@@ -2668,6 +2694,7 @@ function traduzirFixos(){
    Esquerda: visitas ao perfil + visibilidade na rede.
    Direita: sala de troféus + se está pública. */
 function pintarStatusUsuario(){
+  var _tf=function(){ try{ traduzirFixos(); }catch(e){} };
   var alvo=document.getElementById('sbStatus');
   if(!alvo){ var u=document.getElementById('sbUser'); if(!u) return;
     alvo=document.createElement('div'); alvo.className='sb-status'; alvo.id='sbStatus';
@@ -2695,6 +2722,7 @@ function pintarStatusUsuario(){
       'title="'+(sala?'Sua sala está pública. Toque para ocultar.':'Sua sala está oculta. Toque para publicar.')+'">'+
       '<span class="topo">🏆 '+SALAS_COMPART_QTD+'</span>'+
       '<span class="estado">'+(sala?'visível':'oculta')+'</span></button>';
+  _tf();
 }
 window.alternarSalaVisivel=function(){
   var m=STATE.manejador||{}; var novo=(m.salaVisivel!=='Sim');
@@ -2912,7 +2940,6 @@ VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
   var t=STATE.loginTipo||'manejador';
   var texto = (t==='empresa') ? t18n('bv_texto_emp') : t18n('bv_texto_manej');
   app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
-    seletorIdioma()+
     '<div class="segbar" style="margin-bottom:14px"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">'+t18n('manejador')+'</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">'+t18n('empresa')+'</button></div>'+
     '<div class="card"><h3 style="margin:0 0 8px">'+(t==='empresa'?t18n('bv_para_emp'):t18n('bv_para_manej'))+'</h3>'+
     '<p style="font-size:14.5px;line-height:1.65;color:var(--txt);margin:0">'+texto+'</p></div>'+
@@ -2932,7 +2959,6 @@ VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.em
     '<label>'+t18n('senha')+'</label><input id="l_senha" type="password" autocomplete="current-password" placeholder="••••••">'+
     '<button class="btn" onclick="fazerLogin(this)">'+t18n('entrar')+'</button>'+
     '<div style="text-align:center;margin-top:10px"><button class="lnk-den" style="font-size:13px;color:var(--laranja-esc)" onclick="go(\'esqueci\')">'+t18n('esqueciSenha')+'</button></div></div>'+
-    seletorIdioma()+
     '<button class="btn sec" style="margin-top:10px" onclick="go(\'bemvindo\')">'+t18n('voltar')+'</button>'+
     '<div class="dummy" style="display:none">'+(t==='empresa'?'empresa':'manejador')+'</b></div></div>');
   var s=document.getElementById('l_senha'); if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
@@ -3221,7 +3247,7 @@ function pintarPlano(){ if(!MEUPLANO) return;
     b.className='sb-planos'+(pago?' pago':'');
     // O rótulo é sempre "Ver planos": quem indica o plano é o selo ao lado do nome.
     t.innerHTML = '<b>Ver planos</b><small>'+(pago?'comparar e renovar':'desbloqueie mais')+'</small>';
-    b.title=MEUPLANO.fim?('Ativo até '+fmtData(MEUPLANO.fim)):'Escolha seu plano'; } }
+    b.title=MEUPLANO.fim?('Ativo até '+fmtData(MEUPLANO.fim)):'Escolha seu plano'; } try{ traduzirFixos(); }catch(e){} }
 function limTexto(v){ return v===-1?'Ilimitado':(v===0?'—':String(v)); }
 window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurso,precisa:precisa}; go('planos'); };
 VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
@@ -3406,7 +3432,7 @@ function resumoPlataforma(tipo){
 }
 
 VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarConta'));
-  app(seletorIdioma()+resumoPlataforma('manejador')+
+  app(resumoPlataforma('manejador')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="meta" style="margin:-6px 0 8px">'+t('cad_email_ajuda')+'</div>'+
@@ -3514,7 +3540,7 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha(); }); };
 VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('criarConta'),t('empresa'));
-  app(seletorIdioma()+resumoPlataforma('empresa')+
+  app(resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
@@ -4564,7 +4590,7 @@ window.avaliarTrofeu=function(id,nota,el){ var cont=el.parentNode; var stars=con
    ============================================================ */
 VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crumb').innerHTML='';
   var nome=(STATE.manejador&&STATE.manejador.nome)?STATE.manejador.nome.split(' ')[0]:'';
-  app(heroFoto('inicio','Bem-vindo, '+nome,'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.','JavaStreak')+
+  app(heroFoto('inicio',trFrase('Bem-vindo,')+' '+nome,trFrase('Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.'),'JavaStreak')+
     '<div id="inicioAlerta"></div>'+
     '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
     '<div id="blogBox" style="margin-top:4px"><div class="loading"><div class="spin"></div></div></div>'+
