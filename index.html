@@ -712,6 +712,13 @@
   .mod-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;color:var(--txt)}
   .mod-bar{height:8px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden}
   .mod-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#2e8b3d,#57b968);min-width:2px;transition:width .4s}
+  .vitr{display:flex;flex-direction:column;gap:10px}
+  .vitr-item{display:flex;gap:10px;align-items:flex-start}
+  .vitr-item img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:0 0 auto;cursor:pointer;border:1px solid var(--linha)}
+  .vitr-semfoto{width:64px;height:64px;border-radius:10px;background:#f0e6d8;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto}
+  .vitr-info{min-width:0;flex:1 1 auto}
+  .vitr-info b{font-size:14px;display:block}
+  .vitr-preco{display:inline-block;color:#2e8b3d;font-weight:800;font-size:14px;margin:2px 0}
   .resumo-plat .rp-item{display:flex;gap:11px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--linha)}
   .resumo-plat .rp-item:first-of-type{border-top:none}
   .resumo-plat .rp-ic{font-size:21px;flex:0 0 auto;line-height:1.3;width:26px;text-align:center}
@@ -832,7 +839,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.2048';
+var APP_VER = 'vJS.240726.2110';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -912,7 +919,7 @@ function serverOpc(fn){
       return [];
     });
 }
-function sessaoExpirada(){ salvarToken(''); limparDadosSessao(); AUTH.manejador=null; STATE.manejador=null; toast('Sessão expirada, entre novamente'); STATE.stack=['login']; render(); }
+function sessaoExpirada(){ salvarToken(''); limparDadosSessao(); AUTH.manejador=null; STATE.manejador=null; toast('Sessão expirada, entre novamente'); STATE.stack=['bemvindo']; render(); }
 function setConn(ok){ var d=document.getElementById('connDot'); if(!d)return; d.className='dot '+(ok?'on':'off'); d.title=ok?'Conectado':'Sem conexão'; }
 
 /* ============================================================
@@ -1215,6 +1222,24 @@ var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'A
    LOGIN / REGISTRO
    ============================================================ */
 var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
+/* Tela de abertura: texto profissional, sem ícones, e dois caminhos claros
+   (entrar / criar conta). É a primeira coisa que quem não está logado vê. */
+VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
+  STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null;
+  document.getElementById('crumb').innerHTML='';
+  var t=STATE.loginTipo||'manejador';
+  var texto = (t==='empresa')
+    ? 'O JavaStreak conecta sua empresa aos manejadores de javali da sua região. Cadastre sua loja para aparecer no mapa da plataforma, publicar promoções por tempo limitado, montar uma vitrine com seus produtos e serviços e patrocinar destaques para ampliar seu alcance. Você acompanha quantas pessoas visitam seu perfil e fala diretamente com quem procura o que você oferece.'
+    : 'O JavaStreak é a plataforma de apoio ao manejo de javali. Organize suas cevas e o controle do tratadouro, grave rotas de caça por GPS, gerencie seu canil com a saúde de cada cão, registre armadilhas e abates, monte sua sala de troféus e participe do ranking. Tudo reunido num só lugar, com um mapa que mostra a rede de manejadores e as empresas parceiras próximas de você.';
+  app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
+    '<div class="segbar" style="margin-bottom:14px"><button class="'+(t==='manejador'?'on':'')+'" onclick="setLoginTipo(\'manejador\')">Manejador</button><button class="'+(t==='empresa'?'on':'')+'" onclick="setLoginTipo(\'empresa\')">Empresa</button></div>'+
+    '<div class="card"><h3 style="margin:0 0 8px">'+(t==='empresa'?'Para a sua empresa':'Para o manejador')+'</h3>'+
+    '<p style="font-size:14.5px;line-height:1.65;color:var(--txt);margin:0">'+texto+'</p></div>'+
+    '<button class="btn" onclick="go(\'login\')">Entrar</button>'+
+    '<button class="btn sec" style="margin-top:10px" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')">Criar conta</button>'+
+    '<div style="text-align:center;margin-top:12px;font-size:11px;color:#cfc9bd">'+APP_VER+'</div>');
+};
+
 VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
   var t=STATE.loginTipo||'manejador';
   app('<div style="text-align:center;margin:10px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:290px"></div>'+
@@ -1226,7 +1251,8 @@ VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.em
     '<label>Senha</label><input id="l_senha" type="password" autocomplete="current-password" placeholder="••••••">'+
     '<button class="btn" onclick="fazerLogin(this)">Entrar</button>'+
     '<div style="text-align:center;margin-top:10px"><button class="lnk-den" style="font-size:13px;color:var(--laranja-esc)" onclick="go(\'esqueci\')">Esqueci minha senha</button></div></div>'+
-    '<div class="card click" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')" style="text-align:center"><div class="meta">Ainda não tem conta? <b style="color:var(--verde)">Criar conta de '+(t==='empresa'?'empresa':'manejador')+'</b></div></div>');
+    '<button class="btn sec" style="margin-top:10px" onclick="go(\'bemvindo\')">← Voltar</button>'+
+    '<div class="dummy" style="display:none">'+(t==='empresa'?'empresa':'manejador')+'</b></div></div>');
   var s=document.getElementById('l_senha'); if(s) s.addEventListener('keydown',function(e){ if(e.key==='Enter') fazerLogin(document.querySelector('.card .btn')); });
 };
 window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
@@ -1518,7 +1544,7 @@ window.abrirUpgrade=function(recurso,precisa){ STATE.upgradeInfo={recurso:recurs
 VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Carregando planos…');
   Promise.all([server('apiPlanosDisponiveis'), server('apiMeuPlano')]).then(function(res){
     var lista=res[0]||[], meu=res[1]; MEUPLANO=meu; pintarPlano();
-    var ehEmp=(meu.plano==='empresa');
+    var ehEmp=(meu.plano==='empresa'||meu.plano==='empresapro');
     var info=STATE.upgradeInfo; STATE.upgradeInfo=null;
     var dr=meu.diasRestantes;
     var avisoVenc = (meu.plano!=='free' && dr!=null && dr<=15)
@@ -1531,13 +1557,23 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
 
     var grade;
     if(ehEmp){
-      grade='<div class="pl-grade uma"><div class="plano destaque">'+
-        '<div class="plano-top"><div class="plano-nome">Empresa</div>'+(meu.ativo?'<span class="plano-badge">ativo</span>':'')+'</div>'+
-        '<div class="plano-preco">'+precoFmt(meu.precos&&meu.precos[PERIODO_SEL])+'</div>'+
-        economia(meu.precos)+
-        '<div class="plano-sub">Presença no mapa, promoções relâmpago e ranking.</div>'+
-        (meu.ativo?'<div class="plano-ativo">Ativo até '+fmtData(meu.fim)+'</div>':'<button class="plano-btn" onclick="assinar(\'empresa\')">Assinar</button>')+
-        '</div></div>';
+      grade='<div class="pl-grade'+(lista.length===1?' uma':'')+'">'+lista.map(function(p){
+        var atual=(meu.plano===p.plano && meu.ativo);
+        var destaque=(p.plano==='empresapro');
+        return '<div class="plano'+(destaque?' destaque':'')+(atual?' atual':'')+'">'+
+          (destaque?'<div class="plano-fita">Mais completo</div>':'')+
+          '<div class="plano-top"><div class="plano-nome">'+esc(p.nome)+'</div>'+(atual?'<span class="plano-badge">ativo</span>':'')+'</div>'+
+          '<div class="plano-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>'+
+          economia(p.precos)+
+          '<ul class="plano-lista">'+
+            '<li class="sim"><span>✓</span>Presença no mapa da rede</li>'+
+            '<li class="sim"><span>✓</span>Promoções relâmpago</li>'+
+            '<li class="sim"><span>✓</span>Patrocinar destaques e ranking</li>'+
+            '<li class="sim"><span>✓</span>Vitrine com <b>'+p.produtos+'</b> produtos</li>'+
+          '</ul>'+
+          (atual?'<div class="plano-ativo">Ativo até '+fmtData(meu.fim)+'</div>'
+                :'<button class="plano-btn" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+
+          '</div>'; }).join('')+'</div>';
     } else {
       grade='<div class="pl-grade">'+lista.map(function(p){
         var atual=(p.plano===meu.plano), free=(p.plano==='free'), sugerido=(info&&info.precisa===p.plano);
@@ -1629,7 +1665,7 @@ window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha');
   server('apiLogin',login,senha).then(function(r){ aplicarAuth(r); })
   .catch(function(){ btn.disabled=false; btn.textContent='Entrar'; }); };
 
-window.sairCadastro=function(){ STATE.stack=['login']; render(); };
+window.sairCadastro=function(){ STATE.stack=['bemvindo']; render(); };
 window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo; STATE.stack=[tipo==='empresa'?'registrarEmpresa':'registrar']; render(); };
 
 /* ================= RECUPERAR SENHA ================= */
@@ -1658,7 +1694,7 @@ window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=v
   if(s1!==s2){toast('Senhas não conferem');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   server('apiConfirmarReset',STATE.emailReset,c,s1)
-  .then(function(){ toast('Senha alterada! Faça login.'); STATE.stack=['login']; render(); })
+  .then(function(){ toast('Senha alterada! Faça login.'); STATE.stack=['bemvindo']; render(); })
   .catch(function(x){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((x&&x.message)||'Erro'); }); };
 /* Resumo do que a plataforma faz, mostrado no topo do cadastro para a pessoa
    entender o que está criando. Um texto para cada tipo de conta. */
@@ -1842,7 +1878,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao();
-  AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['login']; render(); };
+  AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
 /* ============================================================
    MINHA EMPRESA (LOJISTA) + NETWORK
@@ -1865,12 +1901,18 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       '<button class="btn sec" style="margin-top:10px" onclick="nav(\'empresaForm\')">✏️ Editar dados da empresa</button></div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🛍️ Minha vitrine</h3><div class="meta">Produtos e serviços que aparecem para quem visita sua loja.</div></div>'+
+        ((bloq||semPlano)?'':'<button class="ib" onclick="nav(\'produtoForm\')" title="Novo produto">＋</button>')+'</div>'+
+        (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
+             :(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>'
+             :'<div id="meusProdutos" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>'))+'</div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+((bloq||semPlano)?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>'))+'</div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🏆 Patrocinar destaque</h3><div class="meta" style="margin-top:2px">Envie uma proposta para aparecer no card da lateral direita ou premiar o ranking. O administrador analisa e coloca no ar.</div></div></div>'+
       (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
            :(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>'
            :'<button class="btn" style="margin-top:10px" onclick="nav(\'patrocinioForm\')">📨 Enviar proposta ao administrador</button><div id="meusPatr" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>'))+'</div>');
     if(!bloq && !semPlano) carregarMeusPatrocinios();
+    if(!bloq && !semPlano) carregarMeusProdutos();
     if(!bloq && !semPlano) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
@@ -1879,6 +1921,44 @@ function seloPlanoEmpresa(semPlano){
   return semPlano
     ? '<span class="pill gray" style="vertical-align:middle;font-size:11px">Free</span>'
     : '<span class="pill ok" style="vertical-align:middle;font-size:11px">Plano Empresa</span>'; }
+
+/* ===== VITRINE DE PRODUTOS — lado da empresa ===== */
+function carregarMeusProdutos(){
+  server('apiMeusProdutos').then(function(r){ var el=document.getElementById('meusProdutos'); if(!el) return;
+    var l=r.produtos||[]; var lim=r.limite||0;
+    var cab='<div class="meta" style="margin-bottom:6px">'+l.length+' de '+lim+' produtos'+
+      (l.length>=lim && lim<30 ? ' · <b onclick="go(\'planos\')" style="color:var(--laranja);cursor:pointer">upgrade p/ Empresa Pro</b>':'')+'</div>';
+    el.innerHTML=cab+(l.length? l.map(function(p){
+      return '<div class="row" style="gap:9px;padding:8px 0;border-top:1px solid var(--linha)">'+
+        (p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:46px;height:46px;border-radius:8px;object-fit:cover">':'<div style="width:46px;height:46px;border-radius:8px;background:#f0e6d8;display:flex;align-items:center;justify-content:center">🛍️</div>')+
+        '<div class="grow" style="min-width:0"><b style="font-size:14px">'+esc(p.nome)+'</b>'+(p.preco?' <span style="color:#2e8b3d;font-weight:700">R$ '+esc(p.preco)+'</span>':'')+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+'</div>'+
+        '<button class="ib" title="Editar" onclick="editarProduto(\''+p.id+'\')">✏️</button>'+
+        '<button class="ib" title="Excluir" onclick="excluirProduto(\''+p.id+'\')">🗑️</button></div>'; }).join('')
+      : '<div class="meta">Nenhum produto ainda. Use o + para adicionar.</div>');
+  }).catch(function(){ var el=document.getElementById('meusProdutos'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar os produtos.</div>'; });
+}
+window.editarProduto=function(id){ server('apiMeusProdutos').then(function(r){
+  EDIT=(r.produtos||[]).filter(function(p){ return p.id===id; })[0]||null; nav('produtoForm'); }); };
+window.excluirProduto=function(id){ if(!confirm('Remover este produto da vitrine?'))return;
+  server('apiExcluirProduto',id).then(function(){ toast('Produto removido'); carregarMeusProdutos(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+VIEWS.produtoForm=function(){ var p=EDIT||{}; var ed=!!EDIT;
+  setTitulo(ed?'Editar produto':'Novo produto'); setCrumb('Empresa','Vitrine');
+  app('<div class="card">'+
+    '<label>Nome do produto ou serviço *</label><input id="pr_nome" value="'+esc(p.nome||'')+'" placeholder="Ex: Ração Javali Pro 20kg">'+
+    '<label>Preço (R$)</label><input id="pr_preco" inputmode="decimal" value="'+esc(p.preco||'')+'" placeholder="opcional">'+
+    '<label>Descrição</label><textarea id="pr_desc" placeholder="Detalhes, medidas, condições…">'+esc(p.descricao||'')+'</textarea>'+
+    '<label>Foto</label><input id="pr_foto" type="file" accept="image/*"><img id="pr_prev" class="foto-prev">'+
+    (p.fotoUrl?'<div class="meta">Foto atual: <img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:54px;border-radius:6px;vertical-align:middle"></div>':'')+
+    '<button class="btn" onclick="salvarProduto(this)">'+(ed?'Salvar':'Adicionar à vitrine')+'</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  bindFoto('pr_foto','pr_prev'); };
+window.salvarProduto=function(btn){ if(!val('pr_nome')){ toast('Informe o nome'); return; }
+  btn.disabled=true; btn.textContent='Salvando…';
+  var d={ nome:val('pr_nome'), preco:val('pr_preco'), descricao:val('pr_desc'), foto:fotoData('pr_foto') };
+  if(EDIT) d.id=EDIT.id;
+  server('apiSalvarProduto',d).then(function(){ toast('Vitrine atualizada ✔'); EDIT=null; voltar(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Salvar'; toast((e&&e.message)||'Erro'); }); };
 
 /* ===== PATROCÍNIO — lado da empresa ===== */
 var PATR_SEL={fila:'ok',no_ar:'warn',encerrado:'gray',recusado:'dan'};
@@ -1965,7 +2045,7 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<label>Segmento *</label><select id="em_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
     '<label>CNPJ</label><input id="em_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)" value="'+esc(e.cnpj||'')+'">'+
     '<label>Descrição curta (aparece no mapa)</label><textarea id="em_desc" placeholder="Uma linha sobre a empresa">'+esc(e.descricao||'')+'</textarea>'+
-    '<label>Produtos e serviços (aparece para quem visita)</label><textarea id="em_vitrine" style="min-height:120px" placeholder="Liste o que você oferece. Ex:&#10;- Ração e suplementos&#10;- Manutenção de armadilhas&#10;- Adestramento de cães de rastreio">'+esc(e.vitrine||'')+'</textarea>'+
+
     '<div class="two"><div><label>Telefone</label><input id="em_tel" value="'+esc(e.telefone||'')+'"></div><div><label>WhatsApp</label><input id="em_wa" value="'+esc(e.whatsapp||'')+'" placeholder="DDD+número"></div></div>'+
     '<label>E-mail</label><input id="em_email" value="'+esc(e.email||'')+'">'+
     '<label>Cidade</label><input id="em_cidade" value="'+esc(e.cidade||'')+'">'+
@@ -1979,7 +2059,7 @@ VIEWS.empresaForm=function(){ var e=STATE.empresa||{}; setTitulo('Editar empresa
     '<button class="btn" onclick="salvarEmpresa(this)">Salvar alterações</button></div>');
   if(e.segmento) setVal('em_seg',e.segmento); bindFoto('em_foto','em_prev'); };
 window.salvarEmpresa=function(btn){ if(!val('em_nome')){toast('Informe o nome da empresa');return;} btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),vitrine:val('em_vitrine'),cnpj:val('em_cnpj'),foto:fotoData('em_foto')};
+  var d={nome:val('em_nome'),segmento:val('em_seg'),descricao:val('em_desc'),telefone:val('em_tel'),whatsapp:val('em_wa'),email:val('em_email'),cidade:val('em_cidade'),endereco:val('em_end'),lat:val('em_lat'),lng:val('em_lng'),instagram:val('em_insta'),facebook:val('em_face'),site:val('em_site'),cnpj:val('em_cnpj'),foto:fotoData('em_foto')};
   server('apiSalvarEmpresa',d).then(function(r){ STATE.empresa=r; toast('Empresa salva ✔'); STATE.stack=['empresa']; render(); }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar alterações'; toast('Erro ao salvar: '+((e&&e.message)||'verifique se o Code.gs foi republicado como Nova versão')); }); };
 window.diagEmpresa=function(){ server('apiDiagEmpresa').then(function(r){
   var msg='Login: '+r.login+'\nTipo: '+r.tipo+'\nusuarioId: '+r.usuarioId+'\nEmpresas c/ meu usuário: '+r.empresasComMeuUsuario+' (total '+r.totalEmpresas+')\nColunas alinhadas: '+(r.alinhado?'SIM ✅':'NÃO ⚠️');
@@ -2490,19 +2570,30 @@ function regVisita(tipo,id){ if(!id) return; var k=tipo+':'+id; if(VISITADOS[k])
 var BINOCULO='data:image/png;base64,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';
 function visitasSelo(n){ n=parseInt(n,10)||0;
   return '<div class="vis-selo"><img src="'+BINOCULO+'" class="bino" alt="">'+n+' '+(n===1?'visita':'visitas')+'</div>'; }
-function netPopEmpresa(e){ var w=waLink(e.whatsapp); regVisita('empresa',e.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4>'+visitasSelo(e.visitas)+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div></div>'; }
+function netPopEmpresa(e){ var w=waLink(e.whatsapp); regVisita('empresa',e.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🏪 '+esc(e.nome||'')+'</h4>'+visitasSelo(e.visitas)+'<div class="meta">'+(e.segmento?'<b>'+esc(e.segmento)+'</b><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">site</a>':'')+'</div>'+'<button class="btn sm" style="margin-top:8px" onclick="verLoja(\''+e.id+'\')">🏪 Ver loja e produtos</button>'+(w?'<a class="btn sm sec" style="margin-top:6px;text-decoration:none" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'empresa\',\''+e.id+'\')">🚩 Denunciar</button></div></div>'; }
 function netPopManej(m){ var w=waLink(m.whatsapp); regVisita('manejador',m.id); return '<div class="pop"><div style="text-align:center"><img src="'+esc(avatarUrl(m))+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"></div><h4>🧑‍🌾 '+esc(m.nome||'')+'</h4>'+visitasSelo(m.visitas)+'<div class="meta">'+(m.cidade?'📍 '+esc(m.cidade)+'<br>':'')+(m.bio?esc(m.bio)+'<br>':'')+(m.telefone?'📞 '+esc(m.telefone):'')+'</div><button class="btn sm sec" style="margin-top:6px;width:100%" onclick="verSalaDe(\''+m.id+'\')">🏆 Ver sala de troféu</button>'+(w?'<a class="btn sm" style="margin-top:6px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+'<div style="text-align:center;margin-top:6px"><button class="lnk-den" onclick="denunciar(\'manejador\',\''+m.id+'\')">🚩 Denunciar</button></div></div>'; }
 window.verSalaDe=function(id){ regVisita('manejador',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiTrofeusDe',id).then(function(r){ var g=(r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t){ var estr = r.podeVotar ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>'); return '<div class="trof"><button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+estr+'</div>'; }).join('')+'</div>' : '<div class="empty">'+(r.visivel?'Sem troféus ainda.':'Este manejador não deixou a sala pública.')+'</div>';
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏆 Sala de '+esc(r.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+(r.porConvite?'<div class="meta" style="margin:6px 0;padding:7px 10px;background:rgba(46,139,61,.12);border-radius:8px">🤝 Esta sala está oculta ao público. Você a vê porque foi convidado.</div>':'')+(r.podeVotar?'<div class="meta" style="margin:6px 0">Toque nas estrelas para dar/alterar sua nota.</div>':'')+'<div style="margin-top:10px">'+g+'</div></div>'; }).catch(function(){ fecharSala(); }); };
 window.fecharSala=function(){ document.getElementById('salaPanel').classList.remove('open'); };
+function gradeProdutos(lista){
+  lista=lista||[];
+  if(!lista.length) return '';
+  return '<div class="card" style="margin:8px 0;background:#fff8f0;border-color:#f0d9c0"><h3 style="font-size:14px;margin:0 0 8px">🛍️ Produtos e serviços</h3>'+
+    '<div class="vitr">'+lista.map(function(p){
+      return '<div class="vitr-item">'+
+        (p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(p.fotoUrl))+'\')">':'<div class="vitr-semfoto">🛍️</div>')+
+        '<div class="vitr-info"><b>'+esc(p.nome)+'</b>'+
+        (p.preco?'<span class="vitr-preco">R$ '+esc(p.preco)+'</span>':'')+
+        (p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+'</div></div>'; }).join('')+'</div></div>';
+}
 window.verLoja=function(id){ regVisita('empresa',id); var p=document.getElementById('salaPanel'); p.innerHTML='<div class="promo-box"><div class="loading"><div class="spin"></div></div></div>'; p.classList.add('open');
   server('apiEmpresaPublica',id).then(function(e){ if(!e){ p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">Loja</h3><button class="ib" onclick="fecharSala()">✕</button></div><div class="empty">Loja indisponível.</div></div>'; return; }
     var w=waLink(e.whatsapp);
     p.innerHTML='<div class="promo-box"><div class="row"><h3 class="grow" style="margin:0">🏪 '+esc(e.nome||'')+'</h3><button class="ib" onclick="fecharSala()">✕</button></div>'+
       '<div style="text-align:center;margin:8px 0"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
       visitasSelo(e.visitas)+
-      (e.vitrine?'<div class="card" style="margin:8px 0;background:#fff8f0;border-color:#f0d9c0"><h3 style="font-size:14px;margin:0 0 4px">\ud83d\udecd\ufe0f Produtos e serviços</h3><div class="meta" style="white-space:pre-wrap">'+esc(e.vitrine)+'</div></div>':'')+
+      gradeProdutos(e.produtos)+
       '<div class="meta">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+(e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+(e.telefone?'📞 '+esc(e.telefone)+'<br>':'')+(e.email?'✉️ '+esc(e.email)+'<br>':'')+(e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       (w?'<a class="btn sm" style="margin-top:8px;text-decoration:none;color:#fff" target="_blank" href="'+w+'">💬 WhatsApp</a>':'')+
@@ -3830,8 +3921,8 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
         aplicarFundo(); render(); iniciarPromoPoll(); })
-      .catch(function(e){ if(!(e&&e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['login']; render(); } }); }
-    STATE.stack=['login']; render();
+      .catch(function(e){ if(!(e&&e.message==='Sessão expirada')){ salvarToken(''); STATE.stack=['bemvindo']; render(); } }); }
+    STATE.stack=['bemvindo']; render();
   }).catch(function(){ app('<div class="empty"><div class="big">⚠️</div>Não consegui falar com o servidor.<br><br>Confira a <b>API_URL</b> e se a implantação está como <b>“Qualquer pessoa”</b>.<div style="max-width:280px;margin:18px auto 0"><button class="btn" onclick="iniciar()">Tentar novamente</button></div></div>'); }); }
 iniciar();
 </script>
