@@ -338,9 +338,10 @@
   #markModal.open{display:flex}
   .mk-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:14px;padding:16px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
   .ceva-mkwrap{background:none;border:none}
-.ceva-mk{position:relative;width:34px;height:34px;border-radius:50%;background:#f3e6cd;
-  border:3px solid #b8863b;display:flex;align-items:center;justify-content:center;font-size:16px;
+.ceva-mk{position:relative;width:36px;height:36px;border-radius:50%;background:#f3e6cd;
+  border:3px solid #b8863b;display:flex;align-items:center;justify-content:center;
   box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ceva-mk img{width:22px;height:22px;object-fit:contain;display:block}
 .ceva-idx{position:absolute;bottom:-6px;right:-8px;min-width:20px;padding:1px 4px;border-radius:9px;
   color:#fff;font:700 10px/14px system-ui,sans-serif;text-align:center;border:1px solid rgba(255,255,255,.8)}
 .emoji-mk{background:none;border:none}
@@ -853,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.1223';
+var APP_VER = 'vJS.250726.1232';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -914,6 +915,12 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    'Lua':'Moon',
+    'Clima':'Weather',
+    'Período do dia':'Time of day',
+    'dos abates daqui':'of kills here',
+    'Sem histórico para':'No history for',
+
     'Condições agora':'Conditions now',
     'dos abates daqui foram nesta lua':'of kills here were on this moon',
     'foram neste horário':'were at this time of day',
@@ -1743,6 +1750,12 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    'Lua':'Luna',
+    'Clima':'Clima',
+    'Período do dia':'Franja del día',
+    'dos abates daqui':'de las cazas aquí',
+    'Sem histórico para':'Sin historial para',
+
     'Condições agora':'Condiciones ahora',
     'dos abates daqui foram nesta lua':'de las cazas aquí fueron con esta luna',
     'foram neste horário':'fueron en este horario',
@@ -5515,61 +5528,82 @@ function faixaHora(dh){
   var d=new Date(String(dh||'').replace(' ','T')); if(isNaN(d.getTime())) return -1;
   return Math.floor(d.getHours()/3); }   // 8 faixas de 3h
 
-/* ---- Índice de condições da ceva ----
-   Compara as condições de AGORA com a distribuição dos abates daquela ceva.
-   Usa lua (8 fases, com vizinhança) e faixa de horário. Encolhe para 50
-   conforme a amostra é pequena, para não gritar 90 com 3 abates. */
-var IDX_PESO_LUA=0.6, IDX_PESO_HORA=0.4, IDX_K=5;
-function indiceCeva(abates, agora){
-  agora=agora||new Date();
+/* ---- Índice de condições da ceva (4 eixos) ----
+   Lua · Clima · Alimento · Período do dia. Cada eixo só entra se houver
+   dado histórico para ele: os pesos são renormalizados sobre os eixos
+   disponíveis, senão uma ceva sem histórico de clima seria punida à toa. */
+var IDX_PESOS={lua:0.3, clima:0.3, alimento:0.2, periodo:0.2};
+var IDX_K=5;
+/* Semelhança circular: igual=1, vizinho=0,5, resto=0 (para ciclos como lua e hora). */
+function simCirc(a,b,total){ if(a<0||b<0) return null;
+  var d=Math.abs(a-b); d=Math.min(d,total-d); return d===0?1:(d===1?0.5:0); }
+function indiceCeva(abates, agora, ctx){
+  agora=agora||new Date(); ctx=ctx||{};
   var ab=(abates||[]).filter(function(a){ return a.dataHora; });
   var n=ab.length;
-  if(!n) return { idx:null, n:0 };
-  var faseHoje=luaFaseEm(agora), hHoje=Math.floor(agora.getHours()/3);
-  var iHoje=LUA_FASES.indexOf(faseHoje);
-  /* lua: fase igual vale 1, vizinha vale 0.5 (o ciclo é contínuo) */
-  var pesoLua=0, pesoHora=0;
+  if(!n) return { idx:null, n:0, eixos:[] };
+  var faseHoje=luaFaseEm(agora), iHoje=LUA_FASES.indexOf(faseHoje);
+  var hHoje=Math.floor(agora.getHours()/3);
+  var climaHoje=ctx.climaHoje||'';          // balde de COND_TEMPO para hoje na ceva
+  var alimHoje=ctx.alimentoHoje||'';        // alimento que está na ceva agora
+  var soma={lua:0,clima:0,alimento:0,periodo:0}, conta={lua:0,clima:0,alimento:0,periodo:0};
   ab.forEach(function(a){
-    var f=LUA_FASES.indexOf(luaDoAbate(a));
-    if(f>=0&&iHoje>=0){
-      var dist=Math.min(Math.abs(f-iHoje), 8-Math.abs(f-iHoje));
-      pesoLua += dist===0?1:(dist===1?0.5:0);
-    }
-    var fh=faixaHora(a.dataHora);
-    if(fh>=0){ var dh=Math.min(Math.abs(fh-hHoje), 8-Math.abs(fh-hHoje));
-      pesoHora += dh===0?1:(dh===1?0.5:0); }
+    var s;
+    s=simCirc(LUA_FASES.indexOf(luaDoAbate(a)), iHoje, 8);
+    if(s!==null){ soma.lua+=s; conta.lua++; }
+    s=simCirc(faixaHora(a.dataHora), hHoje, 8);
+    if(s!==null){ soma.periodo+=s; conta.periodo++; }
+    if(climaHoje && a.condicaoTempo){ soma.clima+=(a.condicaoTempo===climaHoje?1:0); conta.clima++; }
+    var alimAb=(ctx.alimentoDe?ctx.alimentoDe(a):'');
+    if(alimHoje && alimAb){ soma.alimento+=(alimAb===alimHoje?1:0); conta.alimento++; }
   });
-  /* fração dos abates compatíveis com agora, em cada eixo */
-  var sLua=pesoLua/n, sHora=pesoHora/n;
-  /* referência: se os abates fossem espalhados por igual, cada eixo daria 2/8 */
-  var base=2/8;
-  var norm=function(s){ return Math.max(0, Math.min(1, s/(base*2))); };
-  var bruto=IDX_PESO_LUA*norm(sLua)+IDX_PESO_HORA*norm(sHora);
+  /* fração compatível por eixo, normalizada contra o espalhamento neutro */
+  var neutro={lua:2/8*2, periodo:2/8*2, clima:1/COND_TEMPO.length*2, alimento:0.5};
+  var eixos=[], pesoTotal=0, acumulado=0;
+  ['lua','clima','alimento','periodo'].forEach(function(k){
+    if(!conta[k]) return;
+    var frac=soma[k]/conta[k];
+    var nota=Math.max(0, Math.min(1, frac/neutro[k]));
+    eixos.push({ eixo:k, pct:Math.round(frac*100), nota:nota, base:conta[k] });
+    acumulado+=IDX_PESOS[k]*nota; pesoTotal+=IDX_PESOS[k];
+  });
+  if(!pesoTotal) return { idx:null, n:n, eixos:[] };
+  var bruto=acumulado/pesoTotal;                 // renormaliza sobre os eixos com dado
   var conf=n/(n+IDX_K);
   var idx=Math.round(50+(bruto*100-50)*conf);
-  return { idx:Math.max(1,Math.min(99,idx)), n:n, faseHoje:faseHoje,
-    sLua:Math.round(sLua*100), sHora:Math.round(sHora*100), conf:conf }; }
+  return { idx:Math.max(1,Math.min(99,idx)), n:n, faseHoje:faseHoje, climaHoje:climaHoje,
+    alimentoHoje:alimHoje, eixos:eixos, conf:conf }; }
+var EIXO_ROTULO={lua:'Lua', clima:'Clima', alimento:'Alimento', periodo:'Período do dia'};
+var EIXO_ICONE={lua:'🌙', clima:'🌤️', alimento:'🌽', periodo:'🕐'};
 function corIndice(i){ return i>=65?'#2f7d3a':(i>=35?'#b8863b':'#8a3b3b'); }
 /* O popup explica de onde saiu o número — é a parte que vale mais que o número. */
 function blocoIndice(ic){
   if(!ic||ic.idx==null) return '<div class="meta" style="margin-top:6px">'+
     trFrase('Sem abates aqui ainda: não há como comparar.')+'</div>';
   var conf=ic.n>=10?trFrase('boa'):(ic.n>=5?trFrase('média'):trFrase('baixa'));
+  var linhas=(ic.eixos||[]).map(function(e){
+    return '<div>'+EIXO_ICONE[e.eixo]+' <b>'+trFrase(EIXO_ROTULO[e.eixo])+'</b> — '+
+      e.pct+'% '+trFrase('dos abates daqui')+'</div>'; }).join('');
+  var faltam=['lua','clima','alimento','periodo'].filter(function(k){
+    return !(ic.eixos||[]).some(function(e){ return e.eixo===k; }); });
   return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd">'+
     '<b style="color:'+corIndice(ic.idx)+'">'+trFrase('Condições agora')+': '+ic.idx+'/100</b>'+
-    '<div class="meta">'+(LUA_ICONE[ic.faseHoje]||'')+' '+esc(trFrase(ic.faseHoje))+' — '+
-      ic.sLua+'% '+trFrase('dos abates daqui foram nesta lua')+'<br>'+
-      '🕐 '+ic.sHora+'% '+trFrase('foram neste horário')+'<br>'+
-      trFrase('Base')+': '+ic.n+' '+trFrase('abates')+' · '+trFrase('confiança')+' '+conf+'</div>'+
+    '<div class="meta" style="margin-top:4px">'+linhas+
+      '<div style="margin-top:4px">'+trFrase('Base')+': '+ic.n+' '+trFrase('abates')+
+      ' · '+trFrase('confiança')+' '+conf+'</div>'+
+      (faltam.length?'<div style="margin-top:4px;opacity:.7">'+trFrase('Sem histórico para')+': '+
+        faltam.map(function(k){ return trFrase(EIXO_ROTULO[k]); }).join(', ')+'</div>':'')+
+    '</div>'+
     '<div class="meta" style="margin-top:4px;opacity:.75">'+
       trFrase('É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.')+
     '</div></div>'; }
 function cevaIcon(idx){
   var cor=idx==null?'#7a6a55':corIndice(idx);
   var txt=idx==null?'–':idx;
-  return L.divIcon({ html:'<div class="ceva-mk" style="border-color:'+cor+'">🌽'+
+  return L.divIcon({ html:'<div class="ceva-mk" style="border-color:'+cor+'">'+
+      '<img src="'+ICONS.espera+'" alt="">'+
       '<span class="ceva-idx" style="background:'+cor+'">'+txt+'</span></div>',
-    className:'ceva-mkwrap', iconSize:[34,34], iconAnchor:[17,17], popupAnchor:[0,-18] }); }
+    className:'ceva-mkwrap', iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-19] }); }
 function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
   if(lf&&LUA_ICONE[lf]) p.push(LUA_ICONE[lf]+' '+esc(trFrase(lf)));
   if(a&&a.condicaoTempo&&COND_ICONE[a.condicaoTempo]) p.push(COND_ICONE[a.condicaoTempo]+' '+esc(trFrase(a.condicaoTempo)));
@@ -5764,6 +5798,8 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
     MAPDATA=d; ajustarFiltroPorPerfil();
+    /* clima de hoje por ceva: chega depois e o mapa se redesenha com o eixo Clima */
+    if(STATE.tipo!=='empresa') carregarClimaCevas().then(function(){ try{ desenharMapa(); }catch(e){} });
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
     var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
@@ -5833,11 +5869,21 @@ function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAP
     '<h4>Por mês</h4>'+barChart(porMes(ab),{w:280,h:100,color:'#3f6b3f'})+
     '<div class="legend" style="margin-top:8px">'+leg+'</div>'; }
 
+var CLIMA_CEVAS={}, CLIMA_CEVAS_EM=0;
+/* Os termos do MET Norway pedem cache: 30 min por sessão evita repetir consulta
+   a cada abertura do mapa. Falha silenciosa — o índice só perde o eixo clima. */
+function carregarClimaCevas(){
+  if(Date.now()-CLIMA_CEVAS_EM < 30*60*1000) return Promise.resolve(CLIMA_CEVAS);
+  return serverOpc('apiClimaCevas').then(function(r){
+    if(r&&r.cevas){ CLIMA_CEVAS=r.cevas; CLIMA_CEVAS_EM=Date.now(); }
+    return CLIMA_CEVAS; }).catch(function(){ return CLIMA_CEVAS; }); }
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
   if(MAPFILTER.espera) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
-    var ic=indiceCeva(abs);
+    var alHoje=al?al.tipo:'';
+    var ic=indiceCeva(abs, new Date(), { climaHoje:(CLIMA_CEVAS[c.id]||{}).condicaoTempo||'',
+      alimentoHoje:alHoje, alimentoDe:function(a){ return d.alimentoTipo[a.alimentoId]||''; } });
     var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+blocoIndice(ic)+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
     var mk=L.marker([la,ln],{icon:cevaIcon(ic.idx)}).bindPopup(pop);
     mk.on('dblclick',function(){ abrirCevaTimeline(c.id); });
