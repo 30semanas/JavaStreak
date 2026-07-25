@@ -337,14 +337,7 @@
   #markModal{position:fixed;inset:0;background:rgba(20,14,6,.55);z-index:3100;display:none;align-items:center;justify-content:center;padding:16px}
   #markModal.open{display:flex}
   .mk-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:14px;padding:16px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
-  .ceva-mkwrap{background:none;border:none}
-.ceva-mk{position:relative;width:36px;height:36px;border-radius:50%;background:#f3e6cd;
-  border:3px solid #b8863b;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.ceva-mk img{width:22px;height:22px;object-fit:contain;display:block}
-.ceva-idx{position:absolute;bottom:-6px;right:-8px;min-width:20px;padding:1px 4px;border-radius:9px;
-  color:#fff;font:700 10px/14px system-ui,sans-serif;text-align:center;border:1px solid rgba(255,255,255,.8)}
-.emoji-mk{background:none;border:none}
+  .emoji-mk{background:none;border:none}
   .emoji-mk>div{font-size:26px;line-height:1;text-align:center;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
   /* ===== IDENTIDADE VISUAL — WILDLIFE ===== */
   :root{
@@ -738,6 +731,8 @@
   .resumo-plat .rp-item:first-of-type{border-top:none}
   .resumo-plat .rp-ic{font-size:21px;flex:0 0 auto;line-height:1.3;width:26px;text-align:center}
   .resumo-plat .rp-item b{font-size:14px;display:block;margin-bottom:1px}
+  .chk{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:14px;cursor:pointer}
+  .chk input{width:auto}
   .blog-lista{display:flex;flex-direction:column}
   .blog-item{display:block;width:100%;text-align:left;padding:11px 2px;background:none;border:none;
     border-top:1px solid var(--linha);cursor:pointer;font-family:inherit;transition:background .12s}
@@ -854,7 +849,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.1232';
+var APP_VER = 'vJS.250726.1926';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,64 +910,6 @@ function t(chave){
 }
 var FRASES = {
   en:{
-    'Lua':'Moon',
-    'Clima':'Weather',
-    'Período do dia':'Time of day',
-    'dos abates daqui':'of kills here',
-    'Sem histórico para':'No history for',
-
-    'Condições agora':'Conditions now',
-    'dos abates daqui foram nesta lua':'of kills here were on this moon',
-    'foram neste horário':'were at this time of day',
-    'Base':'Base',
-    'abates':'kills',
-    'confiança':'confidence',
-    'boa':'good',
-    'média':'medium',
-    'baixa':'low',
-    'Sem abates aqui ainda: não há como comparar.':'No kills here yet: nothing to compare.',
-    'É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.':'This is the frequency of your kills, not a probability: the app does not know the sits where nothing showed up.',
-
-    'Tempo real':'Real time',
-    'Passado':'Past',
-    'Selecione a ceva para informar lua e tempo.':'Select the bait site to record moon and weather.',
-    'Você informa as condições do dia do abate.':'You enter the conditions from the day of the kill.',
-    'Consultando lua e tempo na ceva…':'Checking moon and weather at the bait site…',
-    'Capturado pelo sistema. Não é editável.':'Captured by the system. Not editable.',
-    'Informar manualmente':'Enter manually',
-    'umidade':'humidity',
-    'vento':'wind',
-    'chuva':'rain',
-    'Esta ceva não tem coordenada. Edite a ceva e marque o ponto no mapa para usar o tempo real.':'This bait site has no coordinates. Edit it and mark the spot on the map to use real time.',
-    'A consulta de tempo ainda não está configurada no servidor.':'Weather lookup is not configured on the server yet.',
-    'O serviço de tempo recusou por excesso de consultas. Tente em alguns minutos.':'The weather service refused due to too many requests. Try again in a few minutes.',
-    'O serviço de tempo recusou a identificação do app.':'The weather service rejected the app identification.',
-    'Não foi possível consultar o tempo na ceva agora.':'Could not check the weather at the bait site right now.',
-    'Aguarde a consulta do tempo ou use o modo Passado':'Wait for the weather lookup or use Past mode',
-    'Data no passado: modo alterado para Passado':'Date in the past: switched to Past mode',
-
-    'Fase da lua':'Moon phase',
-    'Condição do tempo':'Weather',
-    'Sugerida pela data do abate.':'Suggested from the kill date.',
-    'Escolhida por você.':'Chosen by you.',
-    'Lua nova':'New moon',
-    'Crescente inicial':'Waxing crescent',
-    'Quarto crescente':'First quarter',
-    'Crescente final':'Waxing gibbous',
-    'Lua cheia':'Full moon',
-    'Minguante inicial':'Waning gibbous',
-    'Quarto minguante':'Last quarter',
-    'Minguante final':'Waning crescent',
-    'Aberto':'Clear',
-    'Parcialmente nublado':'Partly cloudy',
-    'Nublado':'Cloudy',
-    'Neblina':'Fog',
-    'Garoa':'Drizzle',
-    'Chuva':'Rain',
-    'Tempestade':'Thunderstorm',
-    '— não informada —':'— not recorded —',
-    '— não informado —':'— not recorded —',
-
     'Idioma':'Language',
     'O idioma fica salvo na sua conta e acompanha você em qualquer aparelho.':'Your language is saved to your account and follows you on any device.',
     'Início':'Home',
@@ -1747,67 +1684,71 @@ var FRASES = {
     'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.':'Use the side menu to navigate: feeder, routes, dogs, traps, takes, calendar and map.',
     'comparar e renovar':'compare and renew',
     'desbloqueie mais':'unlock more',
-    'oculta':'hidden'
+    'oculta':'hidden',
+    'Novo manejo':'New management',
+    'Meus manejos':'My sessions',
+    'Manejo aberto':'Open session',
+    'Encerrar manejo':'End session',
+    'Abrir manejo':'Open session',
+    'Tipo de caçada':'Hunt type',
+    'Por ceva':'By feeder',
+    'Por rota':'By route',
+    'Livre':'Free',
+    'Selecione as cevas':'Select the feeders',
+    'Selecione as rotas':'Select the routes',
+    'Nome do manejo':'Session name',
+    'Você já tem um manejo aberto. Encerre-o antes de abrir outro.':'You already have an open session. End it before opening another.',
+    'Nenhum manejo ainda. Toque em Novo manejo para abrir o primeiro.':'No sessions yet. Tap New management to open the first.',
+    'Encerrar este manejo?':'End this session?',
+    'Manejo aberto ✔':'Session opened ✔',
+    'Manejo encerrado':'Session ended',
+    'aberto':'open',
+    'encerrado':'ended',
+    'Registrar abate (histórico antigo)':'Log take (old history)',
+    'Nenhuma ceva cadastrada':'No feeder registered',
+    'Nenhuma rota cadastrada':'No route registered',
+    'animal(is)':'animal(s)',
+    'Abates deste manejo':'Takes in this session',
+    'Nenhum abate neste manejo ainda.':'No takes in this session yet.',
+    'Abra um manejo antes de registrar o abate':'Open a session before logging the take',
+    'Amigos no manejo':'Friends in the session',
+    'Convidar amigo (e-mail)':'Invite friend (email)',
+    'Convite enviado ✔':'Invite sent ✔',
+    'Convite reenviado ✔':'Invite resent ✔',
+    'Convite aceito ✔':'Invite accepted ✔',
+    'Convite recusado':'Invite declined',
+    'Convites de manejo':'Session invites',
+    'Manejos que participo':'Sessions I take part in',
+    'Reenviar':'Resend',
+    'Aceitar':'Accept',
+    'Recusar':'Decline',
+    'pendente':'pending',
+    'aceito':'accepted',
+    'recusado':'declined',
+    'Informe o e-mail do amigo':'Enter the friend\'s email',
+    'Limite de manejo':'Management boundary',
+    'Desenhe no mapa, por cliques, o perímetro onde você pode andar. Aparece só para você (e para quem você compartilhar).':'Draw on the map, by clicks, the perimeter where you can move. Shown only to you (and whom you share it with).',
+    'ponto(s) marcado(s)':'point(s) marked',
+    'Nenhum limite desenhado':'No boundary drawn',
+    'Desenhar / editar limite':'Draw / edit boundary',
+    'Toque no mapa para marcar os vértices do perímetro. Ligue ao menos 3 pontos.':'Tap the map to mark the perimeter vertices. Connect at least 3 points.',
+    'Marque ao menos 3 pontos para fechar o perímetro':'Mark at least 3 points to close the perimeter',
+    'Salvar limite':'Save boundary',
+    'Limite salvo ✔':'Boundary saved ✔',
+    'Limite':'Boundary',
+    'Propriedade (limite de manejo)':'Property (management boundary)',
+    '— nenhuma —':'— none —',
+    'Na caçada livre, a propriedade com limite é obrigatória.':'For free hunts, a property with a boundary is required.',
+    'Na caçada livre, escolha uma propriedade com limite.':'For free hunts, choose a property with a boundary.',
+    'Compartilhar limite':'Share boundary',
+    'E-mail de quem vai receber o limite:':'Email of who will receive the boundary:',
+    'Limites compartilhados com você':'Boundaries shared with you',
+    'Compartilhar ceva':'Share feeder',
+    'E-mail de quem vai receber a ceva:':'Email of who will receive the feeder:',
+    'Cevas compartilhadas com você':'Feeders shared with you',
+    'Rotas do manejo':'Session routes'
   },
   es:{
-    'Lua':'Luna',
-    'Clima':'Clima',
-    'Período do dia':'Franja del día',
-    'dos abates daqui':'de las cazas aquí',
-    'Sem histórico para':'Sin historial para',
-
-    'Condições agora':'Condiciones ahora',
-    'dos abates daqui foram nesta lua':'de las cazas aquí fueron con esta luna',
-    'foram neste horário':'fueron en este horario',
-    'Base':'Base',
-    'abates':'cazas',
-    'confiança':'confianza',
-    'boa':'buena',
-    'média':'media',
-    'baixa':'baja',
-    'Sem abates aqui ainda: não há como comparar.':'Aún no hay cazas aquí: no hay con qué comparar.',
-    'É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.':'Es la frecuencia de sus cazas, no una probabilidad: la app no conoce las esperas en que no vino nada.',
-
-    'Tempo real':'Tiempo real',
-    'Passado':'Pasado',
-    'Selecione a ceva para informar lua e tempo.':'Seleccione el cebadero para registrar luna y clima.',
-    'Você informa as condições do dia do abate.':'Usted informa las condiciones del día de la caza.',
-    'Consultando lua e tempo na ceva…':'Consultando luna y clima en el cebadero…',
-    'Capturado pelo sistema. Não é editável.':'Capturado por el sistema. No es editable.',
-    'Informar manualmente':'Informar manualmente',
-    'umidade':'humedad',
-    'vento':'viento',
-    'chuva':'lluvia',
-    'Esta ceva não tem coordenada. Edite a ceva e marque o ponto no mapa para usar o tempo real.':'Este cebadero no tiene coordenada. Edítelo y marque el punto en el mapa para usar tiempo real.',
-    'A consulta de tempo ainda não está configurada no servidor.':'La consulta de clima aún no está configurada en el servidor.',
-    'O serviço de tempo recusou por excesso de consultas. Tente em alguns minutos.':'El servicio de clima rechazó por exceso de consultas. Intente en unos minutos.',
-    'O serviço de tempo recusou a identificação do app.':'El servicio de clima rechazó la identificación de la app.',
-    'Não foi possível consultar o tempo na ceva agora.':'No se pudo consultar el clima en el cebadero ahora.',
-    'Aguarde a consulta do tempo ou use o modo Passado':'Espere la consulta del clima o use el modo Pasado',
-    'Data no passado: modo alterado para Passado':'Fecha en el pasado: modo cambiado a Pasado',
-
-    'Fase da lua':'Fase lunar',
-    'Condição do tempo':'Clima',
-    'Sugerida pela data do abate.':'Sugerida por la fecha de la caza.',
-    'Escolhida por você.':'Elegida por usted.',
-    'Lua nova':'Luna nueva',
-    'Crescente inicial':'Luna creciente',
-    'Quarto crescente':'Cuarto creciente',
-    'Crescente final':'Creciente gibosa',
-    'Lua cheia':'Luna llena',
-    'Minguante inicial':'Menguante gibosa',
-    'Quarto minguante':'Cuarto menguante',
-    'Minguante final':'Luna menguante',
-    'Aberto':'Despejado',
-    'Parcialmente nublado':'Parcialmente nublado',
-    'Nublado':'Nublado',
-    'Neblina':'Niebla',
-    'Garoa':'Llovizna',
-    'Chuva':'Lluvia',
-    'Tempestade':'Tormenta',
-    '— não informada —':'— no informada —',
-    '— não informado —':'— no informado —',
-
     'Idioma':'Idioma',
     'O idioma fica salvo na sua conta e acompanha você em qualquer aparelho.':'El idioma se guarda en tu cuenta y te acompaña en cualquier dispositivo.',
     'Início':'Inicio',
@@ -2582,7 +2523,69 @@ var FRASES = {
     'Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.':'Usa el menú lateral para navegar: comedero, rutas, perros, trampas, abates, agenda y mapa.',
     'comparar e renovar':'comparar y renovar',
     'desbloqueie mais':'desbloquea más',
-    'oculta':'oculta'
+    'oculta':'oculta',
+    'Novo manejo':'Nuevo manejo',
+    'Meus manejos':'Mis manejos',
+    'Manejo aberto':'Manejo abierto',
+    'Encerrar manejo':'Finalizar manejo',
+    'Abrir manejo':'Abrir manejo',
+    'Tipo de caçada':'Tipo de cacería',
+    'Por ceva':'Por comedero',
+    'Por rota':'Por ruta',
+    'Livre':'Libre',
+    'Selecione as cevas':'Selecciona los comederos',
+    'Selecione as rotas':'Selecciona las rutas',
+    'Nome do manejo':'Nombre del manejo',
+    'Você já tem um manejo aberto. Encerre-o antes de abrir outro.':'Ya tienes un manejo abierto. Finalízalo antes de abrir otro.',
+    'Nenhum manejo ainda. Toque em Novo manejo para abrir o primeiro.':'Ningún manejo aún. Toca Nuevo manejo para abrir el primero.',
+    'Encerrar este manejo?':'¿Finalizar este manejo?',
+    'Manejo aberto ✔':'Manejo abierto ✔',
+    'Manejo encerrado':'Manejo finalizado',
+    'aberto':'abierto',
+    'encerrado':'finalizado',
+    'Registrar abate (histórico antigo)':'Registrar abate (historial antiguo)',
+    'Nenhuma ceva cadastrada':'Ningún comedero registrado',
+    'Nenhuma rota cadastrada':'Ninguna ruta registrada',
+    'animal(is)':'animal(es)',
+    'Abates deste manejo':'Abates de este manejo',
+    'Nenhum abate neste manejo ainda.':'Ningún abate en este manejo aún.',
+    'Abra um manejo antes de registrar o abate':'Abre un manejo antes de registrar el abate',
+    'Amigos no manejo':'Amigos en el manejo',
+    'Convidar amigo (e-mail)':'Invitar amigo (correo)',
+    'Convite enviado ✔':'Invitación enviada ✔',
+    'Convite reenviado ✔':'Invitación reenviada ✔',
+    'Convite aceito ✔':'Invitación aceptada ✔',
+    'Convite recusado':'Invitación rechazada',
+    'Convites de manejo':'Invitaciones de manejo',
+    'Manejos que participo':'Manejos en que participo',
+    'Reenviar':'Reenviar',
+    'Aceitar':'Aceptar',
+    'Recusar':'Rechazar',
+    'pendente':'pendiente',
+    'aceito':'aceptado',
+    'recusado':'rechazado',
+    'Informe o e-mail do amigo':'Indica el correo del amigo',
+    'Limite de manejo':'Límite de manejo',
+    'Desenhe no mapa, por cliques, o perímetro onde você pode andar. Aparece só para você (e para quem você compartilhar).':'Dibuja en el mapa, por clics, el perímetro donde puedes andar. Aparece solo para ti (y para quien lo compartas).',
+    'ponto(s) marcado(s)':'punto(s) marcado(s)',
+    'Nenhum limite desenhado':'Ningún límite dibujado',
+    'Desenhar / editar limite':'Dibujar / editar límite',
+    'Toque no mapa para marcar os vértices do perímetro. Ligue ao menos 3 pontos.':'Toca el mapa para marcar los vértices del perímetro. Conecta al menos 3 puntos.',
+    'Marque ao menos 3 pontos para fechar o perímetro':'Marca al menos 3 puntos para cerrar el perímetro',
+    'Salvar limite':'Guardar límite',
+    'Limite salvo ✔':'Límite guardado ✔',
+    'Limite':'Límite',
+    'Propriedade (limite de manejo)':'Propiedad (límite de manejo)',
+    '— nenhuma —':'— ninguna —',
+    'Na caçada livre, a propriedade com limite é obrigatória.':'En la cacería libre, la propiedad con límite es obligatoria.',
+    'Na caçada livre, escolha uma propriedade com limite.':'En la cacería libre, elige una propiedad con límite.',
+    'Compartilhar limite':'Compartir límite',
+    'E-mail de quem vai receber o limite:':'Correo de quien recibirá el límite:',
+    'Limites compartilhados com você':'Límites compartidos contigo',
+    'Compartilhar ceva':'Compartir comedero',
+    'E-mail de quem vai receber a ceva:':'Correo de quien recibirá el comedero:',
+    'Cevas compartilhadas com você':'Comederos compartidos contigo',
+    'Rotas do manejo':'Rutas del manejo'
   }
 };
 
@@ -2746,10 +2749,10 @@ function updateHeader(){
 var NAV_MANEJADOR=[
   {v:'inicio',    label:'Início',            icon:'inicio'},
   {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
-  {v:'espreita',  label:'Rotas de manejo',   icon:'espreita'},
+  {v:'transportes',label:'Transportes',        icon:'espreita'},
   {v:'caes',      label:'Meu canil',         icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
-  {v:'abates',    label:'Abate',             icon:'abate'},
+  {v:'manejo',    label:'Manejo',            icon:'abate'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
   {v:'documentacao',label:'Documentação',  icon:'documentacao'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
@@ -3238,7 +3241,7 @@ window.excluirDoc=function(id){ if(!confirm('Excluir este documento?'))return;
   server('apiExcluirDocumento',id).then(function(){ toast('Excluído'); render(); }); };
 /* ---- formulário de propriedade ---- */
 var PROPEDIT=null;
-window.novaProp=function(){ PROPEDIT=null; nav('propForm'); };
+window.novaProp=function(){ PROPEDIT=null; PROP_LIMITE_NOVO=null; nav('propForm'); };
 window.editarProp=function(id){ PROPEDIT=PROPS.filter(function(p){return p.id===id;})[0]||null; nav('propForm'); };
 VIEWS.propForm=function(){ var p=PROPEDIT||{};
   setTitulo(PROPEDIT?'Editar propriedade':'Nova propriedade'); setCrumb('Documentação','Propriedade');
@@ -3251,15 +3254,21 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<div class="two"><div><label>Latitude</label><input id="pr_lat" inputmode="decimal" value="'+esc(p.lat||'')+'"></div>'+
     '<div><label>Longitude</label><input id="pr_lng" inputmode="decimal" value="'+esc(p.lng||'')+'"></div></div>'+
     gpsButton('pr_lat','pr_lng')+
+    '<div class="card" style="background:var(--bg2);margin:10px 0"><h3 style="margin:0 0 4px">'+trFrase('Limite de manejo')+'</h3>'+
+      '<div class="meta" style="margin-bottom:6px">'+trFrase('Desenhe no mapa, por cliques, o perímetro onde você pode andar. Aparece só para você (e para quem você compartilhar).')+'</div>'+
+      '<div class="meta" id="pr_lim_estado">'+(limiteLen_(p.limite)? (limiteLen_(p.limite)+' '+trFrase('ponto(s) marcado(s)')) : trFrase('Nenhum limite desenhado'))+'</div>'+
+      '<button class="btn sm sec" style="margin-top:6px" onclick="desenharLimite()">🗺️ '+trFrase('Desenhar / editar limite')+'</button></div>'+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
-    '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
+    (PROPEDIT&&limiteLen_(PROPEDIT.limite)? '<button class="btn sec" style="margin-bottom:8px" onclick="compartilharPropPrompt(\''+PROPEDIT.id+'\')">🔗 '+trFrase('Compartilhar limite')+'</button>':'')+
+    '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?trFrase('Salvar alterações'):trFrase('Adicionar'))+'</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
 window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
     autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),
     lat:val('pr_lat'),lng:val('pr_lng'),obs:val('pr_obs')};
-  if(PROPEDIT) d.id=PROPEDIT.id;
+  if(PROPEDIT){ d.id=PROPEDIT.id; if(PROPEDIT.limite!==undefined) d.limite=PROPEDIT.limite; }
+  else if(PROP_LIMITE_NOVO!=null) d.limite=PROP_LIMITE_NOVO;
   server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; STATE.stack=['documentacao']; DOCCAT='propriedade'; render(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
 window.excluirProp=function(id){ if(!confirm('Excluir esta propriedade?'))return;
@@ -4834,7 +4843,8 @@ var TIPOS_ALIM=['Milho','Fubá','Farelo','Soja','Ração','Sal mineral','Melaço
 VIEWS.cevaDetail=function(){ var c=STATE.ceva; setTitulo(c.nome||'Ceva'); setCrumb('Espera',esc(c.nome||'Ceva'));
   var tab=STATE.cevaTab||'alimento';
   app('<div class="card"><div class="row">'+(c.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(c.fotoUrl))+'" style="width:80px;height:80px">':'')+'<div class="grow"><h3 style="margin:0 0 3px">🌽 '+esc(c.nome||'Ceva')+'</h3><div class="meta"><span class="pill">'+esc(c.tipo)+'</span> '+mapaLink(c.lat,c.lng)+'</div></div><button class="ib" onclick="editItem(\'ceva\',\''+c.id+'\')" title="Editar">✏️</button></div></div>'+
-    '<div class="tabs"><div class="tab'+(tab==='alimento'?' on':'')+'" onclick="STATE.cevaTab=\'alimento\';render()">🌽 Alimento</div>'+
+    '<button class="btn sm sec" style="width:auto;margin:8px 0 0" onclick="compartilharCevaPrompt(\''+c.id+'\')">🔗 '+trFrase('Compartilhar ceva')+'</button>'+
+    '<div class="tabs"><div class="tab'+(tab==='alimento'?' on':'')+'" onclick="STATE.cevaTab=\'alimento\';render()">🌽 '+trFrase('Alimento')+'</div>'+
     '<div class="tab'+(tab==='nivel'?' on':'')+'" onclick="STATE.cevaTab=\'nivel\';render()">📊 Nível</div></div><div id="tabc"><div class="loading"><div class="spin"></div></div></div>');
   if(tab==='alimento') renderAlimentos(); else renderNiveis(); };
 function renderAlimentos(){ server('apiListarAlimentos',STATE.ceva.id).then(function(l){ CACHE.alimento=l;
@@ -5161,7 +5171,7 @@ window.cancelarRota=function(){ if(!confirm('Descartar esta gravação?'))return
   if(GEOWATCH!=null){ try{navigator.geolocation.clearWatch(GEOWATCH);}catch(e){} GEOWATCH=null; }
   ROTA_REC={ativo:false,pontos:[]}; STATE.stack=['espreita','rotas']; render(); };
 
-window.guiarRota=function(id){ ROTA_GUIA=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(!ROTA_GUIA){toast('Rota não encontrada');return;} if(!(ROTA_GUIA.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; } nav('rotaGuia'); };
+window.guiarRota=function(id){ if(!GUIA_DE_MANEJO) MANEJO_GUIA_PROP=''; GUIA_DE_MANEJO=false; ROTA_GUIA=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(!ROTA_GUIA){toast('Rota não encontrada');return;} if(!(ROTA_GUIA.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; } nav('rotaGuia'); };
 VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STATE.stack=['espreita','rotas']; render(); return; }
   setTitulo('Guia: '+r.nome); setCrumb('Rotas','Guia');
   app('<div class="card"><h3 style="margin:0 0 6px">🧭 '+esc(r.nome)+'</h3>'+
@@ -5177,6 +5187,13 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
   L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
   L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
   L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada');
+  // Etapa 5: se a rota veio de um manejo com propriedade, mostra o limite no guiamento
+  if(MANEJO_GUIA_PROP){ serverOpc('apiMeusLimitesMapa').then(function(ls){
+    var lim=(ls||[]).filter(function(x){ return x.id===MANEJO_GUIA_PROP; })[0];
+    if(lim){ var poly=[]; try{ poly=JSON.parse(lim.limite||'[]'); }catch(e){}
+      var ll=poly.map(function(pp){ return [pp.lat,pp.lng]; });
+      if(ll.length>=3) L.polygon(ll,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.10,dashArray:'4,5'}).addTo(map).bindPopup('🗺️ '+esc(lim.nome||'')); }
+  }).catch(function(){}); }
   ROTA_GUIA._markLayer=L.featureGroup().addTo(map);
   server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms; (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m)); }); }).catch(function(){});
   setTimeout(function(){ map.invalidateSize(); try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} },150);
@@ -5303,6 +5320,48 @@ window.salvarDesenho=function(btn){ if(!DRAW||DRAW.pontos.length<2){ toast('Marq
   .then(function(){ DRAW=null; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
   .catch(function(){ btn.disabled=false; btn.textContent='💾 Salvar rota'; }); };
 window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; DRAW=null; STATE.stack=['espreita','rotas']; render(); };
+/* ===== LIMITE DE MANEJO (polígono por cliques) — Etapa 4 ===== */
+var PROP_LIMITE_NOVO=null;
+window.compartilharPropPrompt=function(id){ var login=prompt(trFrase('E-mail de quem vai receber o limite:')); if(!login)return;
+  server('apiCompartilharPropriedade',{propId:id,login:login}).then(function(){ toast(trFrase('Convite enviado ✔')); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+function limiteLen_(lim){ try{ var a=(typeof lim==='string')?JSON.parse(lim||'[]'):(lim||[]); return a.length; }catch(e){ return 0; } }
+window.desenharLimite=function(){
+  var atual = PROPEDIT ? (PROPEDIT.limite||'') : (PROP_LIMITE_NOVO||'');
+  var pts=[]; try{ pts=(typeof atual==='string')?JSON.parse(atual||'[]'):(atual||[]); }catch(e){ pts=[]; }
+  LIMDRAW={ pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}) };
+  nav('limiteDesenhar');
+};
+var LIMDRAW=null;
+VIEWS.limiteDesenhar=function(){ if(!LIMDRAW){ voltar(); return; }
+  setTitulo(trFrase('Limite de manejo')); setCrumb(trFrase('Propriedade'),trFrase('Limite'));
+  app('<div class="card"><div class="meta" style="margin-bottom:6px">'+trFrase('Toque no mapa para marcar os vértices do perímetro. Ligue ao menos 3 pontos.')+'</div>'+
+    '<div class="dash"><div class="kpi"><b id="limPts">'+LIMDRAW.pontos.length+'</b><span>'+trFrase('pontos')+'</span></div></div>'+
+    '<div id="limMap" style="height:52vh;min-height:320px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<div class="row" style="gap:8px;margin-top:10px"><button class="btn sec grow" onclick="limDesfazer()">↶ '+trFrase('Desfazer')+'</button>'+
+      '<button class="btn sec grow" onclick="limLimpar()">🗑️ '+trFrase('Limpar')+'</button></div>'+
+    '<button class="btn" style="margin-top:8px" onclick="salvarLimite()">💾 '+trFrase('Salvar limite')+'</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">'+trFrase('Cancelar')+'</button></div>');
+  var map=L.map('limMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
+  addBase(map); ROUTEMAP=map; LIMDRAW.layer=L.featureGroup().addTo(map);
+  map.on('click', function(e){ LIMDRAW.pontos.push({lat:+e.latlng.lat.toFixed(6),lng:+e.latlng.lng.toFixed(6)}); redrawLimite(); });
+  setTimeout(function(){ map.invalidateSize();
+    if(LIMDRAW.pontos.length){ try{ map.fitBounds(LIMDRAW.pontos.map(function(p){return [p.lat,p.lng];}),{padding:[40,40],maxZoom:16}); }catch(e){} }
+    else if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP===map) map.setView([pos.coords.latitude,pos.coords.longitude],14); },function(){},{timeout:6000}); }
+  },150);
+  redrawLimite(); };
+function redrawLimite(){ if(!LIMDRAW||!LIMDRAW.layer)return; LIMDRAW.layer.clearLayers();
+  var pts=LIMDRAW.pontos.map(function(p){return [p.lat,p.lng];});
+  if(pts.length>=3) L.polygon(pts,{color:'#2f7d3a',weight:3,fillColor:'#2f7d3a',fillOpacity:.18}).addTo(LIMDRAW.layer);
+  else if(pts.length===2) L.polyline(pts,{color:'#2f7d3a',weight:3,dashArray:'5,6'}).addTo(LIMDRAW.layer);
+  LIMDRAW.pontos.forEach(function(p,i){ L.circleMarker([p.lat,p.lng],{radius:i===0?7:5,color:'#fff',fillColor:'#2f7d3a',fillOpacity:1,weight:2}).addTo(LIMDRAW.layer); });
+  var e=document.getElementById('limPts'); if(e) e.textContent=LIMDRAW.pontos.length; }
+window.limDesfazer=function(){ if(LIMDRAW&&LIMDRAW.pontos.length){ LIMDRAW.pontos.pop(); redrawLimite(); } };
+window.limLimpar=function(){ if(LIMDRAW){ LIMDRAW.pontos=[]; redrawLimite(); } };
+window.salvarLimite=function(){ if(!LIMDRAW||LIMDRAW.pontos.length<3){ toast(trFrase('Marque ao menos 3 pontos para fechar o perímetro')); return; }
+  var json=JSON.stringify(LIMDRAW.pontos);
+  if(PROPEDIT) PROPEDIT.limite=json; else PROP_LIMITE_NOVO=json;
+  LIMDRAW=null; toast(trFrase('Limite salvo ✔')); voltar(); };
+
 
 /* ============================================================
    CÃES
@@ -5405,215 +5464,174 @@ window.salvarArm=function(btn){ btn.disabled=true; btn.textContent='Salvando…'
    ============================================================ */
 var TIPOS_MANEJO=['Espera','Cães','Espreita','Armadilha'];
 var ABATEOPTS={ cevas:[], transportes:[], armadilhas:[], caes:[] };
-
-/* ---- Condições do abate: lua e tempo ----
-   O valor gravado é o texto simples (sem emoji), igual à lista do backend.
-   A fase da lua é calculada aqui mesmo: astronomia pura, sem rede, funciona offline. */
-var LUA_FASES=['Lua nova','Crescente inicial','Quarto crescente','Crescente final',
-  'Lua cheia','Minguante inicial','Quarto minguante','Minguante final'];
-var LUA_ICONE={'Lua nova':'🌑','Crescente inicial':'🌒','Quarto crescente':'🌓','Crescente final':'🌔',
-  'Lua cheia':'🌕','Minguante inicial':'🌖','Quarto minguante':'🌗','Minguante final':'🌘'};
-var COND_TEMPO=['Aberto','Parcialmente nublado','Nublado','Neblina','Garoa','Chuva','Tempestade'];
-var COND_ICONE={'Aberto':'☀️','Parcialmente nublado':'🌤️','Nublado':'☁️','Neblina':'🌫️',
-  'Garoa':'🌦️','Chuva':'🌧️','Tempestade':'⛈️'};
-var LUNACAO=29.530588853;
-/* Fração da lunação: 0 = nova, 0.5 = cheia. Época: lua nova de 06/01/2000 18:14 UTC. */
-function luaFracao(dt){ if(!dt||isNaN(dt.getTime())) return null;
-  var d=(dt.getTime()-Date.UTC(2000,0,6,18,14,0))/86400000;
-  var f=(d/LUNACAO)%1; if(f<0) f+=1; return f; }
-/* Converte a fração em uma das 8 fases (faixas centradas, 1/16 de lunação para cada lado). */
-function luaFaseEm(dt){ var f=luaFracao(dt); if(f===null) return '';
-  var i=Math.floor(f*8+0.5)%8; return LUA_FASES[i]; }
-function luaFaseDeInput(valorDataHora){ if(!valorDataHora) return '';
-  var dt=new Date(String(valorDataHora).replace(' ','T')); return luaFaseEm(dt); }
-/* O value fica sempre em pt (é o que o banco guarda e o backend valida);
-   só o rótulo visível passa por trFrase, porque o nó de texto leva emoji e
-   nunca casaria no dicionário depois de renderizado. */
-function optsLua(sel){ return LUA_FASES.map(function(f){
-  return '<option value="'+f+'"'+(f===sel?' selected':'')+'>'+LUA_ICONE[f]+' '+esc(trFrase(f))+'</option>'; }).join(''); }
-function optsTempo(sel){ return COND_TEMPO.map(function(c){
-  return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+COND_ICONE[c]+' '+esc(trFrase(c))+'</option>'; }).join(''); }
-/* ---- Condições da ceva: Tempo Real (sistema) x Passado (manual) ----
-   Tempo real vale só para a espera com ceva. O painel é somente leitura:
-   quem grava é o servidor, que refaz a consulta na hora de salvar. */
-var COND_MODO='passado', COND_AUTO=null, COND_BUSCANDO=false;
-window.renderCondCeva=function(){
-  var el=document.getElementById('ab_cond'); if(!el) return;
-  var cevaId=val('ab_ceva');
-  if(!cevaId){ el.innerHTML='<div class="meta">'+trFrase('Selecione a ceva para informar lua e tempo.')+'</div>'; return; }
-  var abaR=COND_MODO==='tempoReal', abaP=!abaR;
-  var h='<div class="row" style="gap:6px;margin:8px 0">'+
-    '<button class="btn sm'+(abaR?'':' out')+'" style="width:auto" onclick="setCondModo(\'tempoReal\')">'+trFrase('Tempo real')+'</button>'+
-    '<button class="btn sm'+(abaP?'':' out')+'" style="width:auto" onclick="setCondModo(\'passado\')">'+trFrase('Passado')+'</button></div>';
-  if(abaP){
-    h+='<div class="two"><div><label>Fase da lua</label><select id="ab_lua" onchange="luaManual()"><option value="">— não informada —</option>'+
-      optsLua(EDIT?pv('luaFase'):'')+'</select><div class="meta" id="ab_luaDica" style="margin:-6px 0 8px"></div></div>'+
-      '<div><label>Condição do tempo</label><select id="ab_tempo"><option value="">— não informado —</option>'+
-      optsTempo(EDIT?pv('condicaoTempo'):'')+'</select></div></div>'+
-      '<div class="meta">'+trFrase('Você informa as condições do dia do abate.')+'</div>';
-  } else if(COND_BUSCANDO){
-    h+='<div class="meta">'+trFrase('Consultando lua e tempo na ceva…')+'</div>';
-  } else if(COND_AUTO&&COND_AUTO.ok){
-    var c=COND_AUTO;
-    h+='<div class="card" style="border-left:5px solid var(--ok);margin:0 0 8px">'+
-      '<div class="meta"><b>'+(LUA_ICONE[c.luaFase]||'🌙')+' '+esc(trFrase(c.luaFase||''))+'</b>'+
-      (c.condicaoTempo?' · <b>'+(COND_ICONE[c.condicaoTempo]||'')+' '+esc(trFrase(c.condicaoTempo))+'</b>':'')+'<br>'+
-      (c.temp!==''&&c.temp!=null?esc(c.temp)+' °C · ':'')+
-      (c.umidade!==''&&c.umidade!=null?trFrase('umidade')+' '+esc(c.umidade)+'% · ':'')+
-      (c.vento!==''&&c.vento!=null?trFrase('vento')+' '+esc(c.vento)+' km/h'+(c.ventoDir?' '+esc(c.ventoDir):''):'')+
-      (c.chuvaProb!==''&&c.chuvaProb!=null?'<br>'+trFrase('chuva')+' '+esc(c.chuvaProb)+'%':'')+
-      '</div><div class="meta" style="margin-top:6px">'+trFrase('Capturado pelo sistema. Não é editável.')+'</div>'+
-      '<div class="meta no-i18n" style="margin-top:4px;opacity:.7">'+
-      'Dados: <a href="https://www.met.no/" target="_blank" rel="noopener">MET Norway</a> · '+
-      '<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></div></div>';
-  } else {
-    var er=COND_AUTO&&COND_AUTO.erro?COND_AUTO.erro:'';
-    h+='<div class="card" style="border-left:5px solid var(--alerta);margin:0 0 8px"><div class="meta">'+
-      trFrase(msgErroClima(er))+'</div>'+
-      '<button class="btn sm" style="width:auto;margin-top:8px" onclick="setCondModo(\'passado\')">'+
-      trFrase('Informar manualmente')+'</button></div>';
-  }
-  el.innerHTML=h;
-  if(abaP) sugerirLua();
+/* ===================== MANEJO — Etapa 1: fundação (telas) ===================== */
+VIEWS.manejo=function(){ setTitulo(trFrase('Manejo')); setCrumb(trFrase('Manejo')); loadingBox();
+  Promise.all([serverOpc('apiManejoAberto'), serverOpc('apiListarManejos'), serverOpc('apiConvitesManejo'), serverOpc('apiManejosComoAmigo'), serverOpc('apiConvitesPropriedade'), serverOpc('apiConvitesCeva')]).then(function(res){
+    var aberto=res[0], lista=res[1]||[], convites=res[2]||[], comoAmigo=res[3]||[], convProp=res[4]||[], convCeva=res[5]||[];
+    var abertoHtml = aberto
+      ? '<div class="card" style="border-left:5px solid var(--verde)"><div class="row"><div class="grow">'+
+          '<h3 style="margin:0 0 2px">'+trFrase('Manejo aberto')+'</h3>'+
+          '<b>'+esc(aberto.nome)+'</b><div class="meta">'+trFrase(rotuloTipo_(aberto.tipo))+
+          ' · '+aberto.cevasIds.length+' ceva(s) · '+aberto.rotasIds.length+' rota(s)</div></div></div>'+
+          '<button class="btn sm" style="margin-top:8px" onclick="abrirManejo(\''+aberto.id+'\')">'+trFrase('Abrir manejo')+'</button>'+
+          '<button class="btn sm sec" style="margin-top:8px" onclick="encerrarManejo(\''+aberto.id+'\')">'+trFrase('Encerrar manejo')+'</button></div>'
+      : '';
+    var histHtml = lista.length
+      ? '<div class="card"><h3 style="margin:0 0 8px">'+trFrase('Meus manejos')+'</h3>'+
+        lista.map(function(m){
+          return '<div class="row" style="gap:9px;padding:9px 0;border-top:1px solid var(--linha)">'+
+            '<div class="grow"><b>'+esc(m.nome)+'</b><div class="meta">'+trFrase(rotuloTipo_(m.tipo))+' · '+
+            '<span class="pill '+(m.status==='aberto'?'ok':'gray')+'">'+trFrase(m.status)+'</span> · '+fmtData(m.criadoEm)+'</div></div></div>'; }).join('')+'</div>'
+      : '<div class="empty"><div class="big">🐗</div>'+trFrase('Nenhum manejo ainda. Toque em Novo manejo para abrir o primeiro.')+'</div>';
+    var convCevaHtml = convCeva.length
+      ? '<div class="card" style="border-left:5px solid #b8863b"><h3 style="margin:0 0 6px">'+trFrase('Cevas compartilhadas com você')+'</h3>'+
+        convCeva.map(function(c){ return '<div class="row" style="gap:6px;padding:7px 0;border-top:1px solid var(--linha)"><div class="grow"><b>'+esc(c.cevaNome||'')+'</b><div class="meta">'+esc(c.donoNome||'')+'</div></div>'+
+          '<button class="btn sm" style="width:auto;margin:0" onclick="responderConviteCeva(\''+c.id+'\',true)">'+trFrase('Aceitar')+'</button>'+
+          '<button class="btn sm sec" style="width:auto;margin:0" onclick="responderConviteCeva(\''+c.id+'\',false)">'+trFrase('Recusar')+'</button></div>'; }).join('')+'</div>'
+      : '';
+    var convPropHtml = convProp.length
+      ? '<div class="card" style="border-left:5px solid var(--verde)"><h3 style="margin:0 0 6px">'+trFrase('Limites compartilhados com você')+'</h3>'+
+        convProp.map(function(c){ return '<div class="row" style="gap:6px;padding:7px 0;border-top:1px solid var(--linha)"><div class="grow"><b>'+esc(c.propNome||'')+'</b><div class="meta">'+esc(c.donoNome||'')+'</div></div>'+
+          '<button class="btn sm" style="width:auto;margin:0" onclick="responderConviteProp(\''+c.id+'\',true)">'+trFrase('Aceitar')+'</button>'+
+          '<button class="btn sm sec" style="width:auto;margin:0" onclick="responderConviteProp(\''+c.id+'\',false)">'+trFrase('Recusar')+'</button></div>'; }).join('')+'</div>'
+      : '';
+    var convHtml = convites.length
+      ? '<div class="card" style="border-left:5px solid var(--laranja)"><h3 style="margin:0 0 6px">'+trFrase('Convites de manejo')+'</h3>'+
+        convites.map(function(c){ return '<div class="row" style="gap:6px;padding:7px 0;border-top:1px solid var(--linha)"><div class="grow"><b>'+esc(c.manejoNome||'')+'</b><div class="meta">'+esc(c.donoNome||'')+'</div></div>'+
+          '<button class="btn sm" style="width:auto;margin:0" onclick="responderConviteManejo(\''+c.id+'\',true)">'+trFrase('Aceitar')+'</button>'+
+          '<button class="btn sm sec" style="width:auto;margin:0" onclick="responderConviteManejo(\''+c.id+'\',false)">'+trFrase('Recusar')+'</button></div>'; }).join('')+'</div>'
+      : '';
+    var amigoHtml = comoAmigo.length
+      ? '<div class="card"><h3 style="margin:0 0 8px">'+trFrase('Manejos que participo')+'</h3>'+
+        comoAmigo.map(function(m){ return '<div class="row" style="gap:9px;padding:9px 0;border-top:1px solid var(--linha)"><div class="grow"><b>'+esc(m.nome)+'</b><div class="meta">'+esc(m.donoNome||'')+' · <span class="pill '+(m.status==='aberto'?'ok':'gray')+'">'+trFrase(m.status)+'</span></div></div>'+
+          (m.status==='aberto'?'<button class="btn sm" style="width:auto;margin:0" onclick="abrirManejo(\''+m.id+'\')">'+trFrase('Abrir manejo')+'</button>':'')+'</div>'; }).join('')+'</div>'
+      : '';
+    app(convCevaHtml+convPropHtml+convHtml+amigoHtml+abertoHtml+histHtml+
+      '<div class="card click" onclick="go(\'abates\')"><div class="row"><div class="grow"><h3 style="margin:0">'+trFrase('Registrar abate (histórico antigo)')+'</h3></div><div class="chev">›</div></div></div>');
+    if(!aberto) fab('<button class="btn" onclick="nav(\'manejoForm\')">＋ '+trFrase('Novo manejo')+'</button>');
+  }).catch(function(){ app('<div class="card"><div class="meta">'+trFrase('Não foi possível carregar.')+'</div></div>'); });
 };
-function msgErroClima(er){
-  if(er==='CEVA_SEM_COORD') return 'Esta ceva não tem coordenada. Edite a ceva e marque o ponto no mapa para usar o tempo real.';
-  if(er==='CLIMA_INDISPONIVEL') return 'A consulta de tempo ainda não está configurada no servidor.';
-  if(er==='CLIMA_LIMITE') return 'O serviço de tempo recusou por excesso de consultas. Tente em alguns minutos.';
-  if(er==='CLIMA_IDENTIFICACAO') return 'O serviço de tempo recusou a identificação do app.';
-  return 'Não foi possível consultar o tempo na ceva agora.';
-}
-window.setCondModo=function(m){
-  COND_MODO=m;
-  var dh=document.getElementById('ab_dh');
-  if(m==='tempoReal'){
-    /* Tempo real é agora: fixa e trava a data/hora. */
-    if(dh){ dh.value=nowLocal(); dh.readOnly=true; dh.style.opacity=.6; }
-    COND_AUTO=null; COND_BUSCANDO=true; renderCondCeva();
-    var cevaId=val('ab_ceva');
-    server('apiClimaCeva',cevaId).then(function(r){ COND_AUTO=r; COND_BUSCANDO=false; renderCondCeva(); })
-      .catch(function(e){ COND_AUTO={ok:false,erro:(e&&e.message)||''}; COND_BUSCANDO=false; renderCondCeva(); });
-  } else {
-    if(dh){ dh.readOnly=false; dh.style.opacity=1; }
-    COND_AUTO=null; COND_BUSCANDO=false; renderCondCeva();
-  }
+function rotuloTipo_(t){ return t==='ceva'?'Por ceva':(t==='rota'?'Por rota':'Livre'); }
+window.abrirManejo=function(id){
+  server('apiListarManejos').then(function(l){
+    MANEJO_ATUAL=(l||[]).filter(function(m){return m.id===id;})[0]||null;
+    if(!MANEJO_ATUAL){ toast('Manejo não encontrado'); return; }
+    nav('manejoAberto');
+  }).catch(function(){ toast('Erro'); });
 };
-/* Mexer na data para o passado desliga o tempo real: não faz sentido dizer
-   "agora" e apontar para outro dia. */
-window.sugerirLua=function(){ var s=document.getElementById('ab_lua');
-  if(COND_MODO==='tempoReal'){
-    var dh=val('ab_dh');
-    if(dh && Math.abs(new Date(String(dh).replace(' ','T')) - new Date())>2*3600000){ setCondModo('passado'); toast('Data no passado: modo alterado para Passado'); }
-    return; }
-  if(!s) return;
-  if(s.getAttribute('data-manual')==='1') return;
-  var f=luaFaseDeInput(val('ab_dh')); if(f) s.value=f;
-  var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=f?trFrase('Sugerida pela data do abate.'):''; };
-window.luaManual=function(){ var s=document.getElementById('ab_lua'); if(s) s.setAttribute('data-manual','1');
-  var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=trFrase('Escolhida por você.'); };
-/* Ícone + nome do local do abate. O nome vem resolvido pelo backend. */
-var LOCAL_ICONE={ceva:'🌽',rota:'🥾',armadilha:'🪤',canil:'🐕'};
-function localAbate(a){
-  if(!a||!a.localNome) return '';
-  return '<b>'+(LOCAL_ICONE[a.localTipo]||'📍')+' <span class="no-i18n">'+esc(a.localNome)+'</span></b><br>'; }
+VIEWS.manejoAberto=function(){ var m=MANEJO_ATUAL; if(!m){ go('manejo'); return; }
+  setTitulo(esc(m.nome)); setCrumb(trFrase('Manejo'), esc(m.nome)); loadingBox();
+  server('apiAbatesDoManejo', m.id).then(function(abs){ abs=abs||[];
+    var abatidos=abs.reduce(function(s,a){ return s+(parseInt(a.quantidade,10)||0); },0);
+    var listaAbs = abs.length
+      ? abs.map(function(a){ return '<div class="row" style="gap:8px;padding:8px 0;border-top:1px solid var(--linha)">'+
+          '<div class="grow"><b>'+esc(a.quantidade||'1')+' '+trFrase('animal(is)')+'</b>'+(a.sexo?' · '+esc(a.sexo):'')+
+          '<div class="meta">'+fmtDataHora(a.dataHora)+(a.abatidoPorNome?' · '+esc(a.abatidoPorNome):'')+'</div></div></div>'; }).join('')
+      : '<div class="meta">'+trFrase('Nenhum abate neste manejo ainda.')+'</div>';
+    app('<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">'+esc(m.nome)+'</h3>'+
+        '<div class="meta">'+trFrase(rotuloTipo_(m.tipo))+' · '+m.cevasIds.length+' ceva(s) · '+m.rotasIds.length+' rota(s)</div></div>'+
+        '<span class="pill '+(m.status==='aberto'?'ok':'gray')+'">'+trFrase(m.status)+'</span></div></div>'+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">'+trFrase('Abates deste manejo')+'</h3>'+
+        '<div class="meta">'+abatidos+' '+trFrase('animal(is)')+'</div></div></div>'+
+        '<div style="margin-top:6px">'+listaAbs+'</div></div>'+
+      '<div id="mnjRotas"></div>'+
+      '<div id="mnjAmigos"></div>'+
+      (m.status==='aberto'
+        ? '<button class="btn" onclick="novoAbateNoManejo()">＋ '+trFrase('Registrar abate')+'</button>'+
+          '<button class="btn sec" style="margin-top:8px" onclick="encerrarManejo(\''+m.id+'\')">'+trFrase('Encerrar manejo')+'</button>'
+        : ''));
+      if(m.status==='aberto'){ carregarAmigosManejo(m.id); carregarRotasManejo(m); }
+  }).catch(function(e){ app('<div class="card"><div class="meta">'+esc((e&&e.message)||'Erro')+'</div></div>'); });
+};
+window.novoAbateNoManejo=function(){ EDIT=null; nav('abateForm'); };
+window.carregarRotasManejo=function(m){ var box=document.getElementById('mnjRotas'); if(!box||!m.rotasIds||!m.rotasIds.length){ if(box) box.innerHTML=''; return; }
+  server('apiListarRotas').then(function(rs){ rs=rs||[];
+    var doManejo = rs.filter(function(r){ return m.rotasIds.indexOf(r.id)>=0; });
+    if(!doManejo.length){ box.innerHTML=''; return; }
+    box.innerHTML='<div class="card"><h3 style="margin:0 0 6px">'+trFrase('Rotas do manejo')+'</h3>'+
+      doManejo.map(function(r){ return '<div class="row" style="gap:8px;padding:7px 0;border-top:1px solid var(--linha)"><div class="grow">'+esc(r.nome||r.id)+'</div>'+
+        '<button class="btn sm" style="width:auto;margin:0" onclick="guiarRotaManejo(\''+r.id+'\',\''+(m.propriedadeId||'')+'\')">🧭 '+trFrase('Guiar')+'</button></div>'; }).join('')+'</div>';
+  }).catch(function(){}); };
+var MANEJO_GUIA_PROP='';
+var GUIA_DE_MANEJO=false;
+window.guiarRotaManejo=function(rotaId,propId){ MANEJO_GUIA_PROP=propId||''; GUIA_DE_MANEJO=true;
+  server('apiListarRotas').then(function(rs){ CACHE.rota=rs||[]; guiarRota(rotaId); }).catch(function(){ toast('Erro'); }); };
+window.carregarAmigosManejo=function(id){ var box=document.getElementById('mnjAmigos'); if(!box) return;
+  server('apiParticipantesManejo',id).then(function(ps){ ps=ps||[];
+    var linhas = ps.length? ps.map(function(pt){
+      var cor = pt.status==='aceito'?'ok':(pt.status==='pendente'?'gray':'gray');
+      var acao = pt.status!=='aceito'
+        ? '<button class="btn sm sec" style="width:auto;margin:0" onclick="reenviarConvite(\''+pt.id+'\',\''+id+'\')">'+trFrase('Reenviar')+'</button>' : '';
+      return '<div class="row" style="gap:8px;padding:7px 0;border-top:1px solid var(--linha)"><div class="grow">'+esc(pt.amigoNome||pt.amigoId)+
+        ' <span class="pill '+cor+'">'+trFrase(pt.status)+'</span></div>'+acao+'</div>';
+    }).join('') : '<div class="meta">'+trFrase('Ninguém convidado ainda.')+'</div>';
+    box.innerHTML='<div class="card"><h3 style="margin:0 0 6px">'+trFrase('Amigos no manejo')+'</h3>'+linhas+
+      '<label style="margin-top:8px">'+trFrase('Convidar amigo (e-mail)')+'</label>'+
+      '<div class="row" style="gap:6px"><input id="mnj_amigo" placeholder="amigo@email.com" class="grow"><button class="btn sm" style="width:auto;margin:0" onclick="convidarAmigoManejo(\''+id+'\')">'+trFrase('Convidar')+'</button></div></div>';
+  }).catch(function(){}); };
+window.convidarAmigoManejo=function(id){ var login=val('mnj_amigo'); if(!login){ toast(trFrase('Informe o e-mail do amigo')); return; }
+  server('apiConvidarManejo',{manejoId:id,login:login}).then(function(){ toast(trFrase('Convite enviado ✔')); carregarAmigosManejo(id); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.reenviarConvite=function(pid,id){ server('apiReenviarConviteManejo',pid).then(function(){ toast(trFrase('Convite reenviado ✔')); carregarAmigosManejo(id); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.compartilharCevaPrompt=function(id){ var login=prompt(trFrase('E-mail de quem vai receber a ceva:')); if(!login)return;
+  server('apiCompartilharCeva',{cevaId:id,login:login}).then(function(){ toast(trFrase('Convite enviado ✔')); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.responderConviteCeva=function(pid,aceitar){ server('apiResponderConviteCeva',{id:pid,aceitar:aceitar}).then(function(){ toast(aceitar?trFrase('Convite aceito ✔'):trFrase('Convite recusado')); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.responderConviteProp=function(pid,aceitar){ server('apiResponderConvitePropriedade',{id:pid,aceitar:aceitar}).then(function(){ toast(aceitar?trFrase('Convite aceito ✔'):trFrase('Convite recusado')); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.responderConviteManejo=function(pid,aceitar){ server('apiResponderConviteManejo',{id:pid,aceitar:aceitar}).then(function(){ toast(aceitar?trFrase('Convite aceito ✔'):trFrase('Convite recusado')); render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
-/* Lua de um abate: a gravada, ou calculada da data quando não houver.
-   Como é função pura da dataHora, não precisa de backfill nem de coluna. */
-function luaDoAbate(a){
-  if(!a) return '';
-  if(a.luaFase) return a.luaFase;
-  if(!a.dataHora) return '';
-  return luaFaseEm(new Date(String(a.dataHora).replace(' ','T'))); }
-function faixaHora(dh){
-  var d=new Date(String(dh||'').replace(' ','T')); if(isNaN(d.getTime())) return -1;
-  return Math.floor(d.getHours()/3); }   // 8 faixas de 3h
+window.encerrarManejo=function(id){ if(!confirm(trFrase('Encerrar este manejo?')))return;
+  server('apiEncerrarManejo',id).then(function(){ toast(trFrase('Manejo encerrado')); render(); })
+  .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
-/* ---- Índice de condições da ceva (4 eixos) ----
-   Lua · Clima · Alimento · Período do dia. Cada eixo só entra se houver
-   dado histórico para ele: os pesos são renormalizados sobre os eixos
-   disponíveis, senão uma ceva sem histórico de clima seria punida à toa. */
-var IDX_PESOS={lua:0.3, clima:0.3, alimento:0.2, periodo:0.2};
-var IDX_K=5;
-/* Semelhança circular: igual=1, vizinho=0,5, resto=0 (para ciclos como lua e hora). */
-function simCirc(a,b,total){ if(a<0||b<0) return null;
-  var d=Math.abs(a-b); d=Math.min(d,total-d); return d===0?1:(d===1?0.5:0); }
-function indiceCeva(abates, agora, ctx){
-  agora=agora||new Date(); ctx=ctx||{};
-  var ab=(abates||[]).filter(function(a){ return a.dataHora; });
-  var n=ab.length;
-  if(!n) return { idx:null, n:0, eixos:[] };
-  var faseHoje=luaFaseEm(agora), iHoje=LUA_FASES.indexOf(faseHoje);
-  var hHoje=Math.floor(agora.getHours()/3);
-  var climaHoje=ctx.climaHoje||'';          // balde de COND_TEMPO para hoje na ceva
-  var alimHoje=ctx.alimentoHoje||'';        // alimento que está na ceva agora
-  var soma={lua:0,clima:0,alimento:0,periodo:0}, conta={lua:0,clima:0,alimento:0,periodo:0};
-  ab.forEach(function(a){
-    var s;
-    s=simCirc(LUA_FASES.indexOf(luaDoAbate(a)), iHoje, 8);
-    if(s!==null){ soma.lua+=s; conta.lua++; }
-    s=simCirc(faixaHora(a.dataHora), hHoje, 8);
-    if(s!==null){ soma.periodo+=s; conta.periodo++; }
-    if(climaHoje && a.condicaoTempo){ soma.clima+=(a.condicaoTempo===climaHoje?1:0); conta.clima++; }
-    var alimAb=(ctx.alimentoDe?ctx.alimentoDe(a):'');
-    if(alimHoje && alimAb){ soma.alimento+=(alimAb===alimHoje?1:0); conta.alimento++; }
-  });
-  /* fração compatível por eixo, normalizada contra o espalhamento neutro */
-  var neutro={lua:2/8*2, periodo:2/8*2, clima:1/COND_TEMPO.length*2, alimento:0.5};
-  var eixos=[], pesoTotal=0, acumulado=0;
-  ['lua','clima','alimento','periodo'].forEach(function(k){
-    if(!conta[k]) return;
-    var frac=soma[k]/conta[k];
-    var nota=Math.max(0, Math.min(1, frac/neutro[k]));
-    eixos.push({ eixo:k, pct:Math.round(frac*100), nota:nota, base:conta[k] });
-    acumulado+=IDX_PESOS[k]*nota; pesoTotal+=IDX_PESOS[k];
-  });
-  if(!pesoTotal) return { idx:null, n:n, eixos:[] };
-  var bruto=acumulado/pesoTotal;                 // renormaliza sobre os eixos com dado
-  var conf=n/(n+IDX_K);
-  var idx=Math.round(50+(bruto*100-50)*conf);
-  return { idx:Math.max(1,Math.min(99,idx)), n:n, faseHoje:faseHoje, climaHoje:climaHoje,
-    alimentoHoje:alimHoje, eixos:eixos, conf:conf }; }
-var EIXO_ROTULO={lua:'Lua', clima:'Clima', alimento:'Alimento', periodo:'Período do dia'};
-var EIXO_ICONE={lua:'🌙', clima:'🌤️', alimento:'🌽', periodo:'🕐'};
-function corIndice(i){ return i>=65?'#2f7d3a':(i>=35?'#b8863b':'#8a3b3b'); }
-/* O popup explica de onde saiu o número — é a parte que vale mais que o número. */
-function blocoIndice(ic){
-  if(!ic||ic.idx==null) return '<div class="meta" style="margin-top:6px">'+
-    trFrase('Sem abates aqui ainda: não há como comparar.')+'</div>';
-  var conf=ic.n>=10?trFrase('boa'):(ic.n>=5?trFrase('média'):trFrase('baixa'));
-  var linhas=(ic.eixos||[]).map(function(e){
-    return '<div>'+EIXO_ICONE[e.eixo]+' <b>'+trFrase(EIXO_ROTULO[e.eixo])+'</b> — '+
-      e.pct+'% '+trFrase('dos abates daqui')+'</div>'; }).join('');
-  var faltam=['lua','clima','alimento','periodo'].filter(function(k){
-    return !(ic.eixos||[]).some(function(e){ return e.eixo===k; }); });
-  return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd">'+
-    '<b style="color:'+corIndice(ic.idx)+'">'+trFrase('Condições agora')+': '+ic.idx+'/100</b>'+
-    '<div class="meta" style="margin-top:4px">'+linhas+
-      '<div style="margin-top:4px">'+trFrase('Base')+': '+ic.n+' '+trFrase('abates')+
-      ' · '+trFrase('confiança')+' '+conf+'</div>'+
-      (faltam.length?'<div style="margin-top:4px;opacity:.7">'+trFrase('Sem histórico para')+': '+
-        faltam.map(function(k){ return trFrase(EIXO_ROTULO[k]); }).join(', ')+'</div>':'')+
-    '</div>'+
-    '<div class="meta" style="margin-top:4px;opacity:.75">'+
-      trFrase('É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.')+
-    '</div></div>'; }
-function cevaIcon(idx){
-  var cor=idx==null?'#7a6a55':corIndice(idx);
-  var txt=idx==null?'–':idx;
-  return L.divIcon({ html:'<div class="ceva-mk" style="border-color:'+cor+'">'+
-      '<img src="'+ICONS.espera+'" alt="">'+
-      '<span class="ceva-idx" style="background:'+cor+'">'+txt+'</span></div>',
-    className:'ceva-mkwrap', iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-19] }); }
-function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
-  if(lf&&LUA_ICONE[lf]) p.push(LUA_ICONE[lf]+' '+esc(trFrase(lf)));
-  if(a&&a.condicaoTempo&&COND_ICONE[a.condicaoTempo]) p.push(COND_ICONE[a.condicaoTempo]+' '+esc(trFrase(a.condicaoTempo)));
-  return p.length?' · '+p.join(' · '):''; }
+VIEWS.manejoForm=function(){ setTitulo(trFrase('Novo manejo')); setCrumb(trFrase('Manejo'),trFrase('Novo manejo')); loadingBox();
+  Promise.all([serverOpc('apiListarCevas'), serverOpc('apiListarRotas'), serverOpc('apiPropriedadesComLimite')]).then(function(res){
+    var cevas=res[0]||[], rotas=res[1]||[], props=res[2]||[];
+    MANEJO_NOVO={tipo:'livre', cevas:[], rotas:[]};
+    app('<div class="card">'+
+      '<label>'+trFrase('Nome do manejo')+'</label><input id="mn_nome" placeholder="'+esc(trFrase('Nome do manejo'))+'">'+
+      '<label>'+trFrase('Tipo de caçada')+'</label>'+
+      '<div class="segbar" id="mn_tipo">'+
+        '<button class="on" onclick="manejoTipo(\'livre\',this)">'+trFrase('Livre')+'</button>'+
+        '<button onclick="manejoTipo(\'ceva\',this)">'+trFrase('Por ceva')+'</button>'+
+        '<button onclick="manejoTipo(\'rota\',this)">'+trFrase('Por rota')+'</button>'+
+      '</div>'+
+      '<div id="mn_cevas" style="display:none"><label>'+trFrase('Selecione as cevas')+'</label>'+
+        (cevas.length?cevas.map(function(c){ return '<label class="chk"><input type="checkbox" value="'+c.id+'" onchange="manejoToggle(\'cevas\',this)"> '+esc(c.nome||c.id)+'</label>'; }).join(''):'<div class="meta">'+trFrase('Nenhuma ceva cadastrada')+'</div>')+'</div>'+
+      '<div id="mn_rotas" style="display:none"><label>'+trFrase('Selecione as rotas')+'</label>'+
+        (rotas.length?rotas.map(function(r){ return '<label class="chk"><input type="checkbox" value="'+r.id+'" onchange="manejoToggle(\'rotas\',this)"> '+esc(r.nome||r.id)+'</label>'; }).join(''):'<div class="meta">'+trFrase('Nenhuma rota cadastrada')+'</div>')+'</div>'+
+      '<div id="mn_prop"><label>'+trFrase('Propriedade (limite de manejo)')+'</label>'+
+        '<select id="mn_propId"><option value="">'+trFrase('— nenhuma —')+'</option>'+
+        (props.length?props.map(function(pr){ return '<option value="'+pr.id+'">'+esc(pr.nome)+'</option>'; }).join(''):'')+'</select>'+
+        '<div class="meta" id="mn_prop_hint" style="margin-top:4px">'+trFrase('Na caçada livre, a propriedade com limite é obrigatória.')+'</div></div>'+
+      '<button class="btn" style="margin-top:12px" onclick="salvarManejo(this)">'+trFrase('Abrir manejo')+'</button>'+
+      '<button class="btn sec" style="margin-top:8px" onclick="voltar()">'+trFrase('Cancelar')+'</button></div>');
+  }); };
+var MANEJO_NOVO={tipo:'livre',cevas:[],rotas:[]};
+var MANEJO_ATUAL=null;
+window.manejoTipo=function(t,btn){ MANEJO_NOVO.tipo=t;
+  [].slice.call(btn.parentNode.children).forEach(function(b){ b.classList.remove('on'); }); btn.classList.add('on');
+  document.getElementById('mn_cevas').style.display=(t==='ceva')?'block':'none';
+  document.getElementById('mn_rotas').style.display=(t==='rota')?'block':'none'; };
+window.manejoToggle=function(k,el){ var arr=MANEJO_NOVO[k];
+  if(el.checked){ if(arr.indexOf(el.value)<0) arr.push(el.value); }
+  else { var i=arr.indexOf(el.value); if(i>=0) arr.splice(i,1); } };
+window.salvarManejo=function(btn){
+  var d={ nome:val('mn_nome'), tipo:MANEJO_NOVO.tipo,
+    cevasIds:MANEJO_NOVO.cevas.join(','), rotasIds:MANEJO_NOVO.rotas.join(','),
+    propriedadeId:val('mn_propId')||'' };
+  if(MANEJO_NOVO.tipo==='livre' && !d.propriedadeId){ toast(trFrase('Na caçada livre, escolha uma propriedade com limite.')); return; }
+  if(d.tipo==='ceva' && !MANEJO_NOVO.cevas.length){ toast(trFrase('Selecione as cevas')); return; }
+  if(d.tipo==='rota' && !MANEJO_NOVO.rotas.length){ toast(trFrase('Selecione as rotas')); return; }
+  btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiCriarManejo',d).then(function(){ toast(trFrase('Manejo aberto ✔')); STATE.stack=['manejo']; render(); })
+  .catch(function(e){ btn.disabled=false; btn.textContent=trFrase('Abrir manejo'); toast((e&&e.message)||'Erro'); }); };
+
 VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadingBox();
   server('apiListarAbates').then(function(l){ CACHE.abate=l;
     l.sort(function(a,b){ return String(b.dataHora).localeCompare(String(a.dataHora)); });
     var html=l.length? l.map(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666';
       return '<div class="card"><div class="row"><div class="grow"><h3><span class="pill" style="background:'+cor+'">'+esc(a.tipoManejo||'—')+'</span> '+esc(a.quantidade||'1')+' animal(is)</h3>'+
-        '<div class="meta">'+localAbate(a)+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
+        '<div class="meta">'+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
@@ -5625,7 +5643,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<label>Propriedade</label><select id="ab_prop"><option value="">— não informada —</option>'+
         (ABATEOPTS.props||[]).map(function(p){ return '<option value="'+p.id+'"'+(EDIT&&EDIT.propriedadeId===p.id?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>'+
         ((ABATEOPTS.props||[]).length?'':'<div class="meta" style="margin:-6px 0 8px">Cadastre propriedades em <b>Documentação → Propriedade</b>.</div>')+
-        '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local" onchange="sugerirLua()"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
+        '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
         '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
         '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
         gpsButton('ab_lat','ab_lng')+
@@ -5636,9 +5654,6 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<button class="btn" onclick="salvarAbate(this)">'+(ed?'Salvar alterações':'Registrar abate')+'</button></div>');
     document.getElementById('ab_dh').value = ed&&EDIT.dataHora?String(EDIT.dataHora).substring(0,16):nowLocal();
     if(ed){ setVal('ab_tipo',EDIT.tipoManejo); setVal('ab_sexo',EDIT.sexo); }
-    COND_MODO='passado'; COND_AUTO=null; COND_BUSCANDO=false;
-    /* Abate novo: já sugere a fase da lua da data. Edição: respeita o que está gravado. */
-    if(ed&&pv('luaFase')){ var sl=document.getElementById('ab_lua'); if(sl) sl.setAttribute('data-manual','1'); }
     bindFoto('ab_foto','ab_prev');
     renderAbateCtx();
   }); };
@@ -5650,10 +5665,9 @@ function avisoModalidade(chave,nome){
     '<button class="btn sm" style="margin-top:8px;width:auto" onclick="abrirUpgrade(\''+chave+'\',\'n1\')">Ver planos</button></div>'; }
 function renderAbateCtx(){ var t=val('ab_tipo'), el=document.getElementById('abateCtx'); if(!el) return; var h='';
   if(t==='Espera'){
-    h='<label>Ceva *</label><select id="ab_ceva" onchange="carregarAlimentosCeva();renderCondCeva()"><option value="">Selecione…</option>'+
+    h='<label>Ceva *</label><select id="ab_ceva" onchange="carregarAlimentosCeva()"><option value="">Selecione…</option>'+
       ABATEOPTS.cevas.map(function(c){return '<option value="'+c.id+'">'+esc(c.nome||'Ceva')+'</option>';}).join('')+'</select>'+
-      '<label>Alimento na ceva</label><select id="ab_alim"><option value="">—</option></select>'+
-      '<div id="ab_cond"></div>';
+      '<label>Alimento na ceva</label><select id="ab_alim"><option value="">—</option></select>';
   } else if(t==='Cães'){
     if((ABATEOPTS.canis||[]).bloqueadoPorPlano){ el.innerHTML=avisoModalidade('canis','Caçada com cães'); return; }
     h='<label>Matilha (canil) *</label><select id="ab_canil" onchange="renderCaesDaMatilha()"><option value="">Selecione…</option>'+
@@ -5685,19 +5699,16 @@ window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var se
   if(ceva && !val('ab_lat')){ setVal('ab_lat',ceva.lat); setVal('ab_lng',ceva.lng); }
   if(!cid){ sel.innerHTML='<option value="">—</option>'; return; }
   server('apiListarAlimentos',cid).then(function(l){ sel.innerHTML='<option value="">—</option>'+l.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+' ('+fmtData(a.data)+')</option>';}).join(''); if(preselect) setVal('ab_alim',preselect); }); };
-window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo') };
-  if(tipo==='Espera'){ d.cevaId=val('ab_ceva'); d.alimentoId=val('ab_alim'); if(!d.cevaId){toast('Selecione a ceva');return;}
-    if(COND_MODO==='tempoReal'){ if(!(COND_AUTO&&COND_AUTO.ok)){toast('Aguarde a consulta do tempo ou use o modo Passado');return;}
-      d.modo='tempoReal'; delete d.luaFase; delete d.condicaoTempo; } }
+window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs') };
+  if(tipo==='Espera'){ d.cevaId=val('ab_ceva'); d.alimentoId=val('ab_alim'); if(!d.cevaId){toast('Selecione a ceva');return;} }
   if(tipo==='Espreita'){ d.rotaId=val('ab_rota'); if(!d.rotaId){toast('Selecione a rota de manejo');return;} }
   if(tipo==='Armadilha'){ d.armadilhaId=val('ab_arm'); if(!d.armadilhaId){toast('Selecione a armadilha');return;} }
   if(tipo==='Cães'){ d.canilId=val('ab_canil'); if(!d.canilId){toast('Selecione a matilha (canil)');return;} var ids=[].slice.call(document.querySelectorAll('#ab_caes input:checked')).map(function(c){return c.value;}); if(!ids.length){toast('Selecione ao menos 1 cão da matilha');return;} d.caesIds=ids.join(','); }
-  if(tipo!=='Espera'){ delete d.luaFase; delete d.condicaoTempo; delete d.modo; }
   d.propriedadeId=val('ab_prop')||'';
   if(!d.dataHora){toast('Informe data e hora');return;}
   btn.disabled=true; btn.textContent='Salvando…';
-  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',luaFase:d.luaFase||'',condicaoTempo:d.condicaoTempo||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
-  else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
+  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
+  else { d.foto=fotoData('ab_foto'); d.manejoId=(MANEJO_ATUAL&&MANEJO_ATUAL.id)||''; if(!d.manejoId){ toast(trFrase('Abra um manejo antes de registrar o abate')); btn.disabled=false; btn.textContent=trFrase('Registrar abate'); return; } server('apiCriarAbate',d).then(function(){ toast(trFrase('Abate registrado ✔')); STATE.stack=['manejo','manejoAberto']; render(); }).catch(function(e){ toast((e&&e.message)||'Erro'); btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
    AGENDA DE SAÚDE (cães + cavalos) — com calendário
@@ -5798,8 +5809,7 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
     d._armN={}; d.armadilhas.forEach(function(a){d._armN[a.id]=a.tipo;});
     d._caoN={}; (d.caes||[]).forEach(function(c){d._caoN[c.id]=c.nome;});
     MAPDATA=d; ajustarFiltroPorPerfil();
-    /* clima de hoje por ceva: chega depois e o mapa se redesenha com o eixo Clima */
-    if(STATE.tipo!=='empresa') carregarClimaCevas().then(function(){ try{ desenharMapa(); }catch(e){} });
+    serverOpc('apiMeusLimitesMapa').then(function(ls){ MAPDATA._limites=ls||[]; desenharMapa(); }).catch(function(){});
     if(CURRENTMAP){ try{CURRENTMAP.remove();}catch(e){} CURRENTMAP=null; }
     var map=L.map('map',{zoomControl:false,preferCanvas:true,zoomAnimation:false,markerZoomAnimation:false,fadeAnimation:false,minZoom:3,maxZoom:19,worldCopyJump:false}).setView([-15.78,-47.93],4);
     L.control.zoom({position:'topright'}).addTo(map);
@@ -5869,23 +5879,16 @@ function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAP
     '<h4>Por mês</h4>'+barChart(porMes(ab),{w:280,h:100,color:'#3f6b3f'})+
     '<div class="legend" style="margin-top:8px">'+leg+'</div>'; }
 
-var CLIMA_CEVAS={}, CLIMA_CEVAS_EM=0;
-/* Os termos do MET Norway pedem cache: 30 min por sessão evita repetir consulta
-   a cada abertura do mapa. Falha silenciosa — o índice só perde o eixo clima. */
-function carregarClimaCevas(){
-  if(Date.now()-CLIMA_CEVAS_EM < 30*60*1000) return Promise.resolve(CLIMA_CEVAS);
-  return serverOpc('apiClimaCevas').then(function(r){
-    if(r&&r.cevas){ CLIMA_CEVAS=r.cevas; CLIMA_CEVAS_EM=Date.now(); }
-    return CLIMA_CEVAS; }).catch(function(){ return CLIMA_CEVAS; }); }
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
+  (d._limites||[]).forEach(function(L_){ var poly=[]; try{ poly=JSON.parse(L_.limite||'[]'); }catch(e){}
+    var latlng=poly.map(function(p){ return [coord(p.lat),coord(p.lng)]; }).filter(function(x){ return ptOk(x[0],x[1]); });
+    if(latlng.length>=3){ var pg=L.polygon(latlng,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'4,5'}).bindPopup('🗺️ '+esc(L_.nome||'')+(L_.dono&&L_.dono!=='eu'?' · '+esc(L_.dono):''));
+      pg.addTo(MAPLAYER); latlng.forEach(function(x){ pts.push(x); }); } });
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
   if(MAPFILTER.espera) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
-    var alHoje=al?al.tipo:'';
-    var ic=indiceCeva(abs, new Date(), { climaHoje:(CLIMA_CEVAS[c.id]||{}).condicaoTempo||'',
-      alimentoHoje:alHoje, alimentoDe:function(a){ return d.alimentoTipo[a.alimentoId]||''; } });
-    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+blocoIndice(ic)+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
-    var mk=L.marker([la,ln],{icon:cevaIcon(ic.idx)}).bindPopup(pop);
+    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
+    var mk=L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop);
     mk.on('dblclick',function(){ abrirCevaTimeline(c.id); });
     add(mk,la,ln); });
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
