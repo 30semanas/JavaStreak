@@ -337,7 +337,13 @@
   #markModal{position:fixed;inset:0;background:rgba(20,14,6,.55);z-index:3100;display:none;align-items:center;justify-content:center;padding:16px}
   #markModal.open{display:flex}
   .mk-box{background:var(--papel,#fbf7ee);border:1px solid var(--linha);border-radius:14px;padding:16px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-height:90vh;overflow:auto}
-  .emoji-mk{background:none;border:none}
+  .ceva-mkwrap{background:none;border:none}
+.ceva-mk{position:relative;width:34px;height:34px;border-radius:50%;background:#f3e6cd;
+  border:3px solid #b8863b;display:flex;align-items:center;justify-content:center;font-size:16px;
+  box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ceva-idx{position:absolute;bottom:-6px;right:-8px;min-width:20px;padding:1px 4px;border-radius:9px;
+  color:#fff;font:700 10px/14px system-ui,sans-serif;text-align:center;border:1px solid rgba(255,255,255,.8)}
+.emoji-mk{background:none;border:none}
   .emoji-mk>div{font-size:26px;line-height:1;text-align:center;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)}
   /* ===== IDENTIDADE VISUAL — WILDLIFE ===== */
   :root{
@@ -847,7 +853,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.1158';
+var APP_VER = 'vJS.250726.1223';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -908,6 +914,18 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    'Condições agora':'Conditions now',
+    'dos abates daqui foram nesta lua':'of kills here were on this moon',
+    'foram neste horário':'were at this time of day',
+    'Base':'Base',
+    'abates':'kills',
+    'confiança':'confidence',
+    'boa':'good',
+    'média':'medium',
+    'baixa':'low',
+    'Sem abates aqui ainda: não há como comparar.':'No kills here yet: nothing to compare.',
+    'É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.':'This is the frequency of your kills, not a probability: the app does not know the sits where nothing showed up.',
+
     'Tempo real':'Real time',
     'Passado':'Past',
     'Selecione a ceva para informar lua e tempo.':'Select the bait site to record moon and weather.',
@@ -1725,6 +1743,18 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    'Condições agora':'Condiciones ahora',
+    'dos abates daqui foram nesta lua':'de las cazas aquí fueron con esta luna',
+    'foram neste horário':'fueron en este horario',
+    'Base':'Base',
+    'abates':'cazas',
+    'confiança':'confianza',
+    'boa':'buena',
+    'média':'media',
+    'baixa':'baja',
+    'Sem abates aqui ainda: não há como comparar.':'Aún no hay cazas aquí: no hay con qué comparar.',
+    'É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.':'Es la frecuencia de sus cazas, no una probabilidad: la app no conoce las esperas en que no vino nada.',
+
     'Tempo real':'Tiempo real',
     'Passado':'Pasado',
     'Selecione a ceva para informar lua e tempo.':'Seleccione el cebadero para registrar luna y clima.',
@@ -5468,9 +5498,80 @@ window.sugerirLua=function(){ var s=document.getElementById('ab_lua');
   var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=f?trFrase('Sugerida pela data do abate.'):''; };
 window.luaManual=function(){ var s=document.getElementById('ab_lua'); if(s) s.setAttribute('data-manual','1');
   var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=trFrase('Escolhida por você.'); };
-/* Linha "🌕 Cheia · 🌧️ Chuva" para os cards de abate. Só mostra o que foi informado. */
-function condResumo(a){ var p=[];
-  if(a&&a.luaFase&&LUA_ICONE[a.luaFase]) p.push(LUA_ICONE[a.luaFase]+' '+esc(trFrase(a.luaFase)));
+/* Ícone + nome do local do abate. O nome vem resolvido pelo backend. */
+var LOCAL_ICONE={ceva:'🌽',rota:'🥾',armadilha:'🪤',canil:'🐕'};
+function localAbate(a){
+  if(!a||!a.localNome) return '';
+  return '<b>'+(LOCAL_ICONE[a.localTipo]||'📍')+' <span class="no-i18n">'+esc(a.localNome)+'</span></b><br>'; }
+
+/* Lua de um abate: a gravada, ou calculada da data quando não houver.
+   Como é função pura da dataHora, não precisa de backfill nem de coluna. */
+function luaDoAbate(a){
+  if(!a) return '';
+  if(a.luaFase) return a.luaFase;
+  if(!a.dataHora) return '';
+  return luaFaseEm(new Date(String(a.dataHora).replace(' ','T'))); }
+function faixaHora(dh){
+  var d=new Date(String(dh||'').replace(' ','T')); if(isNaN(d.getTime())) return -1;
+  return Math.floor(d.getHours()/3); }   // 8 faixas de 3h
+
+/* ---- Índice de condições da ceva ----
+   Compara as condições de AGORA com a distribuição dos abates daquela ceva.
+   Usa lua (8 fases, com vizinhança) e faixa de horário. Encolhe para 50
+   conforme a amostra é pequena, para não gritar 90 com 3 abates. */
+var IDX_PESO_LUA=0.6, IDX_PESO_HORA=0.4, IDX_K=5;
+function indiceCeva(abates, agora){
+  agora=agora||new Date();
+  var ab=(abates||[]).filter(function(a){ return a.dataHora; });
+  var n=ab.length;
+  if(!n) return { idx:null, n:0 };
+  var faseHoje=luaFaseEm(agora), hHoje=Math.floor(agora.getHours()/3);
+  var iHoje=LUA_FASES.indexOf(faseHoje);
+  /* lua: fase igual vale 1, vizinha vale 0.5 (o ciclo é contínuo) */
+  var pesoLua=0, pesoHora=0;
+  ab.forEach(function(a){
+    var f=LUA_FASES.indexOf(luaDoAbate(a));
+    if(f>=0&&iHoje>=0){
+      var dist=Math.min(Math.abs(f-iHoje), 8-Math.abs(f-iHoje));
+      pesoLua += dist===0?1:(dist===1?0.5:0);
+    }
+    var fh=faixaHora(a.dataHora);
+    if(fh>=0){ var dh=Math.min(Math.abs(fh-hHoje), 8-Math.abs(fh-hHoje));
+      pesoHora += dh===0?1:(dh===1?0.5:0); }
+  });
+  /* fração dos abates compatíveis com agora, em cada eixo */
+  var sLua=pesoLua/n, sHora=pesoHora/n;
+  /* referência: se os abates fossem espalhados por igual, cada eixo daria 2/8 */
+  var base=2/8;
+  var norm=function(s){ return Math.max(0, Math.min(1, s/(base*2))); };
+  var bruto=IDX_PESO_LUA*norm(sLua)+IDX_PESO_HORA*norm(sHora);
+  var conf=n/(n+IDX_K);
+  var idx=Math.round(50+(bruto*100-50)*conf);
+  return { idx:Math.max(1,Math.min(99,idx)), n:n, faseHoje:faseHoje,
+    sLua:Math.round(sLua*100), sHora:Math.round(sHora*100), conf:conf }; }
+function corIndice(i){ return i>=65?'#2f7d3a':(i>=35?'#b8863b':'#8a3b3b'); }
+/* O popup explica de onde saiu o número — é a parte que vale mais que o número. */
+function blocoIndice(ic){
+  if(!ic||ic.idx==null) return '<div class="meta" style="margin-top:6px">'+
+    trFrase('Sem abates aqui ainda: não há como comparar.')+'</div>';
+  var conf=ic.n>=10?trFrase('boa'):(ic.n>=5?trFrase('média'):trFrase('baixa'));
+  return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd">'+
+    '<b style="color:'+corIndice(ic.idx)+'">'+trFrase('Condições agora')+': '+ic.idx+'/100</b>'+
+    '<div class="meta">'+(LUA_ICONE[ic.faseHoje]||'')+' '+esc(trFrase(ic.faseHoje))+' — '+
+      ic.sLua+'% '+trFrase('dos abates daqui foram nesta lua')+'<br>'+
+      '🕐 '+ic.sHora+'% '+trFrase('foram neste horário')+'<br>'+
+      trFrase('Base')+': '+ic.n+' '+trFrase('abates')+' · '+trFrase('confiança')+' '+conf+'</div>'+
+    '<div class="meta" style="margin-top:4px;opacity:.75">'+
+      trFrase('É frequência dos seus abates, não probabilidade: o app não sabe as esperas em que nada veio.')+
+    '</div></div>'; }
+function cevaIcon(idx){
+  var cor=idx==null?'#7a6a55':corIndice(idx);
+  var txt=idx==null?'–':idx;
+  return L.divIcon({ html:'<div class="ceva-mk" style="border-color:'+cor+'">🌽'+
+      '<span class="ceva-idx" style="background:'+cor+'">'+txt+'</span></div>',
+    className:'ceva-mkwrap', iconSize:[34,34], iconAnchor:[17,17], popupAnchor:[0,-18] }); }
+function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
+  if(lf&&LUA_ICONE[lf]) p.push(LUA_ICONE[lf]+' '+esc(trFrase(lf)));
   if(a&&a.condicaoTempo&&COND_ICONE[a.condicaoTempo]) p.push(COND_ICONE[a.condicaoTempo]+' '+esc(trFrase(a.condicaoTempo)));
   return p.length?' · '+p.join(' · '):''; }
 VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadingBox();
@@ -5478,7 +5579,7 @@ VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadi
     l.sort(function(a,b){ return String(b.dataHora).localeCompare(String(a.dataHora)); });
     var html=l.length? l.map(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666';
       return '<div class="card"><div class="row"><div class="grow"><h3><span class="pill" style="background:'+cor+'">'+esc(a.tipoManejo||'—')+'</span> '+esc(a.quantidade||'1')+' animal(is)</h3>'+
-        '<div class="meta">'+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
+        '<div class="meta">'+localAbate(a)+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
@@ -5736,8 +5837,9 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
   if(MAPFILTER.espera) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
-    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
-    var mk=L.circleMarker([la,ln],{radius:13,color:'#5c421c',fillColor:'#b8863b',fillOpacity:.95,weight:3}).bindPopup(pop);
+    var ic=indiceCeva(abs);
+    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+'</h4><div class="meta"><b>Tipo:</b> '+esc(c.tipo||'—')+'<br><b>Alimento:</b> '+(al?esc(al.tipo)+' ('+fmtData(al.data)+')':'—')+'<br><b>Abates aqui:</b> '+abs.length+'</div>'+blocoIndice(ic)+(c.fotoUrl?'<img src="'+esc(imgSrc(c.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+c.id+'\')">📈 Linha do tempo</button></div>';
+    var mk=L.marker([la,ln],{icon:cevaIcon(ic.idx)}).bindPopup(pop);
     mk.on('dblclick',function(){ abrirCevaTimeline(c.id); });
     add(mk,la,ln); });
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
