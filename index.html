@@ -847,7 +847,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.2349';
+var APP_VER = 'vJS.250726.1126';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -908,6 +908,28 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    'Fase da lua':'Moon phase',
+    'Condição do tempo':'Weather',
+    'Sugerida pela data do abate.':'Suggested from the kill date.',
+    'Escolhida por você.':'Chosen by you.',
+    'Lua nova':'New moon',
+    'Crescente inicial':'Waxing crescent',
+    'Quarto crescente':'First quarter',
+    'Crescente final':'Waxing gibbous',
+    'Lua cheia':'Full moon',
+    'Minguante inicial':'Waning gibbous',
+    'Quarto minguante':'Last quarter',
+    'Minguante final':'Waning crescent',
+    'Aberto':'Clear',
+    'Parcialmente nublado':'Partly cloudy',
+    'Nublado':'Cloudy',
+    'Neblina':'Fog',
+    'Garoa':'Drizzle',
+    'Chuva':'Rain',
+    'Tempestade':'Thunderstorm',
+    '— não informada —':'— not recorded —',
+    '— não informado —':'— not recorded —',
+
     'Idioma':'Language',
     'O idioma fica salvo na sua conta e acompanha você em qualquer aparelho.':'Your language is saved to your account and follows you on any device.',
     'Início':'Home',
@@ -1685,6 +1707,28 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    'Fase da lua':'Fase lunar',
+    'Condição do tempo':'Clima',
+    'Sugerida pela data do abate.':'Sugerida por la fecha de la caza.',
+    'Escolhida por você.':'Elegida por usted.',
+    'Lua nova':'Luna nueva',
+    'Crescente inicial':'Luna creciente',
+    'Quarto crescente':'Cuarto creciente',
+    'Crescente final':'Creciente gibosa',
+    'Lua cheia':'Luna llena',
+    'Minguante inicial':'Menguante gibosa',
+    'Quarto minguante':'Cuarto menguante',
+    'Minguante final':'Luna menguante',
+    'Aberto':'Despejado',
+    'Parcialmente nublado':'Parcialmente nublado',
+    'Nublado':'Nublado',
+    'Neblina':'Niebla',
+    'Garoa':'Llovizna',
+    'Chuva':'Lluvia',
+    'Tempestade':'Tormenta',
+    '— não informada —':'— no informada —',
+    '— não informado —':'— no informado —',
+
     'Idioma':'Idioma',
     'O idioma fica salvo na sua conta e acompanha você em qualquer aparelho.':'El idioma se guarda en tu cuenta y te acompaña en cualquier dispositivo.',
     'Início':'Inicio',
@@ -5282,12 +5326,52 @@ window.salvarArm=function(btn){ btn.disabled=true; btn.textContent='Salvando…'
    ============================================================ */
 var TIPOS_MANEJO=['Espera','Cães','Espreita','Armadilha'];
 var ABATEOPTS={ cevas:[], transportes:[], armadilhas:[], caes:[] };
+
+/* ---- Condições do abate: lua e tempo ----
+   O valor gravado é o texto simples (sem emoji), igual à lista do backend.
+   A fase da lua é calculada aqui mesmo: astronomia pura, sem rede, funciona offline. */
+var LUA_FASES=['Lua nova','Crescente inicial','Quarto crescente','Crescente final',
+  'Lua cheia','Minguante inicial','Quarto minguante','Minguante final'];
+var LUA_ICONE={'Lua nova':'🌑','Crescente inicial':'🌒','Quarto crescente':'🌓','Crescente final':'🌔',
+  'Lua cheia':'🌕','Minguante inicial':'🌖','Quarto minguante':'🌗','Minguante final':'🌘'};
+var COND_TEMPO=['Aberto','Parcialmente nublado','Nublado','Neblina','Garoa','Chuva','Tempestade'];
+var COND_ICONE={'Aberto':'☀️','Parcialmente nublado':'🌤️','Nublado':'☁️','Neblina':'🌫️',
+  'Garoa':'🌦️','Chuva':'🌧️','Tempestade':'⛈️'};
+var LUNACAO=29.530588853;
+/* Fração da lunação: 0 = nova, 0.5 = cheia. Época: lua nova de 06/01/2000 18:14 UTC. */
+function luaFracao(dt){ if(!dt||isNaN(dt.getTime())) return null;
+  var d=(dt.getTime()-Date.UTC(2000,0,6,18,14,0))/86400000;
+  var f=(d/LUNACAO)%1; if(f<0) f+=1; return f; }
+/* Converte a fração em uma das 8 fases (faixas centradas, 1/16 de lunação para cada lado). */
+function luaFaseEm(dt){ var f=luaFracao(dt); if(f===null) return '';
+  var i=Math.floor(f*8+0.5)%8; return LUA_FASES[i]; }
+function luaFaseDeInput(valorDataHora){ if(!valorDataHora) return '';
+  var dt=new Date(String(valorDataHora).replace(' ','T')); return luaFaseEm(dt); }
+/* O value fica sempre em pt (é o que o banco guarda e o backend valida);
+   só o rótulo visível passa por trFrase, porque o nó de texto leva emoji e
+   nunca casaria no dicionário depois de renderizado. */
+function optsLua(sel){ return LUA_FASES.map(function(f){
+  return '<option value="'+f+'"'+(f===sel?' selected':'')+'>'+LUA_ICONE[f]+' '+esc(trFrase(f))+'</option>'; }).join(''); }
+function optsTempo(sel){ return COND_TEMPO.map(function(c){
+  return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+COND_ICONE[c]+' '+esc(trFrase(c))+'</option>'; }).join(''); }
+/* Reaplica a fase sugerida quando o caçador muda a data/hora do abate. */
+window.sugerirLua=function(){ var s=document.getElementById('ab_lua'); if(!s) return;
+  if(s.getAttribute('data-manual')==='1') return;
+  var f=luaFaseDeInput(val('ab_dh')); if(f) s.value=f;
+  var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=f?trFrase('Sugerida pela data do abate.'):''; };
+window.luaManual=function(){ var s=document.getElementById('ab_lua'); if(s) s.setAttribute('data-manual','1');
+  var d=document.getElementById('ab_luaDica'); if(d) d.innerHTML=trFrase('Escolhida por você.'); };
+/* Linha "🌕 Cheia · 🌧️ Chuva" para os cards de abate. Só mostra o que foi informado. */
+function condResumo(a){ var p=[];
+  if(a&&a.luaFase&&LUA_ICONE[a.luaFase]) p.push(LUA_ICONE[a.luaFase]+' '+esc(trFrase(a.luaFase)));
+  if(a&&a.condicaoTempo&&COND_ICONE[a.condicaoTempo]) p.push(COND_ICONE[a.condicaoTempo]+' '+esc(trFrase(a.condicaoTempo)));
+  return p.length?' · '+p.join(' · '):''; }
 VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadingBox();
   server('apiListarAbates').then(function(l){ CACHE.abate=l;
     l.sort(function(a,b){ return String(b.dataHora).localeCompare(String(a.dataHora)); });
     var html=l.length? l.map(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666';
       return '<div class="card"><div class="row"><div class="grow"><h3><span class="pill" style="background:'+cor+'">'+esc(a.tipoManejo||'—')+'</span> '+esc(a.quantidade||'1')+' animal(is)</h3>'+
-        '<div class="meta">'+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
+        '<div class="meta">'+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
@@ -5299,7 +5383,9 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<label>Propriedade</label><select id="ab_prop"><option value="">— não informada —</option>'+
         (ABATEOPTS.props||[]).map(function(p){ return '<option value="'+p.id+'"'+(EDIT&&EDIT.propriedadeId===p.id?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>'+
         ((ABATEOPTS.props||[]).length?'':'<div class="meta" style="margin:-6px 0 8px">Cadastre propriedades em <b>Documentação → Propriedade</b>.</div>')+
-        '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
+        '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local" onchange="sugerirLua()"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
+        '<div class="two"><div><label>Fase da lua</label><select id="ab_lua" onchange="luaManual()"><option value="">— não informada —</option>'+optsLua(ed?pv('luaFase'):'')+'</select><div class="meta" id="ab_luaDica" style="margin:-6px 0 8px"></div></div>'+
+        '<div><label>Condição do tempo</label><select id="ab_tempo"><option value="">— não informado —</option>'+optsTempo(ed?pv('condicaoTempo'):'')+'</select></div></div>'+
         '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
         '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
         gpsButton('ab_lat','ab_lng')+
@@ -5310,6 +5396,9 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<button class="btn" onclick="salvarAbate(this)">'+(ed?'Salvar alterações':'Registrar abate')+'</button></div>');
     document.getElementById('ab_dh').value = ed&&EDIT.dataHora?String(EDIT.dataHora).substring(0,16):nowLocal();
     if(ed){ setVal('ab_tipo',EDIT.tipoManejo); setVal('ab_sexo',EDIT.sexo); }
+    /* Abate novo: já sugere a fase da lua da data. Edição: respeita o que está gravado. */
+    if(ed&&pv('luaFase')) document.getElementById('ab_lua').setAttribute('data-manual','1');
+    sugerirLua();
     bindFoto('ab_foto','ab_prev');
     renderAbateCtx();
   }); };
@@ -5355,7 +5444,7 @@ window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var se
   if(ceva && !val('ab_lat')){ setVal('ab_lat',ceva.lat); setVal('ab_lng',ceva.lng); }
   if(!cid){ sel.innerHTML='<option value="">—</option>'; return; }
   server('apiListarAlimentos',cid).then(function(l){ sel.innerHTML='<option value="">—</option>'+l.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+' ('+fmtData(a.data)+')</option>';}).join(''); if(preselect) setVal('ab_alim',preselect); }); };
-window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs') };
+window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo') };
   if(tipo==='Espera'){ d.cevaId=val('ab_ceva'); d.alimentoId=val('ab_alim'); if(!d.cevaId){toast('Selecione a ceva');return;} }
   if(tipo==='Espreita'){ d.rotaId=val('ab_rota'); if(!d.rotaId){toast('Selecione a rota de manejo');return;} }
   if(tipo==='Armadilha'){ d.armadilhaId=val('ab_arm'); if(!d.armadilhaId){toast('Selecione a armadilha');return;} }
@@ -5363,7 +5452,7 @@ window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:ti
   d.propriedadeId=val('ab_prop')||'';
   if(!d.dataHora){toast('Informe data e hora');return;}
   btn.disabled=true; btn.textContent='Salvando…';
-  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
+  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',luaFase:d.luaFase||'',condicaoTempo:d.condicaoTempo||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
   else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
 
 /* ============================================================
