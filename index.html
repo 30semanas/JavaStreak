@@ -712,6 +712,11 @@
   .mod-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;color:var(--txt)}
   .mod-bar{height:8px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden}
   .mod-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#2e8b3d,#57b968);min-width:2px;transition:width .4s}
+  .prod-semfoto{width:100%;aspect-ratio:1;background:#f0e6d8;display:flex;align-items:center;justify-content:center;font-size:44px}
+  .trof .prod-preco{color:#2e8b3d;font-weight:800;font-size:15px;margin:2px 0}
+  .trof .prod-desc{font-size:12.5px;color:var(--txt2);margin:2px 0 6px;line-height:1.45}
+  .trof .prod-acoes{display:flex;gap:6px;margin-top:4px}
+  .trof .prod-acoes .btn{flex:1 1 auto;margin:0}
   .vitr{display:flex;flex-direction:column;gap:10px}
   .vitr-item{display:flex;gap:10px;align-items:flex-start}
   .vitr-item img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:0 0 auto;cursor:pointer;border:1px solid var(--linha)}
@@ -839,7 +844,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.2110';
+var APP_VER = 'vJS.240726.2135';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 var VIEWS = {};
@@ -972,6 +977,7 @@ var NAV_MANEJADOR=[
 ];
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
+  {v:'vitrine',   label:'Minha vitrine',     emoji:'🛍️'},
   {v:'promocoes', label:'Promoções',         emoji:'⚡'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
@@ -1901,18 +1907,13 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
       (e.instagram?'📸 '+esc(e.instagram)+'<br>':'')+(e.facebook?'👍 '+esc(e.facebook)+'<br>':'')+(e.site?'🔗 <a href="'+esc(e.site)+'" target="_blank">'+esc(e.site)+'</a>':'')+'</div>'+
       (e.lat&&e.lng?'<div style="margin-top:6px">'+mapaLink(e.lat,e.lng)+'</div>':'')+
       '<button class="btn sec" style="margin-top:10px" onclick="nav(\'empresaForm\')">✏️ Editar dados da empresa</button></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🛍️ Minha vitrine</h3><div class="meta">Produtos e serviços que aparecem para quem visita sua loja.</div></div>'+
-        ((bloq||semPlano)?'':'<button class="ib" onclick="nav(\'produtoForm\')" title="Novo produto">＋</button>')+'</div>'+
-        (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
-             :(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>'
-             :'<div id="meusProdutos" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>'))+'</div>'+
+      '<div class="card click" onclick="go(\'vitrine\')"><div class="row"><div class="grow"><h3 style="margin:0">🛍️ Minha vitrine</h3><div class="meta">Gerencie os produtos e serviços que aparecem na sua loja.</div></div><div class="chev">›</div></div></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">📣 Promoções</h3><div class="meta" style="margin-top:2px">Divulgue ofertas para parceiros e clientes num raio de alcance.</div></div>'+((bloq||semPlano)?'':'<button class="btn sm" style="width:auto;margin:0" onclick="go(\'promocoes\')">Abrir</button>')+'</div>'+(bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>':(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>':'<div id="minhasPromos" style="margin-top:10px"></div>'))+'</div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🏆 Patrocinar destaque</h3><div class="meta" style="margin-top:2px">Envie uma proposta para aparecer no card da lateral direita ou premiar o ranking. O administrador analisa e coloca no ar.</div></div></div>'+
       (bloq?'<div class="meta" style="margin-top:8px">Indisponível enquanto o perfil estiver bloqueado.</div>'
            :(semPlano?'<div class="meta" style="margin-top:8px">🔒 Disponível no plano Empresa.</div>'
            :'<button class="btn" style="margin-top:10px" onclick="nav(\'patrocinioForm\')">📨 Enviar proposta ao administrador</button><div id="meusPatr" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div>'))+'</div>');
     if(!bloq && !semPlano) carregarMeusPatrocinios();
-    if(!bloq && !semPlano) carregarMeusProdutos();
     if(!bloq && !semPlano) server('apiMinhasPromocoes').then(function(l){ var el=document.getElementById('minhasPromos'); if(!el)return;
       el.innerHTML = (l&&l.length)? ('<div class="meta" style="margin-bottom:6px">Suas promoções ativas:</div>'+l.map(function(p){ return '<div class="card" style="margin-bottom:8px"><div class="row"><div class="grow"><h3 style="font-size:14px;margin:0">'+esc(p.descricao||'Promoção')+'</h3><div class="meta">'+(p.precoAtual?'<span class="preco-old">R$ '+esc(p.precoAtual)+'</span> ':'')+(p.precoPromo?'<span class="preco-new" style="font-size:15px">R$ '+esc(p.precoPromo)+'</span>':'')+'<br>🎯 '+esc(p.alvoPerfil||'Todos')+(p.raioKm?' · 📍 '+esc(p.raioKm)+' km':'')+' · ⏳ '+fmtRestante(p.expiraEm)+'</div></div><button class="ib" onclick="excluirPromo(\''+p.id+'\')" title="Encerrar">🗑️</button></div></div>'; }).join('')) : '<div class="meta">Nenhuma promoção ativa.</div>';
     });
@@ -1922,28 +1923,45 @@ function seloPlanoEmpresa(semPlano){
     ? '<span class="pill gray" style="vertical-align:middle;font-size:11px">Free</span>'
     : '<span class="pill ok" style="vertical-align:middle;font-size:11px">Plano Empresa</span>'; }
 
-/* ===== VITRINE DE PRODUTOS — lado da empresa ===== */
-function carregarMeusProdutos(){
-  server('apiMeusProdutos').then(function(r){ var el=document.getElementById('meusProdutos'); if(!el) return;
-    var l=r.produtos||[]; var lim=r.limite||0;
-    var cab='<div class="meta" style="margin-bottom:6px">'+l.length+' de '+lim+' produtos'+
-      (l.length>=lim && lim<30 ? ' · <b onclick="go(\'planos\')" style="color:var(--laranja);cursor:pointer">upgrade p/ Empresa Pro</b>':'')+'</div>';
-    el.innerHTML=cab+(l.length? l.map(function(p){
-      return '<div class="row" style="gap:9px;padding:8px 0;border-top:1px solid var(--linha)">'+
-        (p.fotoUrl?'<img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:46px;height:46px;border-radius:8px;object-fit:cover">':'<div style="width:46px;height:46px;border-radius:8px;background:#f0e6d8;display:flex;align-items:center;justify-content:center">🛍️</div>')+
-        '<div class="grow" style="min-width:0"><b style="font-size:14px">'+esc(p.nome)+'</b>'+(p.preco?' <span style="color:#2e8b3d;font-weight:700">R$ '+esc(p.preco)+'</span>':'')+(p.descricao?'<div class="meta">'+esc(p.descricao)+'</div>':'')+'</div>'+
-        '<button class="ib" title="Editar" onclick="editarProduto(\''+p.id+'\')">✏️</button>'+
-        '<button class="ib" title="Excluir" onclick="excluirProduto(\''+p.id+'\')">🗑️</button></div>'; }).join('')
-      : '<div class="meta">Nenhum produto ainda. Use o + para adicionar.</div>');
-  }).catch(function(){ var el=document.getElementById('meusProdutos'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar os produtos.</div>'; });
-}
+/* ===== VITRINE DE PRODUTOS — tela própria, no estilo da sala de troféu ===== */
+VIEWS.vitrine=function(){ setTitulo('Minha vitrine'); setCrumb('Vitrine'); loadingBox('Carregando vitrine…');
+  server('apiMeusProdutos').then(function(r){
+    var l=r.produtos||[]; var lim=r.limite||0; var nomePlano=r.nomePlano||'Empresa';
+    var cheio=(l.length>=lim);
+    var galeria = l.length
+      ? '<div class="galeria">'+l.map(function(p){
+          return '<div class="trof">'+
+            (p.fotoUrl
+              ? '<img src="'+esc(imgSrc(p.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(p.fotoUrl))+'\')">'
+              : '<div class="prod-semfoto">🛍️</div>')+
+            '<div class="tt"><b>'+esc(p.nome)+'</b>'+
+              (p.preco?'<div class="prod-preco">R$ '+esc(p.preco)+'</div>':'')+
+              (p.descricao?'<div class="prod-desc">'+esc(p.descricao)+'</div>':'')+
+              '<div class="prod-acoes"><button class="btn sm sec" onclick="editarProduto(\''+p.id+'\')">✏️ Editar</button>'+
+              '<button class="btn sm sec" onclick="excluirProduto(\''+p.id+'\')">🗑️</button></div>'+
+            '</div></div>'; }).join('')+'</div>'
+      : '<div class="empty"><div class="big">🛍️</div>Sua vitrine está vazia. Adicione seu primeiro produto ou serviço.</div>';
+    app(heroFoto('empresa','Minha vitrine','Estes produtos e serviços aparecem para quem visita sua loja pelo mapa. Capriche nas fotos e descrições.','Loja')+
+      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">Meus produtos</h3>'+
+        '<div class="meta" style="margin-top:2px">'+l.length+' de '+lim+' · plano '+esc(nomePlano)+
+        (cheio && lim<30 ? ' · <b onclick="go(\'planos\')" style="color:var(--laranja);cursor:pointer">upgrade p/ Empresa Pro</b>':'')+'</div></div>'+
+        (cheio?'':'<button class="btn sm" style="width:auto;margin:0" onclick="nav(\'produtoForm\')">＋ Adicionar</button>')+
+      '</div>'+
+      (cheio?'<div class="meta" style="margin:8px 0 0">Você atingiu o limite do seu plano. Remova um produto ou faça upgrade para adicionar mais.</div>':'')+
+      '<div style="margin-top:12px">'+galeria+'</div></div>');
+  }).catch(function(e){ app('<div class="card"><div class="meta">'+esc((e&&e.message)||'Não foi possível carregar a vitrine.')+'</div>'+
+    '<button class="btn sec" style="margin-top:10px" onclick="voltar()">← Voltar</button></div>'); });
+};
+/* Mantida para compatibilidade: o perfil agora só tem um atalho para a tela. */
+function carregarMeusProdutos(){ var el=document.getElementById('meusProdutos'); if(el) el.innerHTML=''; }
 window.editarProduto=function(id){ server('apiMeusProdutos').then(function(r){
   EDIT=(r.produtos||[]).filter(function(p){ return p.id===id; })[0]||null; nav('produtoForm'); }); };
 window.excluirProduto=function(id){ if(!confirm('Remover este produto da vitrine?'))return;
-  server('apiExcluirProduto',id).then(function(){ toast('Produto removido'); carregarMeusProdutos(); })
+  server('apiExcluirProduto',id).then(function(){ toast('Produto removido');
+    if(STATE.stack[STATE.stack.length-1]==='vitrine') render(); })
   .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 VIEWS.produtoForm=function(){ var p=EDIT||{}; var ed=!!EDIT;
-  setTitulo(ed?'Editar produto':'Novo produto'); setCrumb('Empresa','Vitrine');
+  setTitulo(ed?'Editar produto':'Novo produto'); setCrumb('Vitrine','Produto');
   app('<div class="card">'+
     '<label>Nome do produto ou serviço *</label><input id="pr_nome" value="'+esc(p.nome||'')+'" placeholder="Ex: Ração Javali Pro 20kg">'+
     '<label>Preço (R$)</label><input id="pr_preco" inputmode="decimal" value="'+esc(p.preco||'')+'" placeholder="opcional">'+
@@ -1957,7 +1975,7 @@ window.salvarProduto=function(btn){ if(!val('pr_nome')){ toast('Informe o nome')
   btn.disabled=true; btn.textContent='Salvando…';
   var d={ nome:val('pr_nome'), preco:val('pr_preco'), descricao:val('pr_desc'), foto:fotoData('pr_foto') };
   if(EDIT) d.id=EDIT.id;
-  server('apiSalvarProduto',d).then(function(){ toast('Vitrine atualizada ✔'); EDIT=null; voltar(); })
+  server('apiSalvarProduto',d).then(function(){ toast('Vitrine atualizada ✔'); EDIT=null; STATE.stack=['vitrine']; render(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Salvar'; toast((e&&e.message)||'Erro'); }); };
 
 /* ===== PATROCÍNIO — lado da empresa ===== */
