@@ -778,7 +778,7 @@
     <div class="sb-user" id="sbUser"></div>
     <button class="sb-planos" id="sbPlanosBtn" onclick="go('planos')"><img id="sbPlanoIco" alt=""><span id="sbPlanoTxt">Ver planos</span></button>
     <nav id="sbNav"></nav>
-    <button class="sb-sair" onclick="logout()">Sair</button>
+    <button class="sb-sair" onclick="logout()"><span id="lblSair">Sair</span></button>
     <div class="sb-ver" id="sbVer"></div>
   </aside>
 
@@ -847,7 +847,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.240726.2324';
+var APP_VER = 'vJS.240726.2334';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -861,10 +861,15 @@ function setLang(l){ if(!IDIOMAS[l]) return; LANG=l; try{ localStorage.setItem('
   aplicarLangHtml();
   // Se o usuário está logado, guarda a preferência na conta (segue em qualquer aparelho).
   if(AUTH.token){ server('apiSalvarIdioma', l).catch(function(){}); }
-  render(); }
-/* Aplica o idioma que veio da conta ao entrar. Não regrava (só ajusta local). */
+  render(); }  // render() chama traduzirFixos() no fim
+/* Aplica o idioma da conta ao entrar. A conta MANDA: ao trocar de conta no mesmo
+   navegador, o idioma da nova conta sobrescreve o que estava no localStorage.
+   Só mantém o local quando a conta ainda não tem idioma salvo. */
 function aplicarIdiomaDaConta(l){
-  if(l && IDIOMAS[l] && l!==LANG){ LANG=l; try{ localStorage.setItem('lang', l); }catch(e){} aplicarLangHtml(); }
+  if(l && IDIOMAS[l]){
+    if(l!==LANG){ LANG=l; aplicarLangHtml(); }
+    try{ localStorage.setItem('lang', l); }catch(e){}   // alinha o local ao da conta
+  }
 }
 function aplicarLangHtml(){ try{ document.documentElement.lang = (LANG==='pt'?'pt-BR':LANG); }catch(e){} }
 function t18n(chave){ return t(chave); }
@@ -1651,7 +1656,14 @@ var FRASES = {
     'Atrativo:':'Attractant:',
     'Colocar no ranking':'Add to ranking',
     'Ceva':'Feeder',
-    'Cevas':'Feeders'
+    'Cevas':'Feeders',
+    'Espera (ceva)':'Feeder',
+    'Abate':'Take',
+    '🌽 Espera':'🌽 Feeder',
+    '🌽 Alimento':'🌽 Feed',
+    '🌽 Atrativo:':'🌽 Attractant:',
+    'Visitas':'Visits',
+    'oculto':'hidden'
   },
   es:{
     'Idioma':'Idioma',
@@ -2416,7 +2428,14 @@ var FRASES = {
     'Atrativo:':'Atrayente:',
     'Colocar no ranking':'Poner en el ranking',
     'Ceva':'Comedero',
-    'Cevas':'Comederos'
+    'Cevas':'Comederos',
+    'Espera (ceva)':'Comedero',
+    'Abate':'Abate',
+    '🌽 Espera':'🌽 Comedero',
+    '🌽 Alimento':'🌽 Alimento',
+    '🌽 Atrativo:':'🌽 Atrayente:',
+    'Visitas':'Visitas',
+    'oculto':'oculto'
   }
 };
 
@@ -2632,6 +2651,16 @@ function buildSidebar(){
   pintarPlano();          // depois de recriar o bloco, senão o selo é apagado
   pintarStatusUsuario();
   buildTopNav(root, tipo);
+  traduzirFixos();
+}
+/* Traduz o que é montado FORA do app(): menus lateral e superior, botão Sair,
+   botões de status. O app() já traduz o conteúdo; isto cobre a moldura. */
+function traduzirFixos(){
+  if(LANG==='pt') return;
+  ['sbNav','topnav','sbStatus','menuLateral','sbUser'].forEach(function(id){
+    var el=document.getElementById(id); if(el) traduzirDOM(el);
+  });
+  var sair=document.getElementById('lblSair'); if(sair && FRASES[LANG] && FRASES[LANG][sair.textContent.trim()]) sair.textContent=FRASES[LANG][sair.textContent.trim()];
 }
 /* Visitas + situação de compartilhamento, logo abaixo do nome no menu lateral. */
 /* Dois botões abaixo do nome. Cada um mostra um número e o próprio estado,
@@ -2692,9 +2721,9 @@ function buildTopNav(root, tipo){
   var itens=ordem.map(function(k){ return base.filter(function(n){return n.v===k;})[0]; }).filter(function(x){return x;});
   var html=itens.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
-    return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+n.label+'</span></div>';
+    return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+trFrase(n.label)+'</span></div>';
   }).join('');
-  html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">Rede</span></div>';
+  html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">'+trFrase('Rede')+'</span></div>';
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
