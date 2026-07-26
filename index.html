@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2210';
+var APP_VER = 'vJS.250726.2235';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,39 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Menu TRANSPORTES (ARAS/GARAGEM/MARINA) e manutenção --- */
+    'ARAS':'ARAS',
+    'GARAGEM':'GARAGEM',
+    'MARINA':'MARINA',
+    'Cavalos: saúde, vacinas e casqueamento':'Horses: health, vaccines and hoof care',
+    'Carros, motos e quadriciclos: manutenção':'Cars, motorcycles and quads: maintenance',
+    'Barcos e embarcações: manutenção e rotas de pesca':'Boats and vessels: maintenance and fishing routes',
+    'Novo cavalo':'New horse',
+    'Nova embarcação':'New vessel',
+    'Novo veículo':'New vehicle',
+    'Nenhum cavalo cadastrado.':'No horse registered.',
+    'Nenhuma embarcação cadastrada.':'No vessel registered.',
+    'Nenhum veículo cadastrado.':'No vehicle registered.',
+    'Controles de manutenção':'Maintenance controls',
+    'Histórico de manutenção':'Maintenance history',
+    'Registrar manutenção':'Register maintenance',
+    'Editar manutenção':'Edit maintenance',
+    'Nenhuma manutenção registrada ainda.':'No maintenance registered yet.',
+    'Editar controles':'Edit controls',
+    'Documentos e vencimentos ficam no menu Documentação.':'Documents and due dates live in the Documents menu.',
+    'Horas de motor':'Engine hours',
+    'Manutenção salva ✔':'Maintenance saved ✔',
+    'Controles salvos ✔':'Controls saved ✔',
+    'Salvar controles':'Save controls',
+    'Trajetos gravados por GPS':'Tracks recorded by GPS',
+    'Abertos e encerrados · abates de cada um':'Open and closed · takes of each one',
+    'Excluir este abate? Esta ação não pode ser desfeita.':'Delete this take? This cannot be undone.',
+    'Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.':'Registration, taxes and other documents live in Documents → Vehicles, with due-date alerts in the calendar.',
+    'Rotas de pesca':'Fishing routes',
+    'Próximo KM':'Next mileage',
+    'Próximas horas':'Next engine hours',
+    'KM':'Mileage',
+    'Manutenção':'Maintenance',
     /* --- Entrega 8: limites por plano --- */
     'Cevas por manejo':'Feeders per session',
     'Rotas por manejo':'Routes per session',
@@ -1913,6 +1946,39 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Menu TRANSPORTES (ARAS/GARAGEM/MARINA) e manutenção --- */
+    'ARAS':'ARAS',
+    'GARAGEM':'GARAGEM',
+    'MARINA':'MARINA',
+    'Cavalos: saúde, vacinas e casqueamento':'Caballos: salud, vacunas y casco',
+    'Carros, motos e quadriciclos: manutenção':'Autos, motos y cuatriciclos: mantenimiento',
+    'Barcos e embarcações: manutenção e rotas de pesca':'Barcos y embarcaciones: mantenimiento y rutas de pesca',
+    'Novo cavalo':'Nuevo caballo',
+    'Nova embarcação':'Nueva embarcación',
+    'Novo veículo':'Nuevo vehículo',
+    'Nenhum cavalo cadastrado.':'Ningún caballo registrado.',
+    'Nenhuma embarcação cadastrada.':'Ninguna embarcación registrada.',
+    'Nenhum veículo cadastrado.':'Ningún vehículo registrado.',
+    'Controles de manutenção':'Controles de mantenimiento',
+    'Histórico de manutenção':'Historial de mantenimiento',
+    'Registrar manutenção':'Registrar mantenimiento',
+    'Editar manutenção':'Editar mantenimiento',
+    'Nenhuma manutenção registrada ainda.':'Ningún mantenimiento registrado todavía.',
+    'Editar controles':'Editar controles',
+    'Documentos e vencimentos ficam no menu Documentação.':'Los documentos y vencimientos están en el menú Documentación.',
+    'Horas de motor':'Horas de motor',
+    'Manutenção salva ✔':'Mantenimiento guardado ✔',
+    'Controles salvos ✔':'Controles guardados ✔',
+    'Salvar controles':'Guardar controles',
+    'Trajetos gravados por GPS':'Trayectos grabados por GPS',
+    'Abertos e encerrados · abates de cada um':'Abiertos y cerrados · abates de cada uno',
+    'Excluir este abate? Esta ação não pode ser desfeita.':'¿Eliminar este abate? Esta acción no se puede deshacer.',
+    'Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.':'La licencia, los impuestos y demás documentos están en Documentación → Vehículos, con aviso de vencimiento en la agenda.',
+    'Rotas de pesca':'Rutas de pesca',
+    'Próximo KM':'Próximo KM',
+    'Próximas horas':'Próximas horas',
+    'KM':'KM',
+    'Manutenção':'Mantenimiento',
     /* --- Entrega 8: limites por plano --- */
     'Cevas por manejo':'Comederos por manejo',
     'Rotas por manejo':'Rutas por manejo',
@@ -2976,7 +3042,7 @@ var EDIT = null;         // item em edição (null = novo)
 var CACHE = {};          // últimas listas por entidade (p/ editar)
 var FORMVIEW = { ceva:'cevaForm', alimento:'alimentoForm', nivel:'nivelForm', transporte:'transpForm',
                  canil:'canilForm', cao:'caoForm', saude:'saudeForm', armadilha:'armForm', abate:'abateForm',
-                 saudeTransp:'transpSaudeForm' };
+                 saudeTransp:'transpSaudeForm', manutencao:'manutForm' };
 
 var AUTH = { token:'', manejador:null };
 try { AUTH.token = localStorage.getItem('mj_token') || ''; } catch(e) {}
@@ -3072,7 +3138,7 @@ function updateHeader(){
 var NAV_MANEJADOR=[
   {v:'inicio',    label:'Início',            icon:'inicio'},
   {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
-  {v:'espreita',  label:'Rotas de manejo',   icon:'espreita'},
+  {v:'espreita',  label:'Transportes',       icon:'espreita'},
   {v:'caes',      label:'Meu canil',         icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
   {v:'manejoHub', label:'Manejo',            icon:'abate'},
@@ -3094,7 +3160,7 @@ var NAV_LOJISTA=[
 ];
 var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, mapaGeral:1};
 // qual limite controla cada item do menu
-var MODULO_LIMITE={ espera:'cevas', espreita:'rotas', caes:'canis', armadilha:'armadilhas',
+var MODULO_LIMITE={ espera:'cevas', caes:'canis', armadilha:'armadilhas',
   documentacao:'documentos' };
 function moduloBloqueado(v){
   var k=MODULO_LIMITE[v]; if(!k) return false;
@@ -5284,22 +5350,41 @@ function tiposPorMeio(m){ return (m==='maritimo')?TIPOS_MARITIMO:TIPOS_TRANSP; }
 window.mudouMeio=function(){ var m=val('t_meio'); var s=document.getElementById('t_tipo'); if(!s)return;
   s.innerHTML=tiposPorMeio(m).map(function(t){return '<option>'+t+'</option>';}).join(''); };
 function iconeTransp(t){ var m={'Carro':'🚗','Moto':'🏍️','Quadriciclo':'🛺','Cavalo':'🐎','A pé':'🚶','Bicicleta':'🚲','Caminhonete':'🛻'}; return m[t]||'🧭'; }
-VIEWS.espreita=function(){ setTitulo('Rotas de manejo'); setCrumb('Rotas de manejo');
-  app(moduloCard('🚗','Meio de transporte','Veículos, cavalos e embarcações',true,"nav('transportes')")+
-      moduloCard('🧭','Rotas de manejo','Trajetos por GPS em terra',true,"abrirRotas('manejo')")+
-      moduloCard('🎣','Rotas de pesca','Trajetos com embarcação',true,"abrirRotas('pesca')")); };
+VIEWS.espreita=function(){ setTitulo('Transportes'); setCrumb('Transportes');
+  app(moduloCard('🐎','ARAS','Cavalos: saúde, vacinas e casqueamento',true,"abrirTransportes('aras')")+
+      moduloCard('🚗','GARAGEM','Carros, motos e quadriciclos: manutenção',true,"abrirTransportes('garagem')")+
+      moduloCard('⛵','MARINA','Barcos e embarcações: manutenção e rotas de pesca',true,"abrirTransportes('marina')")); };
+window.abrirTransportes=function(cat){ STATE.transpCat=cat||'garagem'; nav('transportes'); };
+/* Cada tipo mora numa das três casas. O que não se encaixa cai na garagem. */
+var TIPOS_CAT={ aras:['Cavalo'],
+  marina:['Barco','Lancha','Bote','Caiaque','Canoa','Jet ski','Outra embarcação'] };
+function categoriaTransp(tipo){
+  if(TIPOS_CAT.aras.indexOf(tipo)>=0) return 'aras';
+  if(TIPOS_CAT.marina.indexOf(tipo)>=0) return 'marina';
+  return 'garagem'; }
+function catAtual(){ return STATE.transpCat||'garagem'; }
+function rotuloCat(c){ return {aras:'ARAS',garagem:'GARAGEM',marina:'MARINA'}[c]||'GARAGEM'; }
+function iconeCat(c){ return {aras:'🐎',garagem:'🚗',marina:'⛵'}[c]||'🚗'; }
+function tiposDaCat(c){ return c==='aras' ? TIPOS_CAT.aras
+  : c==='marina' ? TIPOS_CAT.marina
+  : TIPOS_TRANSP.filter(function(t){ return categoriaTransp(t)==='garagem'; }); }
 window.abrirRotas=function(mod){ STATE.modalidade=mod||'manejo'; nav('rotas'); };
 function modalidadeAtual(){ return STATE.modalidade||'manejo'; }
-VIEWS.transportes=function(){ setTitulo('Meio de transporte'); setCrumb('Rotas de manejo','Transporte'); loadingBox();
-  server('apiListarTransportes').then(function(l){ CACHE.transporte=l;
+VIEWS.transportes=function(){ var cat=catAtual();
+  setTitulo(rotuloCat(cat)); setCrumb('Transportes',rotuloCat(cat)); loadingBox();
+  server('apiListarTransportes').then(function(todos){ CACHE.transporte=todos;
+    var l=(todos||[]).filter(function(t){ return categoriaTransp(t.tipo)===cat; });
     var html=l.length? l.map(function(t){ return '<div class="card"><div class="row">'+
       (t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
-      '<div class="grow click" onclick="abrirTransporte(\''+t.id+'\')"><h3>'+esc(t.tipo)+(isAnimalTransp(t.tipo)?' <span class="pill">🐎 saúde</span>':(isMecanico(t.tipo)?' <span class="pill gray">🔧 manut.</span>':''))+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🥾</div>Nenhum transporte cadastrado.</div>';
-    app(html); fab('<button class="btn" onclick="novo(\'transpForm\')">＋ Novo transporte</button>'); }); };
+      '<div class="grow click" onclick="abrirTransporte(\''+t.id+'\')"><h3>'+esc(t.tipo)+(isAnimalTransp(t.tipo)?' <span class="pill">🐎 saúde</span>':(isMecanico(t.tipo)?' <span class="pill gray">🔧 manut.</span>':''))+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">'+iconeCat(cat)+'</div>'+trFrase(cat==='aras'?'Nenhum cavalo cadastrado.':(cat==='marina'?'Nenhuma embarcação cadastrada.':'Nenhum veículo cadastrado.'))+'</div>';
+    var extra = (cat==='marina') ? moduloCard('🎣','Rotas de pesca','Trajetos com embarcação',true,"abrirRotas('pesca')") : '';
+    app(html+extra);
+    fab('<button class="btn" onclick="novoTransporte()">＋ '+trFrase(cat==='aras'?'Novo cavalo':(cat==='marina'?'Nova embarcação':'Novo veículo'))+'</button>'); }); };
+window.novoTransporte=function(){ EDIT=null; nav('transpForm'); };
 function isAnimalTransp(t){ return t==='Cavalo'; }
 window.abrirTransporte=function(id){ STATE.transporte=(CACHE.transporte||[]).filter(function(t){return t.id===id;})[0]; nav('transpDetail'); };
 var TIPOS_SAUDE_CAVALO=['Vacina','Vermífugo','Ferrageamento','Casqueamento','Consulta','Exame','Odontológico','Medicação','Outro'];
-VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb('Rotas de manejo',esc(t.tipo));
+VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo));
   var ficha='<div class="card rustic-hero"><div class="row">'+(t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'" style="width:82px;height:82px">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:#efe3cc;display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
     '<div class="grow"><h2 style="margin:0 0 2px;font-size:19px">'+iconeTransp(t.tipo)+' '+esc(t.tipo)+'</h2><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div></div>'+
     '<button class="btn sm sec" style="margin-top:10px;width:auto" onclick="editItem(\'transporte\',\''+t.id+'\')">✏️ Editar / trocar foto</button></div>';
@@ -5315,24 +5400,62 @@ VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCru
     var docLinha=function(label,valor,alerta){ return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--linha)"><div class="grow">'+label+'</div><b'+(alerta?' style="color:var(--danger)"':'')+'>'+(valor||'—')+'</b></div>'; };
     var atrasadaRev = t.proximaRevisao && String(t.proximaRevisao).substring(0,10)<h;
     var atrasadaOleo = t.proximaTrocaOleo && String(t.proximaTrocaOleo).substring(0,10)<h;
-    var docHtml='<div class="card"><h3 style="margin:0 0 6px">🔧 Documentação & Revisões</h3>'+
-      docLinha('🚗 KM atual', t.kmAtual?esc(t.kmAtual)+' km':'')+
-      docLinha('📋 Licenciamento (mês)', t.mesLicenciamento?meses[parseInt(t.mesLicenciamento,10)]||'':'', t.mesLicenciamento&&parseInt(t.mesLicenciamento,10)===mesAtual)+
-      docLinha('💰 IPVA (mês)', t.mesIpva?meses[parseInt(t.mesIpva,10)]||'':'', t.mesIpva&&parseInt(t.mesIpva,10)===mesAtual)+
+    var docHtml='<div class="card"><h3 style="margin:0 0 6px">🔧 '+trFrase('Controles de manutenção')+'</h3>'+
+      docLinha((isEmbarcacao(t.tipo)?'⛵ ':'🚗 ')+trFrase(isEmbarcacao(t.tipo)?'Horas de motor':'KM atual'), t.kmAtual?esc(t.kmAtual)+(isEmbarcacao(t.tipo)?' h':' km'):'')+
       docLinha('🔧 Última revisão', t.ultimaRevisao?fmtData(t.ultimaRevisao):'')+
       docLinha('🔧 Próxima revisão', t.proximaRevisao?fmtData(t.proximaRevisao):'', atrasadaRev)+
       docLinha('🛢️ Próxima troca de óleo', t.proximaTrocaOleo?fmtData(t.proximaTrocaOleo):'', atrasadaOleo)+
       docLinha('⚙️ Correia dentada', t.correiaDentada?fmtData(t.correiaDentada):'', t.correiaDentada&&String(t.correiaDentada).substring(0,10)<h)+
       docLinha('🛞 Troca de pneus', t.trocaPneus?fmtData(t.trocaPneus):'', t.trocaPneus&&String(t.trocaPneus).substring(0,10)<h)+
-      (t.obs?'<div class="meta" style="margin-top:8px">'+esc(t.obs)+'</div>':'')+'</div>';
-    app(ficha+docHtml);
-    fab('<button class="btn" onclick="nav(\'docVeiculo\')">✏️ Editar documentação</button>');
+      (t.obs?'<div class="meta" style="margin-top:8px">'+esc(t.obs)+'</div>':'')+
+      '<div class="meta" style="margin-top:8px">'+trFrase('Documentos e vencimentos ficam no menu Documentação.')+'</div>'+
+      '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="nav(\'docVeiculo\')">✏️ '+trFrase('Editar controles')+'</button></div>';
+    app(ficha+docHtml+'<h3 style="margin:14px 4px 6px">🛠️ '+trFrase('Histórico de manutenção')+'</h3><div id="manutList"><div class="loading"><div class="spin"></div></div></div>');
+    carregarManutencoes(t.id);
+    fab('<button class="btn" onclick="novo(\'manutForm\')">＋ '+trFrase('Registrar manutenção')+'</button>');
   } else {
     app(ficha+'<div class="empty">Sem controles extras para este tipo de transporte.</div>');
   }
 };
-function isMecanico(t){ return ['Carro','Moto','Quadriciclo','Caminhonete'].indexOf(t)>=0; }
-VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('Rotas de manejo',esc(STATE.transporte.tipo),'Saúde');
+/* Tem manutenção: veículo de motor e embarcação. Cavalo tem saúde, não manutenção. */
+/* ---- Manutenção de veículos e embarcações (a tabela e as ações já existiam,
+   faltava a tela). Documentos e vencimentos ficam no menu Documentação. ---- */
+function isEmbarcacao(t){ return categoriaTransp(t)==='marina'; }
+var TIPOS_MANUT=['Revisão','Troca de óleo','Filtros','Pneus','Freios','Correia dentada','Bateria','Motor',
+  'Hélice','Casco','Elétrica','Suspensão','Lavagem','Outro'];
+function carregarManutencoes(id){
+  server('apiListarManutencao',id).then(function(l){ CACHE.manutencao=l||[]; var el=document.getElementById('manutList'); if(!el) return;
+    el.innerHTML=(l&&l.length)? l.map(function(m){
+      var prox = m.proximaData?('<br><span class="pill warn">'+trFrase('Próxima')+': '+fmtData(m.proximaData)+'</span>'):'';
+      var pkm  = m.proximoKm?(' <span class="pill gray">'+esc(m.proximoKm)+'</span>'):'';
+      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px"><span class="pill">'+esc(m.tipo||'—')+'</span>'+pkm+'</h3>'+
+        '<div class="meta">'+fmtData(m.data)+(m.km?' · '+esc(m.km):'')+prox+(m.obs?'<br>'+esc(m.obs):'')+'</div></div>'+
+        '<button class="ib" onclick="editItem(\'manutencao\',\''+escJs(m.id)+'\')" title="Editar">✏️</button>'+
+        '<button class="ib" onclick="delItem(\'manutencao\',\''+escJs(m.id)+'\')" title="Excluir">🗑️</button></div></div>'; }).join('')
+      : '<div class="empty">'+trFrase('Nenhuma manutenção registrada ainda.')+'</div>';
+  }).catch(function(){}); }
+VIEWS.manutForm=function(){ var ed=!!EDIT; var t=STATE.transporte||{};
+  setTitulo(ed?'Editar manutenção':'Registrar manutenção'); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo||''),'Manutenção');
+  var unid=isEmbarcacao(t.tipo)?'h':'km';
+  app('<div class="card"><label>Tipo *</label><select id="mt_tipo">'+TIPOS_MANUT.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select>'+
+    '<div class="two"><div><label>Data</label><input id="mt_data" type="date"></div>'+
+    '<div><label>'+(unid==='h'?'Horas de motor':'KM')+'</label><input id="mt_km" inputmode="numeric" value="'+esc(pv('km'))+'"></div></div>'+
+    '<div class="two"><div><label>Próxima data</label><input id="mt_prox" type="date"></div>'+
+    '<div><label>'+(unid==='h'?'Próximas horas':'Próximo KM')+'</label><input id="mt_proxkm" inputmode="numeric" value="'+esc(pv('proximoKm'))+'"></div></div>'+
+    '<label>Observações</label><textarea id="mt_obs">'+esc(pv('obs'))+'</textarea>'+
+    '<button class="btn" onclick="salvarManutencao(this)">'+(ed?'Salvar alterações':'Salvar')+'</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  document.getElementById('mt_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):new Date().toISOString().substring(0,10);
+  if(ed){ setVal('mt_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('mt_prox',String(EDIT.proximaData).substring(0,10)); } };
+window.salvarManutencao=function(btn){ var t=STATE.transporte||{};
+  btn.disabled=true; btn.textContent='Salvando…';
+  var d={ transporteId:t.id, tipo:val('mt_tipo'), data:val('mt_data'), km:val('mt_km'),
+    proximaData:val('mt_prox'), proximoKm:val('mt_proxkm'), obs:val('mt_obs') };
+  var p=EDIT? server('apiEditar','manutencao',EDIT.id,d) : server('apiCriarManutencao',d);
+  p.then(function(){ EDIT=null; toast('Manutenção salva ✔'); voltar(); })
+   .catch(function(e){ btn.disabled=false; btn.textContent=EDIT?'Salvar alterações':'Salvar'; toast((e&&e.message)||'Erro'); }); };
+function isMecanico(t){ return categoriaTransp(t)==='marina' || ['Carro','Moto','Quadriciclo','Caminhonete'].indexOf(t)>=0; }
+VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('ARAS',esc(STATE.transporte.tipo),'Saúde');
   app('<div class="card"><label>Tipo *</label><select id="ts_tipo">'+TIPOS_SAUDE_CAVALO.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="ts_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: Influenza equina, casqueamento…">'+
     '<div class="two"><div><label>Data</label><input id="ts_data" type="date"></div><div><label>Próxima</label><input id="ts_prox" type="date"></div></div>'+
@@ -5347,29 +5470,27 @@ window.salvarSaudeTransp=function(btn){ btn.disabled=true; btn.textContent='Salv
 
 var MESES_OPT='<option value="">—</option>'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map(function(m,i){return '<option value="'+(i+1)+'">'+m+' ('+(i+1)+')</option>';}).join('');
 function _setData(id,v){ if(v){ var e=document.getElementById(id); if(e) e.value=String(v).substring(0,10); } }
-VIEWS.docVeiculo=function(){ var t=STATE.transporte; setTitulo('Documentação do veículo'); setCrumb('Rotas de manejo',esc(t.tipo),'Documentação');
+VIEWS.docVeiculo=function(){ var t=STATE.transporte; setTitulo('Controles de manutenção'); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo),'Manutenção');
   app('<div class="card">'+
-    '<div class="two"><div><label>Mês de licenciamento</label><select id="dv_lic">'+MESES_OPT+'</select></div><div><label>Mês de IPVA</label><select id="dv_ipva">'+MESES_OPT+'</select></div></div>'+
+    '<div class="meta" style="margin-bottom:8px">'+trFrase('Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.')+'</div>'+
     '<label>KM atual</label><input id="dv_km" inputmode="numeric" value="'+esc(t.kmAtual||'')+'">'+
     '<div class="two"><div><label>Última revisão</label><input id="dv_urev" type="date"></div><div><label>Próxima revisão</label><input id="dv_prev" type="date"></div></div>'+
     '<label>Próxima troca de óleo</label><input id="dv_oleo" type="date">'+
     '<div class="two"><div><label>Correia dentada (troca)</label><input id="dv_correia" type="date"></div><div><label>Troca de pneus</label><input id="dv_pneus" type="date"></div></div>'+
     '<label>Observações</label><textarea id="dv_obs">'+esc(t.obs||'')+'</textarea>'+
-    '<button class="btn" onclick="salvarDocVeiculo(this)">Salvar documentação</button></div>');
-  if(t.mesLicenciamento) setVal('dv_lic',String(parseInt(t.mesLicenciamento,10)));
-  if(t.mesIpva) setVal('dv_ipva',String(parseInt(t.mesIpva,10)));
+    '<button class="btn" onclick="salvarDocVeiculo(this)">Salvar controles</button></div>');
   _setData('dv_urev',t.ultimaRevisao); _setData('dv_prev',t.proximaRevisao); _setData('dv_oleo',t.proximaTrocaOleo); _setData('dv_correia',t.correiaDentada); _setData('dv_pneus',t.trocaPneus); };
 window.salvarDocVeiculo=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
-  var d={ mesLicenciamento:val('dv_lic'), mesIpva:val('dv_ipva'), kmAtual:val('dv_km'), ultimaRevisao:val('dv_urev'), proximaRevisao:val('dv_prev'), proximaTrocaOleo:val('dv_oleo'), correiaDentada:val('dv_correia'), trocaPneus:val('dv_pneus'), obs:val('dv_obs') };
-  server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Documentação salva ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
+  var d={ kmAtual:val('dv_km'), ultimaRevisao:val('dv_urev'), proximaRevisao:val('dv_prev'), proximaTrocaOleo:val('dv_oleo'), correiaDentada:val('dv_correia'), trocaPneus:val('dv_pneus'), obs:val('dv_obs') };
+  server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Controles salvos ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
 
-VIEWS.transpForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar transporte':'Novo transporte'); setCrumb('Rotas de manejo',ed?'Editar':'Novo');
-  var meioAt=(EDIT&&EDIT.meio)||'terrestre';
-  app('<div class="card"><label>Categoria *</label><select id="t_meio" onchange="mudouMeio()">'+
-    '<option value="terrestre"'+(meioAt!=='maritimo'?' selected':'')+'>🚗 Terrestre / montaria</option>'+
-    '<option value="maritimo"'+(meioAt==='maritimo'?' selected':'')+'>⛵ Embarcação (marítimo)</option></select>'+
-    '<div class="meta" style="margin:-6px 0 8px">Embarcações ficam disponíveis nas rotas de pesca.</div>'+
-    '<label>Tipo *</label><select id="t_tipo">'+tiposPorMeio(meioAt).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
+VIEWS.transpForm=function(){ var ed=!!EDIT; var cat=ed?categoriaTransp(EDIT.tipo):catAtual();
+  setTitulo(ed?'Editar transporte':(cat==='aras'?'Novo cavalo':(cat==='marina'?'Nova embarcação':'Novo veículo')));
+  setCrumb('Transportes',rotuloCat(cat));
+  var meioAt=(cat==='marina')?'maritimo':'terrestre';
+  app('<div class="card"><div class="meta" style="margin-bottom:8px">'+iconeCat(cat)+' '+rotuloCat(cat)+'</div>'+
+    '<input type="hidden" id="t_meio" value="'+meioAt+'">'+
+    '<label>Tipo *</label><select id="t_tipo">'+tiposDaCat(cat).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Identificação / apelido</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="Ex: Cavalo Trovão / Placa">'+
     '<label>Observações</label><textarea id="t_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'')+'</label>'+
@@ -5404,7 +5525,7 @@ function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][
 var LASTPOS=null, MARKCTX=null, MARKPOS=null;
 
 VIEWS.rotas=function(){ var mod=modalidadeAtual(); var ehPesca=(mod==='pesca');
-  setTitulo(ehPesca?'Rotas de pesca':'Rotas de manejo'); setCrumb('Rotas de manejo',ehPesca?'Pesca':'Manejo'); loadingBox();
+  setTitulo(ehPesca?'Rotas de pesca':'Rotas'); setCrumb(ehPesca?'MARINA':'Manejo',ehPesca?'Rotas de pesca':'Rotas'); loadingBox();
   Promise.all([server('apiListarRotas'), server('apiRotasCompartilhadasComigo').catch(function(){return [];})]).then(function(res){ var todas=res[0]||[], comp=res[1]||[]; CACHE.rota=todas.concat(comp);
     var l=todas.filter(function(r){ return String(r.modalidade||'manejo')===mod; });
     l.sort(function(a,b){return String(b.dataCadastro).localeCompare(String(a.dataCadastro));});
@@ -6141,10 +6262,9 @@ function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
    ============================================================ */
 VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
   var cards=moduloCard('🏞️','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
+      moduloCard('🧭','Rotas','Trajetos gravados por GPS',true,"abrirRotas('manejo')")+
       moduloCard('🗺️','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()")+
-      moduloCard('🎯','Novo manejo','Sessão de caça: ceva, rota ou livre',true,"novoManejo()")+
-      moduloCard('📋','Manejos','Abertos e encerrados',true,"nav('manejoLista')")+
-      moduloCard('🐗','Abates','Histórico de todos os abates',true,"nav('abates')");
+      moduloCard('📋','Manejos','Abertos e encerrados · abates de cada um',true,"nav('manejoLista')");
   app('<div id="mnAberto"></div><div id="mnConvites"></div>'+cards);
   fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>');
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; var el=document.getElementById('mnAberto'); if(!el) return;
@@ -6396,15 +6516,30 @@ window.responderConvite=function(id,resp,btn){
       else render(); })
     .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
 window.registrarAbateNoManejo=function(){ EDIT=null; nav('abateForm'); };
+window.editarAbateDoManejo=function(id){
+  var a=(CACHE.abateManejo||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(!a){ toast('Item não encontrado'); return; }
+  EDIT=Object.assign({}, a, { manejoNome:(MANEJO_ATUAL&&MANEJO_ATUAL.nome)||'' });
+  nav('abateForm'); };
+window.excluirAbateDoManejo=function(id){
+  if(!confirm(trFrase('Excluir este abate? Esta ação não pode ser desfeita.'))) return;
+  server('apiExcluir','abate',id).then(function(){ toast('Excluído ✔'); MANEJO_ATUAL=null; render(); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 function carregarAbatesDoManejo(id){
-  server('apiAbatesDoManejo',id).then(function(l){ var el=document.getElementById('mnAbates'); if(!el) return;
+  server('apiAbatesDoManejo',id).then(function(l){ CACHE.abateManejo=l||[]; var el=document.getElementById('mnAbates'); if(!el) return;
     el.innerHTML = (l&&l.length) ? l.map(function(a){
+      var podeMexer = (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'&&MANEJO_ATUAL.souDono!==false);
+      var bts = podeMexer
+        ? '<button class="ib" onclick="editarAbateDoManejo(\''+escJs(a.id)+'\')" title="Editar">✏️</button>'+
+          '<button class="ib" onclick="excluirAbateDoManejo(\''+escJs(a.id)+'\')" title="Excluir">🗑️</button>' : '';
       return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+esc(a.quantidade||'1')+' animal(is)'+
         (a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'</h3>'+
         '<div class="meta">'+fmtDataHora(a.dataHora)+
         (a.cevaNome?' · '+trFrase('Ceva')+': '+esc(a.cevaNome):'')+(a.rotaNome?' · '+trFrase('Rota')+': '+esc(a.rotaNome):'')+
+        condResumo(a)+
         '<br>'+trFrase('Abatido por')+' '+esc(a.abatidoPorNome||'—')+(a.souEu?' ('+trFrase('eu')+')':'')+
-        (a.obs?'<br>'+esc(a.obs):'')+'</div></div></div></div>'; }).join('')
+        (ptOk(coord(a.lat),coord(a.lng))?'<br>'+mapaLink(a.lat,a.lng):'')+
+        (a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+bts+'</div></div>'; }).join('')
       : '<div class="empty">'+trFrase('Nenhum abate neste manejo ainda.')+'</div>';
   }).catch(function(){}); }
 window.editarManejo=function(){ MANEJO_EDIT=MANEJO_ATUAL; nav('manejoForm'); };
@@ -6420,16 +6555,6 @@ window.encerrarManejo=function(btn){ var m=MANEJO_ATUAL; if(!m) return;
 VIEWS.propriedades=function(){ PROP_ORIGEM='propriedades'; setTitulo('Propriedades'); setCrumb('Manejo','Propriedades'); loadingBox();
   server('apiListarPropriedades').catch(function(){return [];}).then(function(l){ PROPS=l||[];
     app('<div class="card"><div class="meta">Cadastre aqui as áreas onde você maneja — a mesma lista aparece em Documentação.</div></div>'+corpoPropriedades()); }); };
-
-VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadingBox();
-  server('apiListarAbates').then(function(l){ CACHE.abate=l;
-    l.sort(function(a,b){ return String(b.dataHora).localeCompare(String(a.dataHora)); });
-    var html=l.length? l.map(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666';
-      return '<div class="card"><div class="row"><div class="grow"><h3><span class="pill" style="background:'+cor+'">'+esc(a.tipoManejo||'—')+'</span> '+esc(a.quantidade||'1')+' animal(is)</h3>'+
-        '<div class="meta">'+localAbate(a)+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+
-        (a.manejoNome?'<br>'+trFrase('Manejo')+': '+esc(a.manejoNome):'')+(a.abatidoPorNome?' · '+trFrase('Abatido por')+' '+esc(a.abatidoPorNome):'')+
-        '<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
-    app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Manejo',ed?'Editar':'Abate'); loadingBox('Carregando…');
   var pManejo = ed ? Promise.resolve(null) : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):server('apiManejoAberto'));
