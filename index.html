@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2148';
+var APP_VER = 'vJS.250726.2204';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,35 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Entrega 7: guiamento dentro do manejo --- */
+    'Só dá para guiar dentro de um manejo aberto':'Guiding only works inside an open session',
+    'Este manejo não tem rota':'This session has no route',
+    'Este manejo não tem ceva':'This session has no feeder',
+    'Qual rota?':'Which route?',
+    'Qual ceva?':'Which feeder?',
+    'Ceva não encontrada':'Feeder not found',
+    'Esta ceva não tem coordenada gravada':'This feeder has no coordinates saved',
+    'Guia do manejo':'Session guide',
+    'até a ceva':'to the feeder',
+    '🧭 Iniciar guiamento':'🧭 Start guiding',
+    'Você chegou na ceva.':'You reached the feeder.',
+    'até a ceva, em linha reta.':'to the feeder, straight line.',
+    'Você está dentro do limite da propriedade.':'You are inside the property boundary.',
+    'Você está fora do limite da propriedade.':'You are outside the property boundary.',
+    'Sua posição no mapa.':'Your position on the map.',
+    'Não consegui ler o GPS.':'Could not read the GPS.',
+    'Abra um manejo para guiar':'Open a session to guide',
+    'Abra um manejo para gravar rota andando':'Open a session to record a route on the move',
+    'Cevas *':'Feeders *',
+    'Rotas *':'Routes *',
+    'Propriedade *':'Property *',
+    'Canil (opcional)':'Kennel (optional)',
+    'Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.':'You have no feeder registered. Register one under Animal feeder before opening a feeder session.',
+    'Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.':'You have no route registered. Record or draw a route before opening a route session.',
+    'Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.':'No property with a drawn boundary. Draw the boundary under Properties before opening a free session.',
+    'Manejo livre: exige uma propriedade com limite desenhado.':'Free session: requires a property with a drawn boundary.',
+    'Amigos são convidados depois, dentro do manejo aberto.':'Friends are invited later, inside the open session.',
+    'Escolha a propriedade do manejo livre':'Pick the property for the free session',
     /* --- Entrega 5: limite da propriedade --- */
     'Limite da propriedade':'Property boundary',
     'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Tap the map to mark the property corners. From 3 points on, the area closes by itself.',
@@ -1867,6 +1896,35 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Entrega 7: guiamento dentro do manejo --- */
+    'Só dá para guiar dentro de um manejo aberto':'Solo se guía dentro de un manejo abierto',
+    'Este manejo não tem rota':'Este manejo no tiene ruta',
+    'Este manejo não tem ceva':'Este manejo no tiene comedero',
+    'Qual rota?':'¿Cuál ruta?',
+    'Qual ceva?':'¿Cuál comedero?',
+    'Ceva não encontrada':'Comedero no encontrado',
+    'Esta ceva não tem coordenada gravada':'Este comedero no tiene coordenada guardada',
+    'Guia do manejo':'Guía del manejo',
+    'até a ceva':'hasta el comedero',
+    '🧭 Iniciar guiamento':'🧭 Iniciar guiado',
+    'Você chegou na ceva.':'Usted llegó al comedero.',
+    'até a ceva, em linha reta.':'hasta el comedero, en línea recta.',
+    'Você está dentro do limite da propriedade.':'Usted está dentro del límite de la propiedad.',
+    'Você está fora do limite da propriedade.':'Usted está fuera del límite de la propiedad.',
+    'Sua posição no mapa.':'Su posición en el mapa.',
+    'Não consegui ler o GPS.':'No pude leer el GPS.',
+    'Abra um manejo para guiar':'Abra un manejo para guiar',
+    'Abra um manejo para gravar rota andando':'Abra un manejo para grabar ruta andando',
+    'Cevas *':'Comederos *',
+    'Rotas *':'Rutas *',
+    'Propriedade *':'Propiedad *',
+    'Canil (opcional)':'Criadero (opcional)',
+    'Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.':'Usted no tiene comedero registrado. Registre uno en Espera (comedero) antes de abrir un manejo de comedero.',
+    'Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.':'Usted no tiene ruta registrada. Grabe o dibuje una ruta antes de abrir un manejo de ruta.',
+    'Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.':'Ninguna propiedad con límite dibujado. Dibuje el límite en Propiedades antes de abrir un manejo libre.',
+    'Manejo livre: exige uma propriedade com limite desenhado.':'Manejo libre: exige una propiedad con límite dibujado.',
+    'Amigos são convidados depois, dentro do manejo aberto.':'Los amigos se invitan después, dentro del manejo abierto.',
+    'Escolha a propriedade do manejo livre':'Elija la propiedad del manejo libre',
     /* --- Entrega 5: limite da propriedade --- */
     'Limite da propriedade':'Límite de la propiedad',
     'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Toque el mapa para marcar las esquinas de la propiedad. A partir de 3 puntos el área se cierra sola.',
@@ -5357,6 +5415,12 @@ function carregarSelectsRota(ehPesca){
 }
 window.comecarGravacao=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
   if(!navigator.geolocation){ toast('GPS não suportado neste aparelho'); return; }
+  /* Gravar rota em deslocamento também só dentro de manejo (a rota manual continua livre). */
+  if(!MANEJO_ABERTO){ btn.disabled=true; btn.textContent='Verificando…';
+    server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; btn.disabled=false; btn.textContent='▶️ Gravar andando (GPS)';
+      if(!m) toast('Abra um manejo para gravar rota andando'); else comecarGravacao(btn); })
+    .catch(function(){ btn.disabled=false; btn.textContent='▶️ Gravar andando (GPS)'; toast('Abra um manejo para gravar rota andando'); });
+    return; }
   ROTA_REC={ ativo:true, nome:nome, propriedadeId:val('ro_propId'), tipoTransporte:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[], distancia:0, inicio:Date.now() };
   salvarRecLocal();
   STATE.stack=['espreita','rotas','rotaGravar']; render(); };
@@ -5470,7 +5534,122 @@ window.cancelarRota=function(){ if(!confirm('Descartar esta gravação?'))return
   if(GEOWATCH!=null){ try{navigator.geolocation.clearWatch(GEOWATCH);}catch(e){} GEOWATCH=null; }
   ROTA_REC={ativo:false,pontos:[]}; STATE.stack=['espreita','rotas']; render(); };
 
-window.guiarRota=function(id){ ROTA_GUIA=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(!ROTA_GUIA){toast('Rota não encontrada');return;} if(!(ROTA_GUIA.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; } nav('rotaGuia'); };
+/* ---- Guiamento dentro do manejo (entrega 7) ----
+   Rota  → traçado + meu ponto. Ceva → meu ponto + a ceva, sem traçado.
+   Livre → meu ponto dentro do limite. Em todos, o limite da propriedade
+   aparece se existir. Fora de manejo aberto não se guia. */
+var GUIA_CTX=null;
+window.iniciarGuiamento=function(){
+  var m=MANEJO_ATUAL; if(!m||m.status!=='aberto'){ toast('Só dá para guiar dentro de um manejo aberto'); return; }
+  if(m.tipo==='rota'){
+    var rotas=m.rotas||[];
+    if(!rotas.length){ toast('Este manejo não tem rota'); return; }
+    if(rotas.length===1) return abrirGuiaRotaDoManejo(rotas[0].id);
+    return escolherNoManejo('Qual rota?', rotas, 'abrirGuiaRotaDoManejo');
+  }
+  if(m.tipo==='ceva'){
+    var cevas=m.cevas||[];
+    if(!cevas.length){ toast('Este manejo não tem ceva'); return; }
+    if(cevas.length===1) return abrirGuiaCeva(cevas[0].id);
+    return escolherNoManejo('Qual ceva?', cevas, 'abrirGuiaCeva');
+  }
+  abrirGuiaLivre(); };
+function escolherNoManejo(titulo, itens, fn){
+  app('<div class="card"><h3 style="margin:0 0 8px">🧭 '+trFrase(titulo)+'</h3>'+
+    itens.map(function(i){ return '<button class="btn sec" style="margin-bottom:6px" onclick="'+fn+'(\''+escJs(i.id)+'\')">'+esc(i.nome)+'</button>'; }).join('')+
+    '<button class="btn" style="margin-top:6px" onclick="render()">Cancelar</button></div>'); }
+
+window.abrirGuiaRotaDoManejo=function(rotaId){
+  server('apiListarRotas').then(function(l){
+    var r=(l||[]).filter(function(x){return x.id===rotaId;})[0];
+    if(!r){ toast('Rota não encontrada'); return; }
+    if(!(r.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; }
+    CACHE.rota=(CACHE.rota||[]).concat([r]); ROTA_GUIA=r;
+    GUIA_CTX={ modo:'rota', manejoId:(MANEJO_ATUAL||{}).id };
+    carregarLimitesGuia().then(function(){ nav('rotaGuia'); });
+  }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+
+window.abrirGuiaCeva=function(cevaId){
+  server('apiListarCevas').then(function(l){
+    var c=(l||[]).filter(function(x){return x.id===cevaId;})[0];
+    if(!c){ toast('Ceva não encontrada'); return; }
+    var la=coord(c.lat), ln=coord(c.lng);
+    if(!ptOk(la,ln)){ toast('Esta ceva não tem coordenada gravada'); return; }
+    GUIA_CTX={ modo:'ceva', ceva:{ id:c.id, nome:c.nome||'Ceva', lat:la, lng:ln }, manejoId:(MANEJO_ATUAL||{}).id };
+    carregarLimitesGuia().then(function(){ nav('guiaPonto'); });
+  }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+
+window.abrirGuiaLivre=function(){
+  GUIA_CTX={ modo:'livre', manejoId:(MANEJO_ATUAL||{}).id };
+  carregarLimitesGuia().then(function(){ nav('guiaPonto'); }); };
+
+/* Limites que entram no mapa do guiamento: o do manejo e qualquer um que
+   contenha o ponto de referência (é a regra "rota dentro da propriedade"). */
+function carregarLimitesGuia(){
+  return server('apiListarPropriedades').then(function(props){
+    var m=MANEJO_ATUAL||{}, ref=null;
+    if(GUIA_CTX.modo==='ceva') ref=GUIA_CTX.ceva;
+    else if(GUIA_CTX.modo==='rota' && ROTA_GUIA && (ROTA_GUIA.pontos||[]).length) ref=ROTA_GUIA.pontos[0];
+    GUIA_CTX.limites=(props||[]).filter(function(p){
+      if(!p.temLimite) return false;
+      if(m.propriedade && String(m.propriedade.id)===String(p.id)) return true;
+      if(ROTA_GUIA && String(ROTA_GUIA.propriedadeId||'')===String(p.id)) return true;
+      return ref ? pontoDentro(ref, p.limite) : false; });
+  }).catch(function(){ GUIA_CTX.limites=[]; }); }
+/* ponto dentro do polígono: raycasting simples */
+function pontoDentro(pt, poly){
+  if(!pt||!poly||poly.length<3) return false;
+  var x=coord(pt.lng), y=coord(pt.lat), dentro=false;
+  if(!ptOk(y,x)) return false;
+  for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+    var xi=coord(poly[i].lng), yi=coord(poly[i].lat), xj=coord(poly[j].lng), yj=coord(poly[j].lat);
+    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi)) dentro=!dentro; }
+  return dentro; }
+
+VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
+  if(!g||(g.modo!=='ceva'&&g.modo!=='livre')){ voltar(); return; }
+  var alvo=g.modo==='ceva'?g.ceva:null;
+  setTitulo(alvo?('Guia: '+alvo.nome):'Guia do manejo'); setCrumb('Manejo','Guia');
+  app('<div class="card"><h3 style="margin:0 0 6px">🧭 '+esc(alvo?alvo.nome:trFrase('Manejo livre'))+'</h3>'+
+    (alvo?'<div class="dash"><div class="kpi"><b id="guiaDist">—</b><span>até a ceva</span></div></div>':'')+
+    '<div class="meta" id="guiaMsg" style="margin:6px 0">Aguardando GPS…</div>'+
+    '<div id="guiaMap" style="height:52vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<button class="btn" style="margin-top:12px" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>'+
+    '<button class="btn sec" onclick="voltar()" style="margin-top:8px">Encerrar guia</button></div>');
+  var centro = alvo ? [alvo.lat,alvo.lng] : [-15.78,-47.93];
+  var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(centro, alvo?15:4);
+  addBase(map); ROUTEMAP=map;
+  var pts=[];
+  desenharLimitesEm(map, g.limites||[], pts);
+  if(alvo){ L.marker([alvo.lat,alvo.lng],{icon:emojiIcon('🌽',34)}).addTo(map).bindPopup('🌽 '+esc(alvo.nome)); pts.push([alvo.lat,alvo.lng]); }
+  setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} } },150);
+  if(!navigator.geolocation){ toast('GPS não suportado'); return; }
+  var me=null, linha=null;
+  GEOWATCH=navigator.geolocation.watchPosition(function(pos){
+    var cur={lat:pos.coords.latitude,lng:pos.coords.longitude}; LASTPOS=cur;
+    if(me) me.setLatLng([cur.lat,cur.lng]); else me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map);
+    var msg=document.getElementById('guiaMsg');
+    if(alvo){
+      var d=distMetros(cur,alvo);
+      var e=document.getElementById('guiaDist'); if(e) e.textContent=fmtDist(d);
+      if(linha) map.removeLayer(linha);
+      linha=L.polyline([[cur.lat,cur.lng],[alvo.lat,alvo.lng]],{color:'#2f7d3a',weight:3,dashArray:'8,6',opacity:.8}).addTo(map);
+      if(msg) msg.textContent = d<40 ? '✅ '+trFrase('Você chegou na ceva.') : '➡️ '+fmtDist(d)+' '+trFrase('até a ceva, em linha reta.');
+    } else {
+      var dentro=(g.limites||[]).some(function(p){ return pontoDentro(cur,p.limite); });
+      if(msg) msg.textContent = (g.limites||[]).length
+        ? (dentro?'✅ '+trFrase('Você está dentro do limite da propriedade.'):'⚠️ '+trFrase('Você está fora do limite da propriedade.'))
+        : '📍 '+trFrase('Sua posição no mapa.');
+    }
+  }, function(){ var msg=document.getElementById('guiaMsg'); if(msg) msg.textContent=trFrase('Não consegui ler o GPS.'); },
+     {enableHighAccuracy:true,maximumAge:5000,timeout:15000}); };
+window.guiarRota=function(id){ ROTA_GUIA=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(!ROTA_GUIA){toast('Rota não encontrada');return;} if(!(ROTA_GUIA.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; }
+  /* Guiar só dentro de manejo aberto: sem isso a caçada acontece fora de qualquer registro. */
+  server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null;
+    if(!m){ toast('Abra um manejo para guiar'); nav('manejoHub'); return; }
+    GUIA_CTX={ modo:'rota', manejoId:m.id }; MANEJO_ATUAL=m;
+    carregarLimitesGuia().then(function(){ nav('rotaGuia'); }); })
+  .catch(function(){ toast('Abra um manejo para guiar'); }); };
 VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STATE.stack=['espreita','rotas']; render(); return; }
   setTitulo('Guia: '+r.nome); setCrumb('Rotas','Guia');
   app('<div class="card"><h3 style="margin:0 0 6px">🧭 '+esc(r.nome)+'</h3>'+
@@ -5483,6 +5662,7 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
   var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(pts[0],15);
   addBase(map);
   ROUTEMAP=map;
+  desenharLimitesEm(map,(GUIA_CTX&&GUIA_CTX.limites)||[],pts);
   L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
   L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
   L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada');
@@ -5969,35 +6149,56 @@ window.abrirManejo=function(id){ MANEJO_ATUAL=null; STATE.manejoId=id;
 VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
   setTitulo(ed?'Editar manejo':'Novo manejo'); setCrumb('Manejo',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
   Promise.all([ serverOpc('apiListarCevas'), serverOpc('apiListarRotas'), serverOpc('apiListarCanis'), serverOpc('apiListarPropriedades') ])
-  .then(function(r){ MANEJO_OPTS={cevas:r[0]||[],rotas:r[1]||[],canis:r[2]||[],props:r[3]||[]};
+  .then(function(r){ MANEJO_OPTS={cevas:r[0]||[],rotas:r[1]||[],canis:r[2]||[],
+      props:(r[3]||[]).filter(function(p){ return p.temLimite; })};
     var m=MANEJO_EDIT||{};
     app('<div class="card">'+
       '<label>Nome do manejo</label><input id="mn_nome" value="'+esc(m.nome||'')+'" placeholder="Ex: Sábado na ceva do brejo">'+
       '<label>Tipo *</label><select id="mn_tipo" onchange="pintarAvisoTipo()">'+
         ['ceva','rota','livre'].map(function(t){ return '<option value="'+t+'"'+(String(m.tipo||'ceva')===t?' selected':'')+'>'+rotuloTipoManejo(t)+'</option>'; }).join('')+'</select>'+
       '<div id="mn_aviso" class="meta" style="margin:-6px 0 10px"></div>'+
-      '<label>Cevas</label>'+listaChecks('mn_cevas',MANEJO_OPTS.cevas,(m.cevas||[]).map(function(c){return c.id;}).join(','),'Nenhuma ceva cadastrada.')+
-      '<label style="margin-top:10px;display:block">Rotas</label>'+listaChecks('mn_rotas',MANEJO_OPTS.rotas,(m.rotas||[]).map(function(c){return c.id;}).join(','),'Nenhuma rota cadastrada.')+
-      '<label style="margin-top:10px;display:block">Canil</label>'+listaChecks('mn_canis',MANEJO_OPTS.canis,(m.canis||[]).map(function(c){return c.id;}).join(','),'Nenhum canil cadastrado.')+
-      '<label style="margin-top:10px;display:block">Propriedade</label><select id="mn_prop"><option value="">— não informada —</option>'+
-        MANEJO_OPTS.props.map(function(p){ return '<option value="'+esc(p.id)+'"'+((m.propriedade&&m.propriedade.id===p.id)?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>'+
+      '<div id="mn_ctx"></div>'+
+      '<label style="margin-top:10px;display:block">Canil (opcional)</label>'+
+        listaChecks('mn_canis',MANEJO_OPTS.canis,(m.canis||[]).map(function(c){return c.id;}).join(','),'Nenhum canil cadastrado.')+
       '<label>Observações</label><textarea id="mn_obs">'+esc(m.obs||'')+'</textarea>'+
-      '<div class="meta" style="margin:2px 0 10px">Amigos convidados chegam na entrega 4.</div>'+
-      '<button class="btn" onclick="salvarManejo(this)">'+(ed?'Salvar alterações':'Iniciar manejo')+'</button>'+
+      '<div class="meta" style="margin:2px 0 10px">Amigos são convidados depois, dentro do manejo aberto.</div>'+
+      '<button class="btn" id="mn_salvar" onclick="salvarManejo(this)">'+(ed?'Salvar alterações':'Iniciar manejo')+'</button>'+
       '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
     pintarAvisoTipo(); }); };
 
-window.pintarAvisoTipo=function(){ var t=val('mn_tipo'), el=document.getElementById('mn_aviso'); if(!el) return;
-  el.innerHTML = t==='ceva' ? 'Manejo de ceva: escolha ao menos uma ceva.'
-    : t==='rota' ? 'Manejo de rota: escolha ao menos uma rota.'
-    : 'Manejo livre: exige uma propriedade com limite.'; };
+/* O tipo manda: manejo de ceva só escolhe ceva, de rota só rota, livre só
+   propriedade com limite. Sem o item cadastrado, o manejo nem começa. */
+window.pintarAvisoTipo=function(){
+  var t=val('mn_tipo'), av=document.getElementById('mn_aviso'), box=document.getElementById('mn_ctx');
+  if(!av||!box) return;
+  var m=MANEJO_EDIT||{}, falta='', corpo='';
+  if(t==='ceva'){
+    av.innerHTML='Manejo de ceva: escolha ao menos uma ceva.';
+    if(!MANEJO_OPTS.cevas.length) falta='Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.';
+    else corpo='<label>Cevas *</label>'+listaChecks('mn_cevas',MANEJO_OPTS.cevas,(m.cevas||[]).map(function(c){return c.id;}).join(','),'');
+  } else if(t==='rota'){
+    av.innerHTML='Manejo de rota: escolha ao menos uma rota.';
+    if(!MANEJO_OPTS.rotas.length) falta='Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.';
+    else corpo='<label>Rotas *</label>'+listaChecks('mn_rotas',MANEJO_OPTS.rotas,(m.rotas||[]).map(function(c){return c.id;}).join(','),'');
+  } else {
+    av.innerHTML='Manejo livre: exige uma propriedade com limite desenhado.';
+    if(!MANEJO_OPTS.props.length) falta='Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.';
+    else corpo='<label>Propriedade *</label><select id="mn_prop">'+
+      (MANEJO_OPTS.props.length>1?'<option value="">Selecione…</option>':'')+
+      MANEJO_OPTS.props.map(function(p){ return '<option value="'+esc(p.id)+'"'+((m.propriedade&&m.propriedade.id===p.id)?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>';
+  }
+  box.innerHTML = falta
+    ? '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0"><div class="meta">🔒 '+esc(falta)+'</div></div>'
+    : corpo;
+  var bt=document.getElementById('mn_salvar'); if(bt){ bt.disabled=!!falta; bt.style.opacity=falta?'.5':''; } };
 
 window.salvarManejo=function(btn){
-  var d={ nome:val('mn_nome'), tipo:val('mn_tipo'), obs:val('mn_obs'), propriedadeId:val('mn_prop'),
-    cevasIds:idsMarcados('mn_cevas'), rotasIds:idsMarcados('mn_rotas'), canisIds:idsMarcados('mn_canis') };
-  if(d.tipo==='ceva' && !d.cevasIds){ toast('Escolha ao menos uma ceva'); return; }
-  if(d.tipo==='rota' && !d.rotasIds){ toast('Escolha ao menos uma rota'); return; }
-  if(d.tipo==='livre' && !d.propriedadeId){ toast('Manejo livre exige uma propriedade'); return; }
+  var tipo=val('mn_tipo');
+  var d={ nome:val('mn_nome'), tipo:tipo, obs:val('mn_obs'), canisIds:idsMarcados('mn_canis'),
+    cevasIds:'', rotasIds:'', propriedadeId:'' };
+  if(tipo==='ceva'){ d.cevasIds=idsMarcados('mn_cevas'); if(!d.cevasIds){ toast('Escolha ao menos uma ceva'); return; } }
+  if(tipo==='rota'){ d.rotasIds=idsMarcados('mn_rotas'); if(!d.rotasIds){ toast('Escolha ao menos uma rota'); return; } }
+  if(tipo==='livre'){ d.propriedadeId=val('mn_prop'); if(!d.propriedadeId){ toast('Escolha a propriedade do manejo livre'); return; } }
   btn.disabled=true; btn.textContent='Salvando…';
   var p = MANEJO_EDIT ? server('apiAtualizarManejo',MANEJO_EDIT.id,d) : server('apiCriarManejo',d);
   p.then(function(res){ var id=(MANEJO_EDIT&&MANEJO_EDIT.id)||(res&&res.id);
@@ -6066,7 +6267,8 @@ function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status
       '<div id="mnAmigos"></div></div>'
     : '';
   app(ficha+'<h3 style="margin:14px 4px 6px">🐗 '+trFrase('Abates deste manejo')+'</h3><div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>'+amigos+acoes);
-  if(aberto) fab('<button class="btn" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>');
+  if(aberto) fab('<button class="btn" onclick="iniciarGuiamento()" style="background:linear-gradient(#3a5a34,#2e4d2e)">🧭 Iniciar guiamento</button>'+
+    '<button class="btn" onclick="registrarAbateNoManejo()" style="margin-top:6px">＋ Registrar abate</button>');
   carregarAbatesDoManejo(m.id);
   if(aberto && souDono) carregarAmigosDoManejo(m.id);
 }
