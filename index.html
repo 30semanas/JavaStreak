@@ -943,7 +943,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2323';
+var APP_VER = 'vJS.250726.2332';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1004,6 +1004,8 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    '📍 Centralizar em mim':'📍 Center on me',
+    'Ainda sem posição do GPS':'No GPS position yet',
     'desde':'since',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Boundary center',
@@ -2042,6 +2044,8 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    '📍 Centralizar em mim':'📍 Centrar en mí',
+    'Ainda sem posição do GPS':'Aún sin posición del GPS',
     'desde':'desde',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Centro del límite',
@@ -5937,6 +5941,9 @@ function pontoDentro(pt, poly){
     if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi)) dentro=!dentro; }
   return dentro; }
 
+window.centralizarEmMim=function(){
+  if(!LASTPOS){ toast(trFrase('Ainda sem posição do GPS')); return; }
+  if(ROUTEMAP) ROUTEMAP.setView([LASTPOS.lat,LASTPOS.lng],16); };
 VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
   if(!g||(g.modo!=='ceva'&&g.modo!=='livre')){ voltar(); return; }
   var alvo=g.modo==='ceva'?g.ceva:null;
@@ -5945,7 +5952,8 @@ VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
     (alvo?'<div class="dash"><div class="kpi"><b id="guiaDist">—</b><span>até a ceva</span></div></div>':'')+
     '<div class="meta" id="guiaMsg" style="margin:6px 0">Aguardando GPS…</div>'+
     '<div id="guiaMap" style="height:52vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
-    '<button class="btn" style="margin-top:12px" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>'+
+    '<button class="btn sec" style="margin-top:10px" onclick="centralizarEmMim()">📍 Centralizar em mim</button>'+
+    '<button class="btn" style="margin-top:8px" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>'+
     '<button class="btn sec" onclick="voltar()" style="margin-top:8px">Encerrar guia</button></div>');
   var centro = alvo ? [alvo.lat,alvo.lng] : [-15.78,-47.93];
   var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(centro, alvo?15:4);
@@ -5960,13 +5968,18 @@ VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
     if(me){ me.setLatLng([cur.lat,cur.lng]); meHalo.setLatLng([cur.lat,cur.lng]); }
     else { meHalo=L.circleMarker([cur.lat,cur.lng],{radius:11,color:'#1f6feb',weight:2,fillColor:'#1f6feb',fillOpacity:.25}).addTo(map);
       me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
+  var primeiroFix=true;
+  function enquadrar(cur){
+    if(!primeiroFix) return; primeiroFix=false;
+    var todos=[[cur.lat,cur.lng]].concat(pts);
+    if(todos.length>1){ try{ map.fitBounds(todos,{padding:[50,50],maxZoom:16}); }catch(e){ map.setView([cur.lat,cur.lng],15); } }
+    else map.setView([cur.lat,cur.lng],15); }
   navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP!==map) return;
-    var c0={lat:pos.coords.latitude,lng:pos.coords.longitude}; porMim(c0);
-    if(!alvo) map.setView([c0.lat,c0.lng],15);
+    var c0={lat:pos.coords.latitude,lng:pos.coords.longitude}; porMim(c0); enquadrar(c0);
   }, function(){}, {enableHighAccuracy:true,timeout:8000});
   GEOWATCH=navigator.geolocation.watchPosition(function(pos){
     var cur={lat:pos.coords.latitude,lng:pos.coords.longitude}; LASTPOS=cur;
-    porMim(cur);
+    porMim(cur); enquadrar(cur);
     var msg=document.getElementById('guiaMsg');
     if(alvo){
       var d=distMetros(cur,alvo);
@@ -5996,7 +6009,8 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
     '<div class="dash"><div class="kpi"><b id="guiaDist">—</b><span>até a rota</span></div><div class="kpi"><b id="guiaRem">—</b><span>faltam</span></div></div>'+
     '<div class="meta" id="guiaMsg" style="margin:6px 0">Aguardando GPS…</div>'+
     '<div id="guiaMap" style="height:52vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
-    (r.permissao==='seguir' ? '<div class="meta" style="margin-top:10px">👁️ Você tem acesso apenas para <b>seguir</b> esta rota.</div>' : '<button class="btn" onclick="abrirMark(\'guia\')" style="margin-top:12px;background:linear-gradient(#9a7b41,#7a5c2c)">📍 Marcar ponto aqui</button>')+
+    '<button class="btn sec" style="margin-top:10px" onclick="centralizarEmMim()">📍 Centralizar em mim</button>'+
+    (r.permissao==='seguir' ? '<div class="meta" style="margin-top:10px">👁️ Você tem acesso apenas para <b>seguir</b> esta rota.</div>' : '<button class="btn" onclick="abrirMark(\'guia\')" style="margin-top:8px;background:linear-gradient(#9a7b41,#7a5c2c)">📍 Marcar ponto aqui</button>')+
     '<button class="btn sec" onclick="voltar()" style="margin-top:8px">Encerrar guia</button></div>');
   var pts=r.pontos.map(function(p){return [p.lat,p.lng];});
   var map=L.map('guiaMap',{preferCanvas:true,zoomAnimation:false}).setView(pts[0],15);
