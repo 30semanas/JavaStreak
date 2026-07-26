@@ -560,6 +560,17 @@
   @media(min-width:901px){ body.logged.camp-on{padding-right:250px} }
   @media(max-width:900px) and (min-width:721px){ body.logged.camp-on{padding-right:210px} }
   @media(max-width:720px){ body.logged.camp-on{padding-right:0} }
+  .sb-chave{margin:0 10px 8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);display:none}
+  .sb-chave.on{display:block}
+  .sb-chave .rot{font-size:10.5px;letter-spacing:.4px;opacity:.75;text-transform:uppercase}
+  .sb-chave .linha{display:flex;align-items:center;gap:6px;margin-top:3px}
+  .sb-chave code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:700;
+    letter-spacing:1px;color:#ffb27a;user-select:all}
+  .sb-chave button{flex:none;border:0;border-radius:7px;padding:5px 8px;cursor:pointer;
+    background:rgba(232,85,43,.85);color:#fff;font-size:11px;font-weight:600}
+  .sb-chave button:active{transform:scale(.95)}
+  .sb-chave .dica{font-size:10.5px;opacity:.7;margin-top:4px;line-height:1.35}
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
 .sb-plano{display:none;margin:0 12px 10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:center}
   .pl-tag{font-size:13px;font-weight:800;color:var(--laranja-claro);text-transform:uppercase;letter-spacing:.5px}
@@ -874,6 +885,7 @@
   <aside id="sidebar">
     <div class="sb-brand"><img src="" id="sbLogo" alt="JavaStreak"></div>
     <div class="sb-user" id="sbUser"></div>
+    <div class="sb-chave" id="sbChave"></div>
     <button class="sb-planos" id="sbPlanosBtn" onclick="go('planos')"><img id="sbPlanoIco" alt=""><span id="sbPlanoTxt">Ver planos</span></button>
     <nav id="sbNav"></nav>
     <button class="sb-sair" onclick="logout()"><span id="lblSair">Sair</span></button>
@@ -945,7 +957,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1807';
+var APP_VER = 'vJS.260726.1820';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1801,6 +1813,17 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Sua chave de indicação':'Your referral key',
+    'Copiar':'Copy',
+    'Copiado ✔':'Copied ✔',
+    'Cada amigo que criar a conta com ela e confirmar o e-mail te dá':'Every friend who signs up with it and confirms their email gives you',
+    'Sim, tenho uma chave':'Yes, I have a key',
+    'Chave de indicação *':'Referral key *',
+    '✅ Chave válida':'✅ Valid key',
+    '❌ Chave não encontrada ou de conta não confirmada':'❌ Key not found, or the account is not confirmed',
+    'Informe a chave de indicação':'Enter the referral key',
+    'Chave inválida — confira com quem indicou':'Invalid key — check with who referred you',
+    'Não foi possível entrar. Atualize a página (Ctrl+Shift+R) e tente de novo.':'Could not sign in. Reload the page (Ctrl+Shift+R) and try again.',
     '🔞 Conteúdo para maiores de 18 anos':'🔞 Content for adults 18+',
     'O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.':'JavaStreak is a wild boar management tool intended for people aged 18 or over who hold the legal permits required for the activity.',
     'Tenho 18 anos ou mais':'I am 18 or older',
@@ -1818,15 +1841,8 @@ var FRASES = {
     'Conta criada — confirme seu e-mail':'Account created — confirm your email',
     'Confirmar e-mail':'Confirm email',
     'Alguém indicou o JavaStreak para você?':'Did someone refer JavaStreak to you?',
-    'Sim, fui indicado':'Yes, I was referred',
-    'E-mail de quem indicou *':'Referrer\'s email *',
     'Conferindo…':'Checking…',
-    '✅ Indicação confirmada':'✅ Referral confirmed',
-    '❌ Esse e-mail não tem conta confirmada no JavaStreak':'❌ That email has no confirmed JavaStreak account',
     'Não foi possível conferir agora':'Could not check right now',
-    'Informe o e-mail de quem indicou':'Enter the referrer\'s email',
-    'Confira o e-mail de quem indicou — ele precisa ter conta confirmada':'Check the referrer\'s email — the account must be confirmed',
-    'Quem indicou precisa ter conta confirmada':'The referrer must have a confirmed account',
     'Informe a data de nascimento':'Enter your date of birth',
     'É preciso ter 18 anos ou mais para criar a conta':'You must be 18 or older to create an account',
     'Data de nascimento *':'Date of birth *',
@@ -2906,6 +2922,17 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Sua chave de indicação':'Tu clave de recomendación',
+    'Copiar':'Copiar',
+    'Copiado ✔':'Copiado ✔',
+    'Cada amigo que criar a conta com ela e confirmar o e-mail te dá':'Cada amigo que se registre con ella y confirme su correo te da',
+    'Sim, tenho uma chave':'Sí, tengo una clave',
+    'Chave de indicação *':'Clave de recomendación *',
+    '✅ Chave válida':'✅ Clave válida',
+    '❌ Chave não encontrada ou de conta não confirmada':'❌ Clave no encontrada o cuenta sin confirmar',
+    'Informe a chave de indicação':'Indica la clave de recomendación',
+    'Chave inválida — confira com quem indicou':'Clave inválida — verifica con quien te recomendó',
+    'Não foi possível entrar. Atualize a página (Ctrl+Shift+R) e tente de novo.':'No se pudo entrar. Recarga la página (Ctrl+Shift+R) e inténtalo de nuevo.',
     '🔞 Conteúdo para maiores de 18 anos':'🔞 Contenido para mayores de 18 años',
     'O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.':'JavaStreak es una herramienta de manejo de jabalí destinada a personas de 18 años o más que cuenten con las autorizaciones legales exigidas.',
     'Tenho 18 anos ou mais':'Tengo 18 años o más',
@@ -2923,15 +2950,8 @@ var FRASES = {
     'Conta criada — confirme seu e-mail':'Cuenta creada — confirma tu correo',
     'Confirmar e-mail':'Confirmar correo',
     'Alguém indicou o JavaStreak para você?':'¿Alguien te recomendó JavaStreak?',
-    'Sim, fui indicado':'Sí, me recomendaron',
-    'E-mail de quem indicou *':'Correo de quien te recomendó *',
     'Conferindo…':'Verificando…',
-    '✅ Indicação confirmada':'✅ Recomendación confirmada',
-    '❌ Esse e-mail não tem conta confirmada no JavaStreak':'❌ Ese correo no tiene cuenta confirmada en JavaStreak',
     'Não foi possível conferir agora':'No se pudo verificar ahora',
-    'Informe o e-mail de quem indicou':'Indica el correo de quien te recomendó',
-    'Confira o e-mail de quem indicou — ele precisa ter conta confirmada':'Revisa el correo de quien te recomendó — la cuenta debe estar confirmada',
-    'Quem indicou precisa ter conta confirmada':'Quien recomienda debe tener cuenta confirmada',
     'Informe a data de nascimento':'Indica tu fecha de nacimiento',
     'É preciso ter 18 anos ou mais para criar a conta':'Debes tener 18 años o más para crear la cuenta',
     'Data de nascimento *':'Fecha de nacimiento *',
@@ -3510,7 +3530,46 @@ function buildTopNav(root, tipo){
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
+  carregarChave();
   setTimeout(posicionarMapShell,0);
+}
+/* Chave de indicação no menu, logo acima de "Ver planos". Buscada uma vez por
+   sessão e guardada, para não bater no servidor a cada abertura do menu. */
+var MINHA_CHAVE=null;
+function pintarChave(){
+  var el=document.getElementById('sbChave'); if(!el) return;
+  if(STATE.tipo==='empresa' || !AUTH.token){ el.className='sb-chave'; el.innerHTML=''; return; }
+  if(!MINHA_CHAVE) return;
+  var d=MINHA_CHAVE;
+  el.className='sb-chave on';
+  el.innerHTML='<div class="rot">'+trFrase('Sua chave de indicação')+'</div>'+
+    '<div class="linha"><code id="sbChaveTxt" class="no-i18n">'+esc(d.chave)+'</code>'+
+    '<button onclick="copiarChave(this)">'+trFrase('Copiar')+'</button></div>'+
+    (d.ativa?('<div class="dica">'+trFrase('Cada amigo que criar a conta com ela e confirmar o e-mail te dá')+' '+d.dias+' '+trFrase('dias de Mateiro.')+'</div>'):'');
+}
+function carregarChave(){
+  if(!AUTH.token || STATE.tipo==='empresa') return;
+  if(MINHA_CHAVE){ pintarChave(); return; }
+  server('apiMinhaChave').then(function(d){ MINHA_CHAVE=d; pintarChave(); }).catch(function(){});
+}
+window.copiarChave=function(btn){
+  var el=document.getElementById('sbChaveTxt'); if(!el) return;
+  var txt=el.textContent, rot=btn.textContent;
+  var fim=function(){ btn.textContent=trFrase('Copiado ✔');
+    setTimeout(function(){ btn.textContent=rot; },1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(fim).catch(function(){ copiaVelha(txt,fim); });
+  } else copiaVelha(txt,fim);
+};
+/* Reserva para navegador antigo e para página servida sem HTTPS, onde o
+   clipboard moderno não existe. */
+function copiaVelha(txt,fim){
+  try{
+    var a=document.createElement('textarea');
+    a.value=txt; a.style.position='fixed'; a.style.opacity='0';
+    document.body.appendChild(a); a.select(); document.execCommand('copy');
+    document.body.removeChild(a); fim();
+  }catch(e){ toast('Copie a chave manualmente: '+txt); }
 }
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
 window.openMenu=function(){ document.body.classList.add('menu-open'); };
@@ -3744,22 +3803,31 @@ var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
    A resposta fica no aparelho — quem já confirmou não vê de novo. */
 var MAIOR_CHAVE='js_maior18';
 function jaConfirmouIdade(){ try{ return localStorage.getItem(MAIOR_CHAVE)==='1'; }catch(e){ return false; } }
+window.limparChaveLocal=function(){ MINHA_CHAVE=null; };
 window.confirmarMaioridade=function(){
   try{ localStorage.setItem(MAIOR_CHAVE,'1'); }catch(e){}
-  render();
+  STATE.stack=['bemvindo']; nav(IDADE_DESTINO||'registrar');
 };
-function portaIdade(){
-  return '<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
+/* Porta de maioridade: só para quem vai CRIAR conta. Quem clica em Entrar já
+   passou por aqui no dia em que se cadastrou. */
+var IDADE_DESTINO='registrar';
+VIEWS.maioridade=function(){ setTitulo(STATE.appNome); setCrumb('Criar conta');
+  app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
     '<div class="card" style="border-top:4px solid var(--alerta)">'+
-    '<h3 style="margin:0 0 6px">🔞 Conteúdo para maiores de 18 anos</h3>'+
-    '<p style="font-size:14.5px;line-height:1.6;margin:0 0 12px">O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.</p>'+
+    '<h3 style="margin:0 0 6px">\ud83d\udd1e Conte\u00fado para maiores de 18 anos</h3>'+
+    '<p style="font-size:14.5px;line-height:1.6;margin:0 0 12px">O JavaStreak \u00e9 uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autoriza\u00e7\u00f5es legais exigidas para a atividade.</p>'+
     '<button class="btn" onclick="confirmarMaioridade()">Tenho 18 anos ou mais</button>'+
-    '<div class="meta" style="text-align:center;margin-top:10px">Se você tem menos de 18 anos, feche esta página.</div></div>';
-}
+    '<button class="btn sec" style="margin-top:10px" onclick="go(\'bemvindo\')">Voltar</button>'+
+    '<div class="meta" style="text-align:center;margin-top:10px">Se voc\u00ea tem menos de 18 anos, feche esta p\u00e1gina.</div></div>');
+};
+window.irCriarConta=function(tipo){
+  IDADE_DESTINO = (tipo==='empresa') ? 'registrarEmpresa' : 'registrar';
+  if(jaConfirmouIdade()){ nav(IDADE_DESTINO); return; }
+  STATE.stack=['maioridade']; render();
+};
 VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
   STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null;
   document.getElementById('crumb').innerHTML='';
-  if(!jaConfirmouIdade()){ app(portaIdade()); return; }
   var t=STATE.loginTipo||'manejador';
   var texto = (t==='empresa') ? t18n('bv_texto_emp') : t18n('bv_texto_manej');
   app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
@@ -3767,7 +3835,7 @@ VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
     '<div class="card"><h3 style="margin:0 0 8px">'+(t==='empresa'?t18n('bv_para_emp'):t18n('bv_para_manej'))+'</h3>'+
     '<p style="font-size:14.5px;line-height:1.65;color:var(--txt);margin:0">'+texto+'</p></div>'+
     '<button class="btn" onclick="go(\'login\')">'+t18n('entrar')+'</button>'+
-    '<button class="btn sec" style="margin-top:10px" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')">'+t18n('criarConta')+'</button>'+
+    '<button class="btn sec" style="margin-top:10px" onclick="irCriarConta(\''+(t==='empresa'?'empresa':'manejador')+'\')">'+t18n('criarConta')+'</button>'+
     '<div style="text-align:center;margin-top:12px;font-size:11px;color:#cfc9bd">'+APP_VER+'</div>');
 };
 
@@ -3818,14 +3886,19 @@ VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.em
 };
 window.setLoginTipo=function(t){ STATE.loginTipo=t; render(); };
 function aplicarAuth(r){
-  // O token é guardado AQUI, e não em cada chamada. O cadastro não salvava e a
-  // conta nova nascia sem sessão: tudo depois falhava com "não autenticado".
-  if(r && r.token) salvarToken(r.token);
+  /* Sem token não existe login. Antes esta função seguia em frente mesmo assim
+     e desenhava a tela inicial com uma sessão fantasma — foi o que fez o
+     cadastro "entrar direto" com o HTML e a função descasados. */
+  if(!r || !r.token){
+    toast('Não foi possível entrar. Atualize a página (Ctrl+Shift+R) e tente de novo.');
+    return false;
+  }
+  salvarToken(r.token);
   aplicarIdiomaDaConta(r && r.idioma);
   STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin; STATE.promoInd=r.promoInd||null;
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
-  aplicarFundo(); render(); iniciarPromoPoll(); }
+  aplicarFundo(); render(); iniciarPromoPoll(); return true; }
 var PROMO_TIMER=null;
 
 /* ================= MÁSCARAS ================= */
@@ -4391,14 +4464,14 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
     '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Conta de empresa</button></div></div>');
   carregarDesafio(); };
-/* ---- Indicação: pergunta primeiro, campo depois ---- */
-var IND_OK=null;   // null = não checado, true/false = resultado do servidor
+/* ---- Indicação: pergunta primeiro, campo da chave depois ---- */
+var IND_OK=null;   // null = não checado, true/false = resposta do servidor
 function blocoIndicacao(){
   return '<div style="margin-top:6px"><label>Alguém indicou o JavaStreak para você?</label>'+
-    '<select id="f_temInd" onchange="mudouIndicacao()"><option value="nao">Não</option><option value="sim">Sim, fui indicado</option></select></div>'+
+    '<select id="f_temInd" onchange="mudouIndicacao()"><option value="nao">Não</option><option value="sim">Sim, tenho uma chave</option></select></div>'+
     '<div id="f_indBox" style="display:none">'+
-    '<label>E-mail de quem indicou *</label>'+
-    '<input id="f_ind" type="email" placeholder="email@dequemindicou.com" oninput="limparIndicador()" onblur="checarIndicador()">'+
+    '<label>Chave de indicação *</label>'+
+    '<input id="f_ind" placeholder="JS-XXXX-XXXX" maxlength="14" style="text-transform:uppercase;letter-spacing:1px" oninput="limparIndicador()" onblur="checarIndicador()">'+
     '<div id="f_indMsg" class="meta" style="margin:-4px 0 8px"></div></div>';
 }
 window.mudouIndicacao=function(){
@@ -4410,23 +4483,24 @@ window.mudouIndicacao=function(){
 window.limparIndicador=function(){ IND_OK=null; var m=document.getElementById('f_indMsg'); if(m) m.textContent=''; };
 window.checarIndicador=function(){
   var m=document.getElementById('f_indMsg'); if(!m) return;
-  var e=val('f_ind');
-  if(!e||e.indexOf('@')<0){ IND_OK=null; m.textContent=''; return; }
+  var c=val('f_ind');
+  if(soAlfaNum(c).length<8){ IND_OK=null; m.textContent=''; return; }
   m.textContent=trFrase('Conferindo…');
-  server('apiValidarIndicador',e).then(function(r){
+  server('apiValidarIndicador',c).then(function(r){
     IND_OK=!!r.valido;
     m.innerHTML = IND_OK
-      ? '<span style="color:var(--verde)">'+trFrase('✅ Indicação confirmada')+'</span>'
-      : '<span style="color:var(--danger)">'+trFrase('❌ Esse e-mail não tem conta confirmada no JavaStreak')+'</span>';
+      ? '<span style="color:var(--verde)">'+trFrase('✅ Chave válida')+'</span>'
+      : '<span style="color:var(--danger)">'+trFrase('❌ Chave não encontrada ou de conta não confirmada')+'</span>';
   }).catch(function(){ IND_OK=null; m.textContent=trFrase('Não foi possível conferir agora'); });
 };
-/* Devolve o e-mail do indicador, ou false se a checagem impede seguir. */
+function soAlfaNum(x){ return String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+/* Devolve a chave, '' se não houve indicação, ou false se não pode seguir. */
 function indicacaoParaEnviar(){
   if(val('f_temInd')!=='sim') return '';
-  var e=val('f_ind');
-  if(!e){ toast('Informe o e-mail de quem indicou'); return false; }
-  if(IND_OK!==true){ toast('Confira o e-mail de quem indicou — ele precisa ter conta confirmada'); checarIndicador(); return false; }
-  return e;
+  var c=val('f_ind');
+  if(!c){ toast('Informe a chave de indicação'); return false; }
+  if(IND_OK!==true){ toast('Chave inválida — confira com quem indicou'); checarIndicador(); return false; }
+  return c;
 }
 
 /* ---- termo e verificação (usados nos dois cadastros) ---- */
@@ -4516,12 +4590,12 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
     dataNascimento:val('f_nasc'),sexo:val('f_sexo'),cpf:val('f_cpf'),cr:val('f_cr'),
     telefone:telCompleto('f_tel'),whatsapp:telCompleto('f_wa'),
     endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),
-    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, indicadoPor:ind,
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, chaveIndicacao:ind,
     captcha:CAPTCHA_TOKEN})
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha();
-    if(e&&e.message==='INDICADOR_INVALIDO') toast('Quem indicou precisa ter conta confirmada'); }); };
+    if(e&&e.message==='INDICADOR_INVALIDO') toast('Chave inválida — confira com quem indicou'); }); };
 
 /* 18 anos completos, contados no fuso local. */
 function maior18(nasc){
@@ -4576,12 +4650,12 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
     descricao:val('fe_desc'),telefone:telCompleto('fe_tel'),whatsapp:telCompleto('fe_wa'),
     cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),
     instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto'),
-    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, indicadoPor:indE,
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, chaveIndicacao:indE,
     captcha:CAPTCHA_TOKEN, cnpj:val('fe_cnpj')})
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao();
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); MINHA_CHAVE=null;
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
 /* ============================================================
@@ -7532,6 +7606,13 @@ function renderCevaPanel(){
    ============================================================ */
 function iniciar(){ loadingBox('Conectando ao servidor…');
   server('apiPing').then(function(p){ STATE.appNome='JavaStreak'; setTitulo(STATE.appNome);
+    /* Front e backend têm que estar na mesma entrega. Quando não estão, o app
+       faz coisas sem explicação — foi assim que o cadastro pulou a confirmação
+       de e-mail. Melhor gritar do que deixar o usuário adivinhando. */
+    if(p && p.apiVer && p.apiVer !== APP_VER){
+      console.warn('Versão descasada — HTML', APP_VER, '| função', p.apiVer);
+      setTimeout(function(){ toast('Atenção: app '+APP_VER+' e servidor '+p.apiVer+' estão em versões diferentes. Atualize a página.'); }, 800);
+    }
     if(AUTH.token){ return server('apiBoot').then(function(b){ aplicarIdiomaDaConta(b.idioma); STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin; STATE.promoInd=b.promoInd||null;
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
