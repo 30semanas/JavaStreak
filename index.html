@@ -944,7 +944,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.0002';
+var APP_VER = 'vJS.260726.1657';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1800,6 +1800,20 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    '📧 Envio de e-mail (Resend)':'📧 Email delivery (Resend)',
+    'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Sends a real email and shows the exact error if it fails.',
+    'Enviar teste para':'Send test to',
+    'Testar envio':'Test delivery',
+    'Informe o e-mail de destino':'Enter the destination email',
+    'Chave RESEND_API_KEY configurada':'RESEND_API_KEY is set',
+    'Chave RESEND_API_KEY ausente':'RESEND_API_KEY is missing',
+    'Remetente:':'Sender:',
+    '⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.':'⚠️ Resend test sender: it only delivers to the address of the Resend account owner. Set EMAIL_REMETENTE to a verified domain.',
+    '✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.':'✅ Email accepted by Resend. Check the inbox and the spam folder.',
+    '❌ Falha no envio:':'❌ Delivery failed:',
+    'Última falha registrada':'Last recorded failure',
+    'Nenhuma falha registrada até agora.':'No failures recorded so far.',
+    'Erro no diagnóstico':'Diagnostics error',
     '🔒 Compartilhar a sala está disponível no plano':'🔒 Sharing the room is available on the plan',
     '🔒 Disponível no plano Empresa.':'🔒 Available on the Company plan.',
     '🔒 Oculto na rede':'🔒 Hidden on the network',
@@ -2842,6 +2856,20 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    '📧 Envio de e-mail (Resend)':'📧 Envío de correo (Resend)',
+    'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Envía un correo real y muestra el error exacto si falla.',
+    'Enviar teste para':'Enviar prueba a',
+    'Testar envio':'Probar envío',
+    'Informe o e-mail de destino':'Indique el correo de destino',
+    'Chave RESEND_API_KEY configurada':'RESEND_API_KEY configurada',
+    'Chave RESEND_API_KEY ausente':'Falta RESEND_API_KEY',
+    'Remetente:':'Remitente:',
+    '⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.':'⚠️ Remitente de prueba de Resend: solo entrega al correo del dueño de la cuenta Resend. Configure EMAIL_REMETENTE con un dominio verificado.',
+    '✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.':'✅ Correo aceptado por Resend. Revise la bandeja de entrada y el spam.',
+    '❌ Falha no envio:':'❌ Falló el envío:',
+    'Última falha registrada':'Última falla registrada',
+    'Nenhuma falha registrada até agora.':'Ninguna falla registrada hasta ahora.',
+    'Erro no diagnóstico':'Error en el diagnóstico',
     '🔒 Compartilhar a sala está disponível no plano':'🔒 Compartir la sala está disponible en el plan',
     '🔒 Disponível no plano Empresa.':'🔒 Disponible en el plan Empresa.',
     '🔒 Oculto na rede':'🔒 Oculto en la red',
@@ -4586,6 +4614,9 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
       '<label>Nova senha (vazio = gerar autom\u00e1tica)</label><input id="rp_senha" placeholder="deixe vazio para gerar">'+
       '<button class="btn" onclick="adminReset(this)">Redefinir senha</button><div id="rpRes" style="margin-top:10px"></div></div>'+
+      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udce7 Envio de e-mail (Resend)</h3><div class="meta" style="margin-bottom:8px">Dispara um e-mail de verdade e mostra o erro exato se falhar.</div>'+
+      '<label>Enviar teste para</label><input id="de_dest" type="email" placeholder="seu@email.com">'+
+      '<button class="btn sec" onclick="diagEmail(this)">Testar envio</button><div id="emDiag" style="margin-top:10px"></div></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcdc Termos de uso e privacidade</h3><div class="meta">Texto exibido no cadastro. Protegido contra altera\u00e7\u00e3o acidental.</div></div><button class="ib" id="tmLapis" onclick="editarTermo()" title="Editar termo">\u270f\ufe0f</button></div><div id="tmBox"></div></div>'+
       '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf81 Liberar acesso (cortesia)</h3><div class="meta" style="margin-bottom:8px">D\u00ea acesso gratuito por tempo determinado \u2014 para testes ou parceiros.</div>'+
       '<label>Quem recebe</label><select id="ct_destino" onchange="mudouDestino()"><option value="login">Um usu\u00e1rio espec\u00edfico</option><option value="manejadores">Todos os manejadores</option><option value="empresas">Todas as empresas</option><option value="todos">Todos os usu\u00e1rios</option><option value="novos:7">Cadastrados nos \u00faltimos 7 dias</option><option value="novos:30">Cadastrados nos \u00faltimos 30 dias</option></select>'+
@@ -4614,7 +4645,7 @@ var ADM_SECOES=[
                    load:['carregarPagsAdm']},
   {k:'planos',     nome:'🎚️ Planos',     titulos:['💰 Preços dos planos','🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
                    load:['carregarParametros','carregarLimites','carregarAssinaturas']},
-  {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📜 Termos de uso e privacidade'],
+  {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📧 Envio de e-mail (Resend)','📜 Termos de uso e privacidade'],
                    load:['carregarParametros','carregarTermoAdm']}
 ];
 var ADM_TAB='denuncias', ADM_PRONTO={};
@@ -4678,6 +4709,32 @@ window.darCortesia=function(btn){ var d=val('ct_destino');
   .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
 var LIMDADOS=null;
+window.diagEmail=function(btn){
+  var el=document.getElementById('emDiag');
+  var dest=(document.getElementById('de_dest')||{}).value||'';
+  if(!dest.trim()){ el.innerHTML='<div class="meta">Informe o e-mail de destino</div>'; traduzirDOM(el); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Enviando…');
+  el.innerHTML='<div class="loading"><div class="spin"></div></div>';
+  server('apiDiagEmail',dest).then(function(d){
+    btn.disabled=false; btn.textContent=rot;
+    var env=d.envio||{};
+    el.innerHTML='<div class="card" style="margin:0">'+
+      '<div>'+(d.temChave?'✅':'❌')+' <span>'+(d.temChave?'Chave RESEND_API_KEY configurada':'Chave RESEND_API_KEY ausente')+'</span></div>'+
+      '<div class="meta" style="margin-top:6px">Remetente: <b class="no-i18n">'+esc(d.remetente||'')+'</b></div>'+
+      (d.sandbox?'<div style="margin-top:8px;padding:10px;background:#fff4e5;border-radius:8px"><div class="meta">⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.</div></div>':'')+
+      (env.ok
+        ? '<div style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:8px"><div class="meta">✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.</div></div>'
+        : '<div style="margin-top:10px;padding:10px;background:#fbe3e0;border-radius:8px"><div class="meta">❌ Falha no envio:</div><div class="meta no-i18n" style="margin-top:4px">'+esc(String(env.erro||'').slice(0,400))+'</div></div>')+
+      (d.ultimaFalha
+        ? '<details style="margin-top:8px"><summary class="meta" style="cursor:pointer">Última falha registrada</summary><div class="meta no-i18n" style="margin-top:6px">'+esc(d.ultimaFalha)+'</div></details>'
+        : '<div class="meta" style="margin-top:8px">Nenhuma falha registrada até agora.</div>')+
+      '</div>';
+    traduzirDOM(el); iconizar(el);
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent=rot;
+    el.innerHTML='<div class="meta">'+trFrase('Erro no diagnóstico')+': <span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div>';
+  });
+};
 window.diagMP=function(btn){ btn.disabled=true; btn.textContent='Verificando…';
   var el=document.getElementById('mpDiag');
   server('apiDiagMP').then(function(d){ btn.disabled=false; btn.textContent='Verificar configuração';
