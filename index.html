@@ -188,6 +188,15 @@
     box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -3px 5px rgba(60,35,15,.4);
     transition:filter .12s,transform .12s}
   .sb-item:hover{filter:brightness(1.07);transform:translateX(2px)}
+  /* MANEJO em destaque no topo, pulsando devagar */
+  .sb-item.destaque{background:repeating-linear-gradient(88deg,rgba(0,0,0,.06) 0 3px,rgba(255,255,255,.04) 3px 9px),linear-gradient(180deg,#3f7a3a 0%,#2f6330 55%,#255127 100%);
+    border-color:#1e3f1c;color:#fff;animation:pulsaManejo 2.8s ease-in-out infinite}
+  .sb-item.destaque .sb-num{background:#f6e8cc;color:#2f6330}
+  @keyframes pulsaManejo{
+    0%,100%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 0 rgba(90,180,90,.55);transform:scale(1)}
+    50%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 7px rgba(90,180,90,0);transform:scale(1.02)} }
+  @media (prefers-reduced-motion:reduce){ .sb-item.destaque{animation:none} }
+  .sb-item .sb-num{margin-left:auto;background:#f6e8cc;color:#6b3f1d;border-radius:10px;font-size:11px;padding:1px 7px;font-family:system-ui,sans-serif}
   .sb-item.active{box-shadow:0 3px 8px rgba(0,0,0,.45),inset 0 0 0 2px #ee8a2e,inset 0 1px 0 rgba(255,255,255,.18)}
   .sb-item img{width:42px;height:42px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 1px rgba(255,255,255,.18)) drop-shadow(0 -1px 1px rgba(0,0,0,.55))}
   .sb-item span{text-shadow:0 1px 1px rgba(40,20,5,.65),0 0 1px rgba(0,0,0,.35)}
@@ -854,7 +863,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2235';
+var APP_VER = 'vJS.250726.2303';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +924,12 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
+    'Centro do limite':'Boundary center',
+    'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'The drawing sets the property location (center of the area), shows on your map and is required for a free session.',
+    'O local do abate é o da ceva escolhida.':'The take location is the chosen feeder.',
+    'Você está aqui':'You are here',
+    'e-mail de acesso dele':'his access e-mail',
     /* --- Menu TRANSPORTES (ARAS/GARAGEM/MARINA) e manutenção --- */
     'ARAS':'ARAS',
     'GARAGEM':'GARAGEM',
@@ -1946,6 +1961,12 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
+    'Centro do limite':'Centro del límite',
+    'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'El dibujo define la ubicación de la propiedad (centro del área), aparece en su mapa y es exigido en el manejo libre.',
+    'O local do abate é o da ceva escolhida.':'El lugar del abate es el del comedero elegido.',
+    'Você está aqui':'Usted está aquí',
+    'e-mail de acesso dele':'su e-mail de acceso',
     /* --- Menu TRANSPORTES (ARAS/GARAGEM/MARINA) e manutenção --- */
     'ARAS':'ARAS',
     'GARAGEM':'GARAGEM',
@@ -3136,12 +3157,12 @@ function updateHeader(){
   if(!logado) closeMenu();
 }
 var NAV_MANEJADOR=[
+  {v:'manejoHub', label:'Manejo',            icon:'abate', destaque:true},
   {v:'inicio',    label:'Início',            icon:'inicio'},
   {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
   {v:'espreita',  label:'Transportes',       icon:'espreita'},
   {v:'caes',      label:'Meu canil',         icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
-  {v:'manejoHub', label:'Manejo',            icon:'abate'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
   {v:'documentacao',label:'Documentação',  icon:'documentacao'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
@@ -3179,8 +3200,9 @@ function buildSidebar(){
   nav.innerHTML=lista.map(function(n){
     var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
     var bloq = moduloBloqueado(n.v);
-    return '<div class="sb-item'+(root===n.v?' active':'')+(bloq?' travado':'')+'" onclick="go(\''+n.v+'\')">'+ic+
-      '<span>'+trFrase(n.label)+'</span>'+(bloq?'<span class="sb-lock">🔒</span>':'')+'</div>';
+    var extra = (n.v==='manejoHub' && MEUS_CONVITES.length) ? '<span class="sb-num">'+MEUS_CONVITES.length+'</span>' : '';
+    return '<div class="sb-item'+(root===n.v?' active':'')+(bloq?' travado':'')+(n.destaque?' destaque':'')+'" onclick="go(\''+n.v+'\')">'+ic+
+      '<span>'+trFrase(n.label)+'</span>'+extra+(bloq?'<span class="sb-lock">🔒</span>':'')+'</div>';
   }).join('');
   var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
   pintarCampanha();
@@ -3366,11 +3388,8 @@ function suportaWebmAlpha(){
   }catch(e){ return false; }
 }
 function huntLoader(txt){
-  var corpo = suportaWebmAlpha()
-    ? '<video class="boar-video" autoplay loop muted playsinline preload="auto"><source src="'+BOAR_VIDEO+'" type="video/webm"></video>'
-    : '<div class="boar-sprite" style="background-image:url('+BOAR_SPRITE+')"></div>';
-  return '<div class="hunt"><div class="boar-anim">'+corpo+'</div>'+
-    '<div class="hunt-txt">'+(txt||'Carregando…')+'</div></div>'; }
+  /* sem o javali: spinner limpo (o vídeo/sprite continua no arquivo, sem uso) */
+  return '<div class="loading"><div class="spin"></div>'+(txt||'Carregando…')+'</div>'; }
 function loadingBox(txt){ app(huntLoader(txt)); }
 function fmtData(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T')[0].split('-');return d[2]+'/'+d[1]+'/'+d[0];} if(s.indexOf('-')===4){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];} return s; }
 function fmtDataHora(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T');var dd=d[0].split('-');var hh=(d[1]||'').substring(0,5);return dd[2]+'/'+dd[1]+'/'+dd[0]+' '+hh;} return fmtData(iso); }
@@ -3644,14 +3663,13 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
     '<label>Nº da autorização de manejo</label><input id="pr_autnum" value="'+esc(p.autorizacaoNum||'')+'">'+
     '<label>Validade da autorização</label><input id="pr_autval" type="date" value="'+esc((p.autorizacaoValidade||'').slice(0,10))+'">'+
-    '<div class="two"><div><label>Latitude</label><input id="pr_lat" inputmode="decimal" value="'+esc(p.lat||'')+'"></div>'+
-    '<div><label>Longitude</label><input id="pr_lng" inputmode="decimal" value="'+esc(p.lng||'')+'"></div></div>'+
-    gpsButton('pr_lat','pr_lng')+
+    '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
+    (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
     '<div class="meta" style="margin:10px 0 4px"><b>'+trFrase('Limite da propriedade')+'</b> — '+
       (PROPEDIT&&PROPEDIT.temLimite? trFrase('desenhado')+' ('+((PROPEDIT.limite||[]).length)+' '+trFrase('pontos')+')' : trFrase('ainda não desenhado'))+'</div>'+
     '<button class="btn sec" onclick="desenharLimite()">🗺️ '+trFrase(PROPEDIT&&PROPEDIT.temLimite?'Redesenhar limite no mapa':'Desenhar limite no mapa')+'</button>'+
-    '<div class="meta" style="margin:4px 0 10px;font-size:12px">O limite aparece no seu mapa e é exigido no manejo livre.</div>'+
+    '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.')+'</div>'+
     '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
 function desenharLimitesEm(layer, props, pts){
@@ -3715,7 +3733,7 @@ window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
   if(LIM_DRAW.pontos.length && LIM_DRAW.pontos.length<3){ toast('Marque ao menos 3 pontos para fechar a área'); return; }
   var v=LIM_DRAW.volta;
   var d={ nome:v.nome||LIM_DRAW.nome, dono:v.dono, documentoDono:v.documentoDono, autorizacaoNum:v.autorizacaoNum,
-    autorizacaoValidade:v.autorizacaoValidade, lat:v.lat, lng:v.lng, obs:v.obs, limite:LIM_DRAW.pontos };
+    autorizacaoValidade:v.autorizacaoValidade, obs:v.obs, limite:LIM_DRAW.pontos };
   if(!d.nome){ toast('Informe o nome da propriedade'); return; }
   if(LIM_DRAW.propId) d.id=LIM_DRAW.propId;
   btn.disabled=true; btn.textContent='Salvando…';
@@ -3724,8 +3742,7 @@ window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
 window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
-    autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),
-    lat:val('pr_lat'),lng:val('pr_lng'),obs:val('pr_obs')};
+    autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),obs:val('pr_obs')};
   if(PROPEDIT) d.id=PROPEDIT.id;
   server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; voltarPropriedades(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
@@ -5179,13 +5196,30 @@ window.avaliarTrofeu=function(id,nota,el){ var cont=el.parentNode; var stars=con
 /* ============================================================
    INÍCIO / MÓDULOS
    ============================================================ */
+/* Convites pendentes (manejo, ceva, propriedade) num lugar só. Alimenta o
+   número no menu e o aviso da tela inicial — antes só apareciam se o
+   convidado entrasse no MANEJO, e passavam despercebidos. */
+function carregarConvites(){
+  if(STATE.tipo==='empresa') return Promise.resolve([]);
+  return Promise.all([ server('apiMeusConvitesManejo').catch(function(){return [];}),
+                       server('apiMeusConvitesCompart').catch(function(){return [];}) ])
+    .then(function(r){ MEUS_CONVITES=(r[0]||[]).concat(r[1]||[]);
+      try{ buildSidebar(); }catch(e){}
+      var el=document.getElementById('inicioConvites');
+      if(el) el.innerHTML = MEUS_CONVITES.length
+        ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="irParaConvites()">'+
+          '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite pendente':'convites pendentes')+'</h3>'+
+          '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
+      return MEUS_CONVITES; }); }
+window.irParaConvites=function(){ STATE.stack=['manejoHub','manejoConvites']; render(); };
 VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crumb').innerHTML='';
   var nome=(STATE.manejador&&STATE.manejador.nome)?STATE.manejador.nome.split(' ')[0]:'';
   app(heroFoto('inicio',trFrase('Bem-vindo,')+' '+nome,trFrase('Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.'),'JavaStreak')+
-    '<div id="inicioAlerta"></div>'+
+    '<div id="inicioConvites"></div><div id="inicioAlerta"></div>'+
     '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
     '<div id="blogBox" style="margin-top:4px"><div class="loading"><div class="spin"></div></div></div>'+
     '');
+  carregarConvites();
   server('apiAgenda').then(function(itens){ var h=diaHoje();
     var atr=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)<h;}).length;
     var prox=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)>=h&&(new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=7;}).length;
@@ -5781,10 +5815,18 @@ VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
   if(alvo){ L.marker([alvo.lat,alvo.lng],{icon:emojiIcon('🌽',34)}).addTo(map).bindPopup('🌽 '+esc(alvo.nome)); pts.push([alvo.lat,alvo.lng]); }
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} } },150);
   if(!navigator.geolocation){ toast('GPS não suportado'); return; }
-  var me=null, linha=null;
+  var me=null, meHalo=null, linha=null;
+  function porMim(cur){
+    if(me){ me.setLatLng([cur.lat,cur.lng]); meHalo.setLatLng([cur.lat,cur.lng]); }
+    else { meHalo=L.circleMarker([cur.lat,cur.lng],{radius:11,color:'#1f6feb',weight:2,fillColor:'#1f6feb',fillOpacity:.25}).addTo(map);
+      me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
+  navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP!==map) return;
+    var c0={lat:pos.coords.latitude,lng:pos.coords.longitude}; porMim(c0);
+    if(!alvo) map.setView([c0.lat,c0.lng],15);
+  }, function(){}, {enableHighAccuracy:true,timeout:8000});
   GEOWATCH=navigator.geolocation.watchPosition(function(pos){
     var cur={lat:pos.coords.latitude,lng:pos.coords.longitude}; LASTPOS=cur;
-    if(me) me.setLatLng([cur.lat,cur.lng]); else me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map);
+    porMim(cur);
     var msg=document.getElementById('guiaMsg');
     if(alvo){
       var d=distMetros(cur,alvo);
@@ -5827,10 +5869,17 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
   server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms; (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m)); }); }).catch(function(){});
   setTimeout(function(){ map.invalidateSize(); try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} },150);
   if(!navigator.geolocation){ toast('GPS não suportado'); return; }
-  var me=null;
+  var me=null, meHalo=null;
+  function porMim(cur){
+    if(me){ me.setLatLng([cur.lat,cur.lng]); meHalo.setLatLng([cur.lat,cur.lng]); }
+    else { meHalo=L.circleMarker([cur.lat,cur.lng],{radius:11,color:'#1f6feb',weight:2,fillColor:'#1f6feb',fillOpacity:.25}).addTo(map);
+      me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
+  /* posição inicial imediata: sem isso o usuário só aparece no primeiro watch */
+  navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP!==map) return;
+    porMim({lat:pos.coords.latitude,lng:pos.coords.longitude}); }, function(){}, {enableHighAccuracy:true,timeout:8000});
   GEOWATCH=navigator.geolocation.watchPosition(function(pos){
     var cur={lat:pos.coords.latitude,lng:pos.coords.longitude}; LASTPOS=cur;
-    if(me) me.setLatLng([cur.lat,cur.lng]); else me=L.marker([cur.lat,cur.lng],{icon:emojiIcon(iconeTransp(r.tipoTransporte),32),zIndexOffset:1000}).addTo(map);
+    porMim(cur);
     map.panTo([cur.lat,cur.lng]);
     var best=Infinity, idx=0;
     for(var i=0;i<r.pontos.length;i++){ var dd=distMetros(cur,r.pontos[i]); if(dd<best){best=dd; idx=i;} }
@@ -6273,8 +6322,7 @@ VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
       (m.souDono===false?'<br>'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+' · '+trFrase('você só registra abate'):'')+'</div>'+
       '<div class="meta" style="margin-top:4px">Toque para ver'+(m.souDono===false?'.':' ou encerrar.')+'</div></div>' : '';
   }).catch(function(){});
-  Promise.all([ server('apiMeusConvitesManejo'), server('apiMeusConvitesCompart').catch(function(){return [];}) ])
-  .then(function(res){ MEUS_CONVITES=(res[0]||[]).concat(res[1]||[]); var el=document.getElementById('mnConvites'); if(!el) return;
+  carregarConvites().then(function(){ var el=document.getElementById('mnConvites'); if(!el) return;
     el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
       '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite pendente':'convites pendentes')+'</h3>'+
       '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
@@ -6449,7 +6497,7 @@ function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status
         '<button class="btn sec" style="margin-top:8px" onclick="sairDoManejo()">Sair deste manejo</button></div>';
   var amigos = (aberto && souDono)
     ? '<h3 style="margin:14px 4px 6px">🤝 '+trFrase('Amigos no manejo')+'</h3>'+
-      '<div class="card"><label>Login do amigo</label><input id="mn_amigo" placeholder="usuário do manejador">'+
+      '<div class="card"><label>Login do amigo</label><input id="mn_amigo" placeholder="e-mail de acesso dele">'+
       '<button class="btn sm" style="width:auto" onclick="convidarAmigo(this)">Convidar</button>'+
       '<div class="meta" style="margin-top:6px">O amigo precisa aceitar. Dentro do manejo ele só registra abate.</div>'+
       '<div id="mnAmigos"></div></div>'
@@ -6564,6 +6612,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<button class="btn" onclick="voltarENovoManejo()">＋ NOVO MANEJO</button></div>'); return; }
     ABATE_MANEJO = m || null;
     var cevas=(m&&m.cevas)||[], rotas=(m&&m.rotas)||[], gente=(m&&m.participantes)||[];
+    var mostraLocal = ed ? true : !(m && m.tipo==='ceva');
     var ctx = ed
       ? '<div class="meta" style="margin-bottom:8px">'+trFrase('Manejo')+': <b>'+esc(EDIT.manejoNome||'—')+'</b>'+
         (EDIT.abatidoPorNome?' · '+trFrase('Abatido por')+' '+esc(EDIT.abatidoPorNome):'')+'</div>'
@@ -6579,9 +6628,11 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
           gente.map(function(g){ return '<option value="'+esc(g.id)+'">'+esc(g.nome||'—')+(g.dono?' ('+trFrase('eu')+')':'')+'</option>'; }).join('')+'</select>';
     app('<div class="card">'+ctx+
         '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local" onchange="sugerirLua()"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
-        '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
-        '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
-        gpsButton('ab_lat','ab_lng')+
+        '<div class="two"><div><label>Sexo *</label><select id="ab_sexo"><option>Macho</option><option>Fêmea</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
+        (mostraLocal
+          ? '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+gpsButton('ab_lat','ab_lng')
+          : '<input type="hidden" id="ab_lat" value=""><input type="hidden" id="ab_lng" value="">'+
+            '<div class="meta" style="margin:6px 0">📍 '+trFrase('O local do abate é o da ceva escolhida.')+'</div>')+
         '<label>Observações</label><textarea id="ab_obs">'+esc(pv('obs'))+'</textarea>'+
         '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(opcional)')+'</label>'+
         (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
