@@ -232,6 +232,16 @@
   .segbar{display:flex;gap:8px;margin:8px 0 12px;background:#efe3cc;border:1px solid #e0d4b6;border-radius:14px;padding:5px}
   .segbar button{flex:1;border:none;background:transparent;color:var(--txt2);font-size:14px;font-weight:700;padding:11px 6px;border-radius:10px;cursor:pointer}
   .segbar button.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;box-shadow:0 2px 8px rgba(46,77,46,.3)}
+  .tipo-conta{display:flex;gap:10px;margin:6px 0 14px}
+  .tipo-conta button{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:16px 8px;border-radius:16px;cursor:pointer;font-size:15px;font-weight:700;
+    background:#fff;color:var(--txt);border:2px solid #e0d4b6;transition:.15s}
+  .tipo-conta button .ic-svg{width:30px;height:30px;stroke-width:1.5}
+  .tipo-conta button small{font-size:11.5px;font-weight:500;opacity:.75;line-height:1.3}
+  .tipo-conta button.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;border-color:#2e4d2e;
+    box-shadow:0 4px 14px rgba(46,77,46,.32);transform:translateY(-1px)}
+  .tipo-conta button.on .ic-svg{stroke:#ffb27a}
+  .tipo-conta button.on small{opacity:.9;color:#e8dfc9}
   .hbell{position:relative;background:transparent;border:none;color:#fff;font-size:19px;cursor:pointer;width:32px}
   .hbadge{position:absolute;top:-4px;right:-2px;background:#ee2e2e;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;border-radius:9px;padding:0 3px;display:none}
   .hbadge.on{display:block}
@@ -957,7 +967,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1820';
+var APP_VER = 'vJS.260726.1831';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1813,6 +1823,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Que tipo de conta você quer criar?':'What kind of account do you want to create?',
+    'Cevas, rotas, cães, abates e troféus':'Baits, routes, dogs, harvests and trophies',
+    'Loja no mapa, promoções e vitrine':'Shop on the map, deals and storefront',
+    'Tenho 18 anos ou mais — continuar':'I am 18 or older — continue',
     'Sua chave de indicação':'Your referral key',
     'Copiar':'Copy',
     'Copiado ✔':'Copied ✔',
@@ -2922,6 +2936,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Que tipo de conta você quer criar?':'¿Qué tipo de cuenta quieres crear?',
+    'Cevas, rotas, cães, abates e troféus':'Cebos, rutas, perros, abates y trofeos',
+    'Loja no mapa, promoções e vitrine':'Tienda en el mapa, promociones y escaparate',
+    'Tenho 18 anos ou mais — continuar':'Tengo 18 años o más — continuar',
     'Sua chave de indicação':'Tu clave de recomendación',
     'Copiar':'Copiar',
     'Copiado ✔':'Copiado ✔',
@@ -3801,28 +3819,42 @@ var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
    (entrar / criar conta). É a primeira coisa que quem não está logado vê. */
 /* Porta de maioridade: primeira coisa que aparece para quem abre o link.
    A resposta fica no aparelho — quem já confirmou não vê de novo. */
-var MAIOR_CHAVE='js_maior18';
-function jaConfirmouIdade(){ try{ return localStorage.getItem(MAIOR_CHAVE)==='1'; }catch(e){ return false; } }
 window.limparChaveLocal=function(){ MINHA_CHAVE=null; };
 window.confirmarMaioridade=function(){
-  try{ localStorage.setItem(MAIOR_CHAVE,'1'); }catch(e){}
   STATE.stack=['bemvindo']; nav(IDADE_DESTINO||'registrar');
 };
-/* Porta de maioridade: só para quem vai CRIAR conta. Quem clica em Entrar já
-   passou por aqui no dia em que se cadastrou. */
+/* Tela de criar conta: escolha do tipo em dois botões grandes no topo e a
+   declaração de maioridade logo abaixo. A declaração aparece SEMPRE, a cada
+   conta criada — é mais firme do que uma marca guardada no aparelho, e evita
+   o caso em que alguém confirmou uma vez e nunca mais viu o aviso. */
 var IDADE_DESTINO='registrar';
-VIEWS.maioridade=function(){ setTitulo(STATE.appNome); setCrumb('Criar conta');
-  app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
+window.escolherTipoConta=function(tipo){
+  IDADE_DESTINO = (tipo==='empresa') ? 'registrarEmpresa' : 'registrar';
+  STATE.loginTipo = tipo;
+  var bts=document.querySelectorAll('.tipo-conta button');
+  for(var i=0;i<bts.length;i++) bts[i].classList.toggle('on', bts[i].getAttribute('data-tipo')===tipo);
+  var b=document.getElementById('btnIdade'); if(b) b.disabled=false;
+};
+VIEWS.maioridade=function(){ setTitulo('Criar conta'); setCrumb('Criar conta');
+  var tipo=(IDADE_DESTINO==='registrarEmpresa')?'empresa':'manejador';
+  app('<div style="text-align:center;margin:12px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:270px"></div>'+
+    '<h3 style="margin:14px 4px 2px">Que tipo de conta você quer criar?</h3>'+
+    '<div class="tipo-conta">'+
+      '<button data-tipo="manejador" class="'+(tipo==='manejador'?'on':'')+'" onclick="escolherTipoConta(\'manejador\')">'+
+        ico('usuario',30)+'Manejador<small>Cevas, rotas, cães, abates e troféus</small></button>'+
+      '<button data-tipo="empresa" class="'+(tipo==='empresa'?'on':'')+'" onclick="escolherTipoConta(\'empresa\')">'+
+        ico('pagamentos',30)+'Empresa<small>Loja no mapa, promoções e vitrine</small></button>'+
+    '</div>'+
     '<div class="card" style="border-top:4px solid var(--alerta)">'+
     '<h3 style="margin:0 0 6px">\ud83d\udd1e Conte\u00fado para maiores de 18 anos</h3>'+
     '<p style="font-size:14.5px;line-height:1.6;margin:0 0 12px">O JavaStreak \u00e9 uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autoriza\u00e7\u00f5es legais exigidas para a atividade.</p>'+
-    '<button class="btn" onclick="confirmarMaioridade()">Tenho 18 anos ou mais</button>'+
+    '<button class="btn" id="btnIdade" onclick="confirmarMaioridade()">Tenho 18 anos ou mais \u2014 continuar</button>'+
     '<button class="btn sec" style="margin-top:10px" onclick="go(\'bemvindo\')">Voltar</button>'+
     '<div class="meta" style="text-align:center;margin-top:10px">Se voc\u00ea tem menos de 18 anos, feche esta p\u00e1gina.</div></div>');
 };
+/* Sempre passa pela tela — a escolha do tipo mora nela. */
 window.irCriarConta=function(tipo){
   IDADE_DESTINO = (tipo==='empresa') ? 'registrarEmpresa' : 'registrar';
-  if(jaConfirmouIdade()){ nav(IDADE_DESTINO); return; }
   STATE.stack=['maioridade']; render();
 };
 VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
@@ -4383,7 +4415,9 @@ window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha');
 function normEmail(x){ return String(x||'').trim().toLowerCase(); }
 
 window.sairCadastro=function(){ STATE.stack=['bemvindo']; render(); };
-window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo; STATE.stack=[tipo==='empresa'?'registrarEmpresa':'registrar']; render(); };
+window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo;
+  IDADE_DESTINO = (tipo==='empresa') ? 'registrarEmpresa' : 'registrar';
+  STATE.stack=[IDADE_DESTINO]; render(); };
 
 /* ================= RECUPERAR SENHA ================= */
 VIEWS.esqueci=function(){ setTitulo('Recuperar senha'); setCrumb('Recuperar senha');
