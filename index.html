@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2127';
+var APP_VER = 'vJS.250726.2139';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,34 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Entrega 4: amigos e convites --- */
+    'Amigos no manejo':'Friends in this session',
+    'Login do amigo':'Friend login',
+    'Convidando…':'Inviting…',
+    'O amigo precisa aceitar. Dentro do manejo ele só registra abate.':'The friend has to accept. Inside the session he can only register takes.',
+    'aceitou':'accepted',
+    'aguardando':'waiting',
+    'Tirar este amigo do manejo?':'Remove this friend from the session?',
+    'Sair deste manejo':'Leave this session',
+    'Sair deste manejo?':'Leave this session?',
+    'Você saiu do manejo':'You left the session',
+    'Informe o login do amigo':'Enter the friend login',
+    'Convites':'Invitations',
+    'Nenhum convite pendente.':'No pending invitation.',
+    'Aceitar':'Accept',
+    'Recusar':'Decline',
+    'Convidado por':'Invited by',
+    'você só registra abate':'you can only register takes',
+    'convite de manejo':'session invitation',
+    'convites de manejo':'session invitations',
+    'Toque para aceitar ou recusar.':'Tap to accept or decline.',
+    'Aceitando, você poderá registrar abates neste manejo.':'By accepting, you will be able to register takes in this session.',
+    'Recusar o convite? Ele some da sua lista e o dono precisa convidar de novo.':'Decline the invitation? It disappears from your list and the owner has to invite you again.',
+    'Convite aceito ✔':'Invitation accepted ✔',
+    'Convite recusado':'Invitation declined',
+    'Recarregue a lista de manejos':'Reload the session list',
+    'Convite enviado a':'Invitation sent to',
+    'Você foi convidado para este manejo. Aqui você só registra abate — quem edita e encerra é':'You were invited to this session. Here you only register takes — editing and closing belong to',
     /* --- Entrega 3: abate dentro do manejo --- */
     'O abate agora pertence a um manejo, e você não tem manejo aberto.':'Takes now belong to a management session, and you have no open session.',
     'Abatido por':'Taken by',
@@ -1823,6 +1851,34 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Entrega 4: amigos e convites --- */
+    'Amigos no manejo':'Amigos en el manejo',
+    'Login do amigo':'Login del amigo',
+    'Convidando…':'Invitando…',
+    'O amigo precisa aceitar. Dentro do manejo ele só registra abate.':'El amigo debe aceptar. Dentro del manejo solo registra abates.',
+    'aceitou':'aceptó',
+    'aguardando':'esperando',
+    'Tirar este amigo do manejo?':'¿Quitar a este amigo del manejo?',
+    'Sair deste manejo':'Salir de este manejo',
+    'Sair deste manejo?':'¿Salir de este manejo?',
+    'Você saiu do manejo':'Usted salió del manejo',
+    'Informe o login do amigo':'Informe el login del amigo',
+    'Convites':'Invitaciones',
+    'Nenhum convite pendente.':'Ninguna invitación pendiente.',
+    'Aceitar':'Aceptar',
+    'Recusar':'Rechazar',
+    'Convidado por':'Invitado por',
+    'você só registra abate':'usted solo registra abates',
+    'convite de manejo':'invitación de manejo',
+    'convites de manejo':'invitaciones de manejo',
+    'Toque para aceitar ou recusar.':'Toque para aceptar o rechazar.',
+    'Aceitando, você poderá registrar abates neste manejo.':'Al aceptar, usted podrá registrar abates en este manejo.',
+    'Recusar o convite? Ele some da sua lista e o dono precisa convidar de novo.':'¿Rechazar la invitación? Desaparece de su lista y el dueño tendrá que invitarlo de nuevo.',
+    'Convite aceito ✔':'Invitación aceptada ✔',
+    'Convite recusado':'Invitación rechazada',
+    'Recarregue a lista de manejos':'Recargue la lista de manejos',
+    'Convite enviado a':'Invitación enviada a',
+    'Você foi convidado para este manejo. Aqui você só registra abate — quem edita e encerra é':'Usted fue invitado a este manejo. Aquí solo registra abates — quien edita y cierra es',
     /* --- Entrega 3: abate dentro do manejo --- */
     'O abate agora pertence a um manejo, e você não tem manejo aberto.':'El abate ahora pertenece a un manejo, y usted no tiene manejo abierto.',
     'Abatido por':'Abatido por',
@@ -5768,23 +5824,31 @@ VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
       moduloCard('🎯','Novo manejo','Sessão de caça: ceva, rota ou livre',true,"novoManejo()")+
       moduloCard('📋','Manejos','Abertos e encerrados',true,"nav('manejoLista')")+
       moduloCard('🐗','Abates','Histórico de todos os abates',true,"nav('abates')");
-  app('<div id="mnAberto"></div>'+cards);
+  app('<div id="mnAberto"></div><div id="mnConvites"></div>'+cards);
   fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>');
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; var el=document.getElementById('mnAberto'); if(!el) return;
     el.innerHTML = m ? '<div class="card click" style="border-left:5px solid var(--danger)" onclick="abrirManejo(\''+escJs(m.id)+'\')">'+
-      '<h3 style="margin:0 0 4px">● Manejo aberto</h3><div class="meta">'+esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · desde '+fmtDataHora(m.criadoEm)+'</div>'+
-      '<div class="meta" style="margin-top:4px">Toque para ver ou encerrar.</div></div>' : '';
+      '<h3 style="margin:0 0 4px">● Manejo aberto</h3><div class="meta">'+esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · desde '+fmtDataHora(m.criadoEm)+
+      (m.souDono===false?'<br>'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+' · '+trFrase('você só registra abate'):'')+'</div>'+
+      '<div class="meta" style="margin-top:4px">Toque para ver'+(m.souDono===false?'.':' ou encerrar.')+'</div></div>' : '';
+  }).catch(function(){});
+  server('apiMeusConvitesManejo').then(function(l){ MEUS_CONVITES=l||[]; var el=document.getElementById('mnConvites'); if(!el) return;
+    el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
+      '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite de manejo':'convites de manejo')+'</h3>'+
+      '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
   }).catch(function(){}); };
 window.novoManejo=function(){
-  if(MANEJO_ABERTO){ toast('Você já tem um manejo aberto'); abrirManejo(MANEJO_ABERTO.id); return; }
+  var meuAberto=function(m){ return m && m.souDono!==false; };
+  if(meuAberto(MANEJO_ABERTO)){ toast('Você já tem um manejo aberto'); abrirManejo(MANEJO_ABERTO.id); return; }
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null;
-    if(m){ toast('Você já tem um manejo aberto'); abrirManejo(m.id); } else { MANEJO_EDIT=null; nav('manejoForm'); } })
+    if(meuAberto(m)){ toast('Você já tem um manejo aberto'); abrirManejo(m.id); } else { MANEJO_EDIT=null; nav('manejoForm'); } })
   .catch(function(){ MANEJO_EDIT=null; nav('manejoForm'); }); };
 window.criarRotaManual=function(){ STATE.modalidade='manejo'; STATE.rotaSoManual=true; nav('rotaForm'); };
 window.novaRota=function(){ STATE.rotaSoManual=false; nav('rotaForm'); };
 
 /* ---- Manejo: estado, formulário, lista, detalhe e encerramento ---- */
-var MANEJO_EDIT=null, MANEJO_ABERTO=null, MANEJO_ATUAL=null, MANEJO_ABA='aberto', MANEJO_OPTS={cevas:[],rotas:[],canis:[],props:[]};
+var MANEJO_EDIT=null, MANEJO_ABERTO=null, MANEJO_ATUAL=null, MANEJO_ABA='aberto', MANEJO_OPTS={cevas:[],rotas:[],canis:[],props:[]}
+var MEUS_CONVITES=[];
 function rotuloTipoManejo(t){ return {ceva:'Ceva',rota:'Rota',livre:'Livre'}[String(t||'')]||'—'; }
 function idsMarcados(box){ return [].slice.call(document.querySelectorAll('#'+box+' input:checked')).map(function(c){return c.value;}).join(','); }
 function listaChecks(box,itens,marcados,vazio){
@@ -5793,7 +5857,9 @@ function listaChecks(box,itens,marcados,vazio){
       return '<label class="check'+(m[i.id]?' on':'')+'" onclick="toggleCheck(this)"><input type="checkbox" value="'+esc(i.id)+'"'+(m[i.id]?' checked':'')+'>'+esc(i.nome||i.tipo||'—')+'</label>'; }).join('')+'</div>'
     : '<div class="checks" id="'+box+'"><div class="meta">'+vazio+'</div></div>';
 }
-window.abrirManejo=function(id){ MANEJO_ATUAL=null; STATE.manejoId=id; nav('manejoDetalhe'); };
+window.abrirManejo=function(id){ MANEJO_ATUAL=null; STATE.manejoId=id;
+  var da=(CACHE.manejo||[]).filter(function(x){return x.id===id;})[0];
+  STATE.participacaoId=(da&&da.participacaoId)||''; nav('manejoDetalhe'); };
 
 VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
   setTitulo(ed?'Editar manejo':'Novo manejo'); setCrumb('Manejo',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
@@ -5852,8 +5918,9 @@ function cardManejo(m){
   var pill = m.status==='aberto' ? '<span class="pill" style="background:var(--danger)">aberto</span>' : '<span class="pill gray">encerrado</span>';
   var partes=[]; if((m.cevas||[]).length) partes.push(m.cevas.length+' ceva(s)');
   if((m.rotas||[]).length) partes.push(m.rotas.length+' rota(s)'); if((m.canis||[]).length) partes.push(m.canis.length+' canil(is)');
+  var deQuem = (m.souDono===false) ? '<span class="pill gray">'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+'</span> ' : '';
   return '<div class="card"><div class="row"><div class="grow click" onclick="abrirManejo(\''+escJs(m.id)+'\')">'+
-    '<h3>'+pill+' '+esc(m.nome||'Manejo')+'</h3><div class="meta">'+rotuloTipoManejo(m.tipo)+' · '+fmtDataHora(m.criadoEm)+
+    '<h3>'+pill+' '+deQuem+esc(m.nome||'Manejo')+'</h3><div class="meta">'+rotuloTipoManejo(m.tipo)+' · '+fmtDataHora(m.criadoEm)+
     (partes.length?'<br>'+esc(partes.join(' · ')):'')+
     (m.status!=='aberto'?'<br>'+trFrase('Avistados')+': '+(m.avistamentos==null?0:m.avistamentos):'')+
     '</div></div><div class="chev">›</div></div></div>';
@@ -5862,7 +5929,9 @@ function cardManejo(m){
 VIEWS.manejoDetalhe=function(){ var id=STATE.manejoId; if(!id){ voltar(); return; }
   setTitulo('Manejo'); setCrumb('Manejos','Detalhe');
   if(!MANEJO_ATUAL||MANEJO_ATUAL.id!==id){ loadingBox();
-    server('apiManejo',id).then(function(m){ MANEJO_ATUAL=m; pintarManejo(); }).catch(function(e){ toast((e&&e.message)||'Erro'); voltar(); });
+    server('apiManejo',id).then(function(m){ MANEJO_ATUAL=m;
+      if(m && !m.participacaoId && STATE.participacaoId) m.participacaoId=STATE.participacaoId;
+      pintarManejo(); }).catch(function(e){ toast((e&&e.message)||'Erro'); voltar(); });
   } else pintarManejo(); };
 function linhaItens(rot,itens){ return (itens&&itens.length)? '<div class="meta">'+trFrase(rot)+': '+itens.map(function(i){return esc(i.nome);}).join(', ')+'</div>' : ''; }
 function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status==='aberto');
@@ -5874,16 +5943,70 @@ function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status
     (m.propriedade?'<div class="meta">'+trFrase('Propriedade')+': '+esc(m.propriedade.nome)+'</div>':'')+
     (m.obs?'<div class="meta" style="margin-top:6px">'+esc(m.obs)+'</div>':'')+
     (aberto?'':'<div class="meta" style="margin-top:6px">'+trFrase('Animais avistados')+': <b>'+(m.avistamentos==null?0:m.avistamentos)+'</b></div>')+'</div>';
-  var acoes = aberto
-    ? '<div class="card"><button class="btn sec" onclick="editarManejo()">✏️ Editar manejo</button>'+
-      '<div class="meta" style="margin:10px 0 6px">Encerrar: depois de encerrado ninguém mais edita este manejo.</div>'+
-      '<label>Animais avistados *</label><input id="mn_avist" inputmode="numeric" value="0">'+
-      '<button class="btn" style="background:linear-gradient(#7a2e2e,#5d2222)" onclick="encerrarManejo(this)">🔒 Encerrar manejo</button></div>'
-    : '<div class="card"><div class="meta">Manejo encerrado — somente leitura.</div></div>';
-  app(ficha+'<h3 style="margin:14px 4px 6px">🐗 '+trFrase('Abates deste manejo')+'</h3><div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>'+acoes);
+  var souDono = (m.souDono !== false);
+  var acoes = !aberto
+    ? '<div class="card"><div class="meta">Manejo encerrado — somente leitura.</div></div>'
+    : souDono
+      ? '<div class="card"><button class="btn sec" onclick="editarManejo()">✏️ Editar manejo</button>'+
+        '<div class="meta" style="margin:10px 0 6px">Encerrar: depois de encerrado ninguém mais edita este manejo.</div>'+
+        '<label>Animais avistados *</label><input id="mn_avist" inputmode="numeric" value="0">'+
+        '<button class="btn" style="background:linear-gradient(#7a2e2e,#5d2222)" onclick="encerrarManejo(this)">🔒 Encerrar manejo</button></div>'
+      : '<div class="card"><div class="meta">Você foi convidado para este manejo. Aqui você só registra abate — quem edita e encerra é '+esc(m.donoNome||'o dono')+'.</div>'+
+        '<button class="btn sec" style="margin-top:8px" onclick="sairDoManejo()">Sair deste manejo</button></div>';
+  var amigos = (aberto && souDono)
+    ? '<h3 style="margin:14px 4px 6px">🤝 '+trFrase('Amigos no manejo')+'</h3>'+
+      '<div class="card"><label>Login do amigo</label><input id="mn_amigo" placeholder="usuário do manejador">'+
+      '<button class="btn sm" style="width:auto" onclick="convidarAmigo(this)">Convidar</button>'+
+      '<div class="meta" style="margin-top:6px">O amigo precisa aceitar. Dentro do manejo ele só registra abate.</div>'+
+      '<div id="mnAmigos"></div></div>'
+    : '';
+  app(ficha+'<h3 style="margin:14px 4px 6px">🐗 '+trFrase('Abates deste manejo')+'</h3><div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>'+amigos+acoes);
   if(aberto) fab('<button class="btn" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>');
   carregarAbatesDoManejo(m.id);
+  if(aberto && souDono) carregarAmigosDoManejo(m.id);
 }
+function carregarAmigosDoManejo(id){
+  server('apiAmigosDoManejo',id).then(function(l){ var el=document.getElementById('mnAmigos'); if(!el) return;
+    el.innerHTML = (l&&l.length) ? l.map(function(p){
+      var pill = p.status==='aceito' ? '<span class="pill ok">'+trFrase('aceitou')+'</span>' : '<span class="pill warn">'+trFrase('aguardando')+'</span>';
+      return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow">'+esc(p.amigoNome||'—')+' '+pill+'</div>'+
+        '<button class="ib" onclick="removerAmigo(\''+escJs(p.id)+'\')" title="Remover">🗑️</button></div>'; }).join('')
+      : '<div class="meta" style="margin-top:8px">'+trFrase('Ninguém convidado ainda.')+'</div>';
+  }).catch(function(){}); }
+window.convidarAmigo=function(btn){ var login=val('mn_amigo'); if(!login){ toast('Informe o login do amigo'); return; }
+  var m=MANEJO_ATUAL; if(!m) return;
+  btn.disabled=true; btn.textContent='Convidando…';
+  server('apiConvidarAmigo',m.id,login).then(function(r){ toast(trFrase('Convite enviado a')+' '+((r&&r.nome)||login));
+      btn.disabled=false; btn.textContent='Convidar'; setVal('mn_amigo',''); carregarAmigosDoManejo(m.id); })
+    .catch(function(e){ btn.disabled=false; btn.textContent='Convidar'; toast((e&&e.message)||'Erro'); }); };
+window.removerAmigo=function(id){ if(!confirm(trFrase('Tirar este amigo do manejo?'))) return;
+  var m=MANEJO_ATUAL; if(!m) return;
+  server('apiRemoverAmigoManejo',id).then(function(){ toast('Removido'); carregarAmigosDoManejo(m.id); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+window.sairDoManejo=function(){ var m=MANEJO_ATUAL; if(!m||!m.participacaoId){ toast('Recarregue a lista de manejos'); return; }
+  if(!confirm(trFrase('Sair deste manejo?'))) return;
+  server('apiRemoverAmigoManejo',m.participacaoId).then(function(){ toast('Você saiu do manejo');
+    MANEJO_ATUAL=null; STATE.stack=['manejoHub','manejoLista']; render(); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+
+/* Convites recebidos: só depois do aceite o manejo entra no histórico do amigo. */
+VIEWS.manejoConvites=function(){ setTitulo('Convites'); setCrumb('Manejo','Convites'); loadingBox();
+  server('apiMeusConvitesManejo').then(function(l){ MEUS_CONVITES=l||[];
+    app(MEUS_CONVITES.length ? MEUS_CONVITES.map(function(c){
+      return '<div class="card"><h3 style="margin:0 0 4px">🤝 '+esc(c.manejoNome||'Manejo')+'</h3>'+
+        '<div class="meta">'+trFrase('Convidado por')+' '+esc(c.donoNome||'—')+' · '+rotuloTipoManejo(c.tipo)+' · '+fmtDataHora(c.criadoEm)+'</div>'+
+        '<div class="meta" style="margin-top:4px">'+trFrase('Aceitando, você poderá registrar abates neste manejo.')+'</div>'+
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="responderConvite(\''+escJs(c.id)+'\',\'aceito\',this)">Aceitar</button>'+
+        '<button class="btn sm sec grow" onclick="responderConvite(\''+escJs(c.id)+'\',\'recusado\',this)">Recusar</button></div></div>'; }).join('')
+      : '<div class="empty"><div class="big">🤝</div>'+trFrase('Nenhum convite pendente.')+'</div>'); }); };
+window.responderConvite=function(id,resp,btn){
+  if(resp==='recusado' && !confirm(trFrase('Recusar o convite? Ele some da sua lista e o dono precisa convidar de novo.'))) return;
+  btn.disabled=true; btn.textContent='…';
+  server('apiResponderConviteManejo',id,resp).then(function(r){
+      toast(resp==='aceito'?'Convite aceito ✔':'Convite recusado');
+      if(resp==='aceito' && r && r.manejoId){ MANEJO_ATUAL=null; STATE.manejoId=r.manejoId; STATE.stack=['manejoHub','manejoDetalhe']; render(); }
+      else render(); })
+    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
 window.registrarAbateNoManejo=function(){ EDIT=null; nav('abateForm'); };
 function carregarAbatesDoManejo(id){
   server('apiAbatesDoManejo',id).then(function(l){ var el=document.getElementById('mnAbates'); if(!el) return;
