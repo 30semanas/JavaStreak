@@ -888,6 +888,7 @@
 <symbol id="js-e12" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-9.5A4.5 4.5 0 0 1 12 7.6a4.5 4.5 0 0 1 7.5 2.9C19.5 15.4 12 20 12 20z"/></symbol>
 <symbol id="js-e13" viewBox="0 0 24 24"><path d="m12 3.5 2.7 5.5 6 .9-4.3 4.2 1 6L12 17.3 6.6 20.1l1-6L3.3 9.9l6-.9z"/></symbol>
 <symbol id="js-e14" viewBox="0 0 24 24"><path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-3.8L6 21z"/></symbol>
+<symbol id="js-h2" viewBox="0 0 24 24"><path d="M7.6 20.8v-3.2a4.7 4.7 0 0 0-1.5-3.4 7.1 7.1 0 1 1 11.8 0 4.7 4.7 0 0 0-1.5 3.4v3.2"/><path d="M5.9 20.8h3.4M14.7 20.8h3.4"/><circle cx="8.6" cy="9.2" r=".7"/><circle cx="15.4" cy="9.2" r=".7"/><circle cx="9.4" cy="13" r=".7"/><circle cx="14.6" cy="13" r=".7"/></symbol>
 <symbol id="js-e16" viewBox="0 0 24 24"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></symbol>
 <symbol id="js-e15" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="js-h1" viewBox="0 0 24 24"><path d="M5.5 20.5V12a6.5 6.5 0 0 1 13 0v8.5h-3V12a3.5 3.5 0 0 0-7 0v8.5z"/><circle cx="7" cy="14" r=".45"/><circle cx="7" cy="17.2" r=".45"/><circle cx="17" cy="14" r=".45"/><circle cx="17" cy="17.2" r=".45"/></symbol>
@@ -968,7 +969,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2003';
+var APP_VER = 'vJS.260726.2025';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1046,7 +1047,6 @@ var FRASES = {
     'MARINA':'MARINA',
     'Cavalos: saúde, vacinas e casqueamento':'Horses: health, vaccines and hoof care',
     'Carros, motos e quadriciclos: manutenção':'Cars, motorcycles and quads: maintenance',
-    'Barcos e embarcações: manutenção e rotas de pesca':'Boats and vessels: maintenance and fishing routes',
     'Novo cavalo':'New horse',
     'Nova embarcação':'New vessel',
     'Novo veículo':'New vehicle',
@@ -1824,6 +1824,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Barcos e embarcações: manutenção':'Boats and vessels: maintenance',
+    'Ver saúde':'View health',
+    'Ver manutenções':'View maintenance',
+    'Nome do cavalo *':'Horse name *',
+    'Próxima data':'Next date',
+    'Registrado hoje automaticamente. Informe só quando repetir.':'Recorded today automatically. Fill in only when it repeats.',
+    'Informe o nome do cavalo':'Enter the horse\'s name',
     'Promoção no ar':'Promotion live',
     'Promoção fora do ar':'Promotion off',
     'A tela inicial anuncia, e a chave aparece no menu de cada manejador.':'The home screen advertises it, and the key shows in every hunter\'s menu.',
@@ -1986,7 +1993,6 @@ var FRASES = {
     'Editar (também adiciona pontos, fotos e avisos)':'Edit (also adds points, photos and notes)',
     'Editar cão':'Edit dog',
     'Elas duram 4 horas — volte mais tarde.':'They last 4 hours — come back later.',
-    'Embarcações ficam disponíveis nas rotas de pesca.':'Vessels are available on fishing routes.',
     'Entrando…':'Signing in…',
     'Enviamos um código para':'We sent a code to',
     'Enviando…':'Sending…',
@@ -2170,7 +2176,6 @@ var FRASES = {
     'MARINA':'MARINA',
     'Cavalos: saúde, vacinas e casqueamento':'Caballos: salud, vacunas y casco',
     'Carros, motos e quadriciclos: manutenção':'Autos, motos y cuatriciclos: mantenimiento',
-    'Barcos e embarcações: manutenção e rotas de pesca':'Barcos y embarcaciones: mantenimiento y rutas de pesca',
     'Novo cavalo':'Nuevo caballo',
     'Nova embarcação':'Nueva embarcación',
     'Novo veículo':'Nuevo vehículo',
@@ -2948,6 +2953,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Barcos e embarcações: manutenção':'Barcos y embarcaciones: mantenimiento',
+    'Ver saúde':'Ver salud',
+    'Ver manutenções':'Ver mantenimientos',
+    'Nome do cavalo *':'Nombre del caballo *',
+    'Próxima data':'Próxima fecha',
+    'Registrado hoje automaticamente. Informe só quando repetir.':'Registrado hoy automáticamente. Indique solo cuando se repita.',
+    'Informe o nome do cavalo':'Indica el nombre del caballo',
     'Promoção no ar':'Promoción activa',
     'Promoção fora do ar':'Promoción apagada',
     'A tela inicial anuncia, e a chave aparece no menu de cada manejador.':'La pantalla inicial la anuncia y la clave aparece en el menú de cada manejador.',
@@ -3110,7 +3122,6 @@ var FRASES = {
     'Editar (também adiciona pontos, fotos e avisos)':'Editar (también añade puntos, fotos y avisos)',
     'Editar cão':'Editar perro',
     'Elas duram 4 horas — volte mais tarde.':'Duran 4 horas — vuelve más tarde.',
-    'Embarcações ficam disponíveis nas rotas de pesca.':'Las embarcaciones están disponibles en las rutas de pesca.',
     'Entrando…':'Ingresando…',
     'Enviamos um código para':'Enviamos un código a',
     'Enviando…':'Enviando…',
@@ -3766,6 +3777,21 @@ function erroTela(e){
     '<button class="btn" style="margin-top:10px" onclick="render()">↶ '+trFrase('Tentar de novo')+'</button></div>');
 }
 function loadingBox(txt){ app(huntLoader(txt)); }
+/* Estas três eram usadas em quatro telas e nunca foram escritas.
+   diaHoje() derrubava a Agenda ("diaHoje is not defined") e também o detalhe
+   do veículo — era por isso que clicar no carro não abria as manutenções. */
+function pad2(n){ return (n<10?'0':'')+n; }
+/* Data de hoje no fuso LOCAL, no formato YYYY-MM-DD. Não usar toISOString():
+   ele converte para UTC e, à noite no Brasil, devolve o dia seguinte. */
+function diaHoje(){ var d=new Date(); return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+/* Como está o vencimento: atrasada, hoje, próxima, ou sem data. */
+function statusProx(data){
+  if(!data) return '';
+  var d=String(data).substring(0,10), h=diaHoje();
+  if(d<h) return 'atrasada';
+  if(d===h) return 'hoje';
+  return 'proxima';
+}
 function fmtData(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T')[0].split('-');return d[2]+'/'+d[1]+'/'+d[0];} if(s.indexOf('-')===4){var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];} return s; }
 function fmtDataHora(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T');var dd=d[0].split('-');var hh=(d[1]||'').substring(0,5);return dd[2]+'/'+dd[1]+'/'+dd[0]+' '+hh;} return fmtData(iso); }
 function idade(n){ if(!n)return''; var d=new Date(n); if(isNaN(d))return''; var a=Math.floor((Date.now()-d.getTime())/(365.25*864e5)); return a>=0?a+' ano'+(a!==1?'s':''):''; }
@@ -4543,6 +4569,9 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
 /* ---- Indicação: pergunta primeiro, campo da chave depois ---- */
 var IND_OK=null;   // null = não checado, true/false = resposta do servidor
 function blocoIndicacao(){
+  /* Sem promoção no ar não há bônus, então nem perguntamos. O estado vem do
+     apiPing, que roda antes de qualquer tela e não exige sessão. */
+  if(!(STATE.promoInd&&STATE.promoInd.ativa)) return '';
   return '<div style="margin-top:6px"><label>Alguém indicou o JavaStreak para você?</label>'+
     '<select id="f_temInd" onchange="mudouIndicacao()"><option value="nao">Não</option><option value="sim">Sim, tenho uma chave</option></select></div>'+
     '<div id="f_indBox" style="display:none">'+
@@ -5951,7 +5980,7 @@ var ICO={ painel:'a1', avisos:'a2', artigos:'a3', patrocinio:'a4', suporte:'a5',
   ver:'d15', ia:'d16', buscar:'e1', filtrar:'e2', adicionar:'e3', editar:'e4', excluir:'e5',
   confirmar:'e6', fechar:'e7', avancar:'e8', atualizar:'e9', baixar:'e10', enviar:'e11',
   favorito:'e12', estrela:'e13', salvar:'e14', menu:'e15', voltar:'e16',
-  haras:'h1' };
+  haras:'h1', ferradura:'h2' };
 function ico(nome,px){
   var id=ICO[nome]; if(!id) return '';
   var st=px?(' style="width:'+px+'px;height:'+px+'px"'):'';
@@ -6043,16 +6072,22 @@ window.salvarNivel=function(btn){ btn.disabled=true; btn.textContent='Salvando�
    ESPREITA / TRANSPORTES
    ============================================================ */
 var SEGMENTOS=['Agricultor','Despachante','Clube de tiro','Loja de artigos de caça','Veterinário','Canil','Outro'];
-var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Cavalo','A pé','Bicicleta','Caminhonete','Outro'];
+var TIPOS_TRANSP=['Carro','Moto','Quadriciclo','Caminhonete','Cavalo','Outro'];
 var TIPOS_MARITIMO=['Barco','Lancha','Bote','Caiaque','Canoa','Jet ski','Outra embarcação'];
 function tiposPorMeio(m){ return (m==='maritimo')?TIPOS_MARITIMO:TIPOS_TRANSP; }
 window.mudouMeio=function(){ var m=val('t_meio'); var s=document.getElementById('t_tipo'); if(!s)return;
   s.innerHTML=tiposPorMeio(m).map(function(t){return '<option>'+t+'</option>';}).join(''); };
-function iconeTransp(t){ var m={'Carro':'🚗','Moto':'🏍️','Quadriciclo':'🛺','Cavalo':'🐎','A pé':'🚶','Bicicleta':'🚲','Caminhonete':'🛻'}; return m[t]||'🧭'; }
+/* Ícone do transporte pela biblioteca de linha, não por emoji. */
+function nomeIconeTransp(t){
+  if(t==='Cavalo') return 'ferradura';
+  if(categoriaTransp(t)==='marina') return 'marina';
+  return 'transporte';
+}
+function iconeTransp(t,px){ return ico(nomeIconeTransp(t), px||20); }
 VIEWS.espreita=function(){ setTitulo('Transportes'); setCrumb('Transportes');
   app(moduloCard('haras','HARAS','Cavalos: saúde, vacinas e casqueamento',true,"abrirTransportes('aras')")+
       moduloCard('garagem','GARAGEM','Carros, motos e quadriciclos: manutenção',true,"abrirTransportes('garagem')")+
-      moduloCard('marina','MARINA','Barcos e embarcações: manutenção e rotas de pesca',true,"abrirTransportes('marina')")); };
+      moduloCard('marina','MARINA','Barcos e embarcações: manutenção',true,"abrirTransportes('marina')")); };
 window.abrirTransportes=function(cat){ STATE.transpCat=cat||'garagem'; nav('transportes'); };
 /* Cada tipo mora numa das três casas. O que não se encaixa cai na garagem. */
 var TIPOS_CAT={ aras:['Cavalo'],
@@ -6063,7 +6098,7 @@ function categoriaTransp(tipo){
   return 'garagem'; }
 function catAtual(){ return STATE.transpCat||'garagem'; }
 function rotuloCat(c){ return {aras:'HARAS',garagem:'GARAGEM',marina:'MARINA'}[c]||'GARAGEM'; }
-function iconeCat(c){ return {aras:'🐎',garagem:'🚗',marina:'⛵'}[c]||'🚗'; }   /* usado no vazio e no cabeçalho do formulário */
+function iconeCat(c,px){ return ico({aras:'ferradura',garagem:'transporte',marina:'marina'}[c]||'transporte', px||20); }
 function tiposDaCat(c){ return c==='aras' ? TIPOS_CAT.aras
   : c==='marina' ? TIPOS_CAT.marina
   : TIPOS_TRANSP.filter(function(t){ return categoriaTransp(t)==='garagem'; }); }
@@ -6075,9 +6110,10 @@ VIEWS.transportes=function(){ var cat=catAtual();
     var l=(todos||[]).filter(function(t){ return categoriaTransp(t.tipo)===cat; });
     var html=l.length? l.map(function(t){ return '<div class="card"><div class="row">'+
       (t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
-      '<div class="grow click" onclick="abrirTransporte(\''+t.id+'\')"><h3>'+esc(t.tipo)+(isAnimalTransp(t.tipo)?' <span class="pill">🐎 saúde</span>':(isMecanico(t.tipo)?' <span class="pill gray">🔧 manut.</span>':''))+'</h3><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">'+iconeCat(cat)+'</div>'+trFrase(cat==='aras'?'Nenhum cavalo cadastrado.':(cat==='marina'?'Nenhuma embarcação cadastrada.':'Nenhum veículo cadastrado.'))+'</div>';
-    var extra = (cat==='marina') ? moduloCard('rotas','Rotas de pesca','Trajetos com embarcação',true,"abrirRotas('pesca')") : '';
-    app(html+extra);
+      '<div class="grow click" onclick="abrirTransporte(\''+t.id+'\')"><h3>'+esc(t.identificacao||t.tipo)+'</h3><div class="meta">'+esc(t.tipo)+(t.obs?'<br>'+esc(t.obs):'')+'</div>'+
+      '<button class="btn sm sec" style="width:auto;margin-top:7px" onclick="event.stopPropagation();abrirTransporte(\''+t.id+'\')">'+
+      trFrase(isAnimalTransp(t.tipo)?'Ver saúde':'Ver manutenções')+'</button></div>'+acoes('transporte',t.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">'+iconeCat(cat)+'</div>'+trFrase(cat==='aras'?'Nenhum cavalo cadastrado.':(cat==='marina'?'Nenhuma embarcação cadastrada.':'Nenhum veículo cadastrado.'))+'</div>';
+    app(html);
     fab('<button class="btn" onclick="novoTransporte()">＋ '+trFrase(cat==='aras'?'Novo cavalo':(cat==='marina'?'Nova embarcação':'Novo veículo'))+'</button>'); }).catch(erroTela); };
 
 window.novoTransporte=function(){ EDIT=null; nav('transpForm'); };
@@ -6146,14 +6182,15 @@ VIEWS.manutForm=function(){ var ed=!!EDIT; var t=STATE.transporte||{};
   setTitulo(ed?'Editar manutenção':'Registrar manutenção'); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo||''),'Manutenção');
   var unid=isEmbarcacao(t.tipo)?'h':'km';
   app('<div class="card"><label>Tipo *</label><select id="mt_tipo">'+TIPOS_MANUT.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select>'+
-    '<div class="two"><div><label>Data</label><input id="mt_data" type="date"></div>'+
+    '<input type="hidden" id="mt_data">'+
+    '<div class="two"><div>'+
     '<div><label>'+(unid==='h'?'Horas de motor':'KM')+'</label><input id="mt_km" inputmode="numeric" value="'+esc(pv('km'))+'"></div></div>'+
     '<div class="two"><div><label>Próxima data</label><input id="mt_prox" type="date"></div>'+
     '<div><label>'+(unid==='h'?'Próximas horas':'Próximo KM')+'</label><input id="mt_proxkm" inputmode="numeric" value="'+esc(pv('proximoKm'))+'"></div></div>'+
     '<label>Observações</label><textarea id="mt_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarManutencao(this)">'+(ed?'Salvar alterações':'Salvar')+'</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
-  document.getElementById('mt_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):new Date().toISOString().substring(0,10);
+  document.getElementById('mt_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):diaHoje();
   if(ed){ setVal('mt_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('mt_prox',String(EDIT.proximaData).substring(0,10)); } };
 window.salvarManutencao=function(btn){ var t=STATE.transporte||{};
   btn.disabled=true; btn.textContent='Salvando…';
@@ -6166,10 +6203,13 @@ function isMecanico(t){ return categoriaTransp(t)==='marina' || ['Carro','Moto',
 VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); setCrumb('HARAS',esc(STATE.transporte.tipo),'Saúde');
   app('<div class="card"><label>Tipo *</label><select id="ts_tipo">'+TIPOS_SAUDE_CAVALO.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="ts_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: Influenza equina, casqueamento…">'+
-    '<div class="two"><div><label>Data</label><input id="ts_data" type="date"></div><div><label>Próxima</label><input id="ts_prox" type="date"></div></div>'+
+    '<input type="hidden" id="ts_data">'+
+    '<label>Próxima data</label><input id="ts_prox" type="date">'+
+    '<div class="meta" style="margin:-4px 0 8px">Registrado hoje automaticamente. Informe só quando repetir.</div>'+
     '<label>Observações</label><textarea id="ts_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarSaudeTransp(this)">Salvar</button></div>');
-  document.getElementById('ts_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):new Date().toISOString().substring(0,10);
+  /* diaHoje() usa o fuso local; toISOString() joga para UTC e, à noite, grava o dia seguinte. */
+  document.getElementById('ts_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):diaHoje();
   if(ed){ setVal('ts_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('ts_prox',String(EDIT.proximaData).substring(0,10)); } };
 window.salvarSaudeTransp=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
   var d={transporteId:STATE.transporte.id,tipo:val('ts_tipo'),descricao:val('ts_desc'),data:val('ts_data'),proximaData:val('ts_prox'),obs:val('ts_obs')};
@@ -6193,21 +6233,28 @@ window.salvarDocVeiculo=function(btn){ btn.disabled=true; btn.textContent='Salva
   server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Controles salvos ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
 
 VIEWS.transpForm=function(){ var ed=!!EDIT; var cat=ed?categoriaTransp(EDIT.tipo):catAtual();
+  /* No HARAS o tipo é sempre Cavalo — não faz sentido perguntar. */
+  var soCavalo = (cat==='aras');
   setTitulo(ed?'Editar transporte':(cat==='aras'?'Novo cavalo':(cat==='marina'?'Nova embarcação':'Novo veículo')));
   setCrumb('Transportes',rotuloCat(cat));
   var meioAt=(cat==='marina')?'maritimo':'terrestre';
   app('<div class="card"><div class="meta" style="margin-bottom:8px">'+iconeCat(cat)+' '+rotuloCat(cat)+'</div>'+
     '<input type="hidden" id="t_meio" value="'+meioAt+'">'+
-    '<label>Tipo *</label><select id="t_tipo">'+tiposDaCat(cat).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
-    '<label>Identificação / apelido</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="Ex: Cavalo Trovão / Placa">'+
+    (soCavalo
+      ? '<input type="hidden" id="t_tipo" value="Cavalo">'
+      : '<label>Tipo *</label><select id="t_tipo">'+tiposDaCat(cat).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>')+
+    '<label>'+(soCavalo?'Nome do cavalo *':'Identificação / apelido')+'</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="'+(soCavalo?'Ex: Trovão':'Ex: Placa ABC-1234')+'">'+
+    (soCavalo?'<label>Data de nascimento</label><input id="t_nasc" type="date" value="'+esc(String(pv('dataNascimento')||'').substring(0,10))+'">':'')+
     '<label>Observações</label><textarea id="t_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
     '<input id="t_foto" type="file" accept="image/*" capture="environment"><img id="t_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarTransp(this)">'+(ed?'Salvar alterações':'Salvar transporte')+'</button></div>');
-  if(ed) setVal('t_tipo',EDIT.tipo); bindFoto('t_foto','t_prev'); };
+  if(ed&&!soCavalo) setVal('t_tipo',EDIT.tipo); bindFoto('t_foto','t_prev'); };
 window.salvarTransp=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
   var base={tipo:val('t_tipo'),identificacao:val('t_id'),obs:val('t_obs'),meio:val('t_meio'),foto:fotoData('t_foto')};
+  if(document.getElementById('t_nasc')) base.dataNascimento=val('t_nasc');
+  if(!base.identificacao && val('t_tipo')==='Cavalo'){ btn.disabled=false; btn.textContent='Salvar transporte'; toast('Informe o nome do cavalo'); return; }
   if(EDIT){ server('apiEditar','transporte',EDIT.id,base).then(function(){ EDIT=null; toast('Salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
   else { server('apiCriarTransporte',base).then(function(){ toast('Transporte cadastrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar transporte'; }); } };
 
@@ -6753,10 +6800,12 @@ VIEWS.caoDetail=function(){ var c=STATE.cao; setTitulo(c.nome); setCrumb('Matilh
 VIEWS.saudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde / Vacina'); setCrumb('Cães',esc(STATE.cao.nome),'Saúde');
   app('<div class="card"><label>Tipo *</label><select id="s_tipo">'+TIPOS_SAUDE.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="s_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: V10, Raiva…">'+
-    '<div class="two"><div><label>Data</label><input id="s_data" type="date"></div><div><label>Próxima</label><input id="s_prox" type="date"></div></div>'+
+    '<input type="hidden" id="s_data">'+
+    '<label>Próxima data</label><input id="s_prox" type="date">'+
+    '<div class="meta" style="margin:-4px 0 8px">Registrado hoje automaticamente. Informe só quando repetir.</div>'+
     '<label>Observações</label><textarea id="s_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarSaude(this)">Salvar</button></div>');
-  document.getElementById('s_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):new Date().toISOString().substring(0,10);
+  document.getElementById('s_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):diaHoje();
   if(ed){ setVal('s_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('s_prox',String(EDIT.proximaData).substring(0,10)); } };
 window.salvarSaude=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
   var d={caoId:STATE.cao.id,tipo:val('s_tipo'),descricao:val('s_desc'),data:val('s_data'),proximaData:val('s_prox'),obs:val('s_obs')};
@@ -7710,6 +7759,7 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
     /* Front e backend têm que estar na mesma entrega. Quando não estão, o app
        faz coisas sem explicação — foi assim que o cadastro pulou a confirmação
        de e-mail. Melhor gritar do que deixar o usuário adivinhando. */
+    if(p && p.promoInd) STATE.promoInd=p.promoInd;
     if(p && p.apiVer && p.apiVer !== APP_VER){
       console.warn('Versão descasada — HTML', APP_VER, '| função', p.apiVer);
       setTimeout(function(){ toast('Atenção: app '+APP_VER+' e servidor '+p.apiVer+' estão em versões diferentes. Atualize a página.'); }, 800);
