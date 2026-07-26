@@ -766,6 +766,7 @@
   .resumo-plat .rp-item{display:flex;gap:11px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--linha)}
   .resumo-plat .rp-item:first-of-type{border-top:none}
   .resumo-plat .rp-ic{font-size:21px;flex:0 0 auto;line-height:1.3;width:26px;text-align:center}
+  .resumo-plat .rp-ic .ic-svg{width:22px;height:22px;vertical-align:-4px;margin:0}
   .resumo-plat .rp-item b{font-size:14px;display:block;margin-bottom:1px}
   .blog-lista{display:flex;flex-direction:column}
   .blog-item{display:block;width:100%;text-align:left;padding:11px 2px;background:none;border:none;
@@ -944,7 +945,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1705';
+var APP_VER = 'vJS.260726.1728';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1804,16 +1805,16 @@ var FRASES = {
     'dias de Mateiro.':'days of Mateiro.',
     'Divulgar promoção de indicação':'Advertise the referral promotion',
     'Dias de Mateiro por indicação':'Days of Mateiro per referral',
-    '📧 Envio de e-mail (Resend)':'📧 Email delivery (Resend)',
+    '📧 Envio de e-mail':'📧 Email delivery',
     'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Sends a real email and shows the exact error if it fails.',
     'Enviar teste para':'Send test to',
     'Testar envio':'Test delivery',
     'Informe o e-mail de destino':'Enter the destination email',
-    'Chave RESEND_API_KEY configurada':'RESEND_API_KEY is set',
-    'Chave RESEND_API_KEY ausente':'RESEND_API_KEY is missing',
+    'Provedor de envio configurado':'Delivery provider configured',
+    'Nenhum provedor de e-mail configurado':'No email provider configured',
     'Remetente:':'Sender:',
-    '⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.':'⚠️ Resend test sender: it only delivers to the address of the Resend account owner. Set EMAIL_REMETENTE to a verified domain.',
-    '✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.':'✅ Email accepted by Resend. Check the inbox and the spam folder.',
+    '⚠️ Remetente de domínio de teste do provedor. Configure EMAIL_REMETENTE com um domínio seu, autenticado por DKIM.':'⚠️ Sender on the provider test domain. Set EMAIL_REMETENTE to your own domain, authenticated with DKIM.',
+    '✅ E-mail aceito pelo provedor. Confira a caixa de entrada e o spam.':'✅ Email accepted by the provider. Check the inbox and the spam folder.',
     '❌ Falha no envio:':'❌ Delivery failed:',
     'Última falha registrada':'Last recorded failure',
     'Nenhuma falha registrada até agora.':'No failures recorded so far.',
@@ -2864,16 +2865,16 @@ var FRASES = {
     'dias de Mateiro.':'días de Mateiro.',
     'Divulgar promoção de indicação':'Divulgar la promoción de referidos',
     'Dias de Mateiro por indicação':'Días de Mateiro por referido',
-    '📧 Envio de e-mail (Resend)':'📧 Envío de correo (Resend)',
+    '📧 Envio de e-mail':'📧 Envío de correo',
     'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Envía un correo real y muestra el error exacto si falla.',
     'Enviar teste para':'Enviar prueba a',
     'Testar envio':'Probar envío',
     'Informe o e-mail de destino':'Indique el correo de destino',
-    'Chave RESEND_API_KEY configurada':'RESEND_API_KEY configurada',
-    'Chave RESEND_API_KEY ausente':'Falta RESEND_API_KEY',
+    'Provedor de envio configurado':'Proveedor de envío configurado',
+    'Nenhum provedor de e-mail configurado':'Ningún proveedor de correo configurado',
     'Remetente:':'Remitente:',
-    '⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.':'⚠️ Remitente de prueba de Resend: solo entrega al correo del dueño de la cuenta Resend. Configure EMAIL_REMETENTE con un dominio verificado.',
-    '✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.':'✅ Correo aceptado por Resend. Revise la bandeja de entrada y el spam.',
+    '⚠️ Remetente de domínio de teste do provedor. Configure EMAIL_REMETENTE com um domínio seu, autenticado por DKIM.':'⚠️ Remitente en el dominio de prueba del proveedor. Configure EMAIL_REMETENTE con un dominio propio, autenticado con DKIM.',
+    '✅ E-mail aceito pelo provedor. Confira a caixa de entrada e o spam.':'✅ Correo aceptado por el proveedor. Revise la bandeja de entrada y el spam.',
     '❌ Falha no envio:':'❌ Falló el envío:',
     'Última falha registrada':'Última falla registrada',
     'Nenhuma falha registrada até agora.':'Ninguna falla registrada hasta ahora.',
@@ -3446,7 +3447,8 @@ var EMOJI_ICO={ '＋':'adicionar','✏️':'editar','🗑️':'excluir','🔗':'
   '🎚️':'ajustes','🎧':'suporte','✓':'confirmar','🎁':'favorito','🏁':'mapa','●':'notificacao','🌙':'global','📌':'favorito','📝':'editar','←':'avancar','⚙️':'ajustes',
   '🔎':'buscar','📜':'arquivo','📡':'global','🔑':'bloqueio','🚚':'garagem','📞':'telefone','👍':'confirmar','✉️':'email','❌':'fechar','📸':'camera','↩️':'atualizar',
   '✍️':'editar','★':'estrela','🏠':'inicio','☰':'menu','🕐':'relogio','👎':'fechar','🏅':'estrela','📆':'calendario','⏰':'relogio','🔥':'notificacao','💡':'ia',
-  '🧰':'ajustes','🗓️':'calendario','🖨️':'arquivo','🧭':'rotas','🧑':'usuario','👤':'usuario','👥':'usuario','🛰️':'global','⛰️':'areas' };
+  '🧰':'ajustes','🗓️':'calendario','🖨️':'arquivo','🧭':'rotas','🧑':'usuario','👤':'usuario','👥':'usuario','🛰️':'global','⛰️':'areas',
+  '⏹️':'fechar','✖️':'fechar','🚫':'fechar','🔁':'atualizar' };
 function iconizarEl(el){
   var n=el.firstChild;
   if(!n || n.nodeType!==3) return;
@@ -4197,24 +4199,24 @@ window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=v
    entender o que está criando. Um texto para cada tipo de conta. */
 function resumoPlataforma(tipo){
   var itens = (tipo==='empresa')
-    ? [['🗺️','Apareça no mapa','Sua loja no mapa da rede, encontrada pelos manejadores da sua região.'],
-       ['⚡','Promoções relâmpago','Publique ofertas com validade curta que chegam aos manejadores por perto.'],
-       ['🏆','Patrocine destaques','Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.'],
-       ['🏪','Sua vitrine','Descreva seus produtos e serviços; quem visita sua loja vê tudo reunido.'],
-       ['📊','Veja quem te procura','Acompanhe quantas visitas seu perfil recebe.']]
-    : [['🌽','Espera com ceva','Cadastre cevas, o alimento usado e acompanhe o nível do tratadouro.'],
-       ['🧭','Rotas de caça','Grave por GPS suas rotas de aproximação e espreita, com marcações no caminho.'],
-       ['🐕','Cães e canil','Controle sua matilha por função, com saúde, vacinas e idade de cada cão.'],
-       ['🪤','Armadilhas','Registre suas armadilhas de captura com localização e tipo.'],
-       ['🎯','Abates e troféus','Registre abates, monte sua sala de troféus e dispute o ranking.'],
-       ['🗺️','Rede e mapa','Veja outros manejadores e as lojas parceiras no mapa da sua região.']];
+    ? [['mapa','Apareça no mapa','Sua loja no mapa da rede, encontrada pelos manejadores da sua região.'],
+       ['notificacao','Promoções relâmpago','Publique ofertas com validade curta que chegam aos manejadores por perto.'],
+       ['patrocinio','Patrocine destaques','Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.'],
+       ['planos','Sua vitrine','Descreva seus produtos e serviços; quem visita sua loja vê tudo reunido.'],
+       ['grafico','Veja quem te procura','Acompanhe quantas visitas seu perfil recebe.']]
+    : [['ceva','Espera com ceva','Cadastre cevas, o alimento usado e acompanhe o nível do tratadouro.'],
+       ['rotas','Rotas de caça','Grave por GPS suas rotas de aproximação e espreita, com marcações no caminho.'],
+       ['canil','Cães e canil','Controle sua matilha por função, com saúde, vacinas e idade de cada cão.'],
+       ['armadilha','Armadilhas','Registre suas armadilhas de captura com localização e tipo.'],
+       ['estrela','Abates e troféus','Registre abates, monte sua sala de troféus e dispute o ranking.'],
+       ['mapa','Rede e mapa','Veja outros manejadores e as lojas parceiras no mapa da sua região.']];
   var cor = tipo==='empresa' ? '#ee8a2e' : 'var(--verde)';
   var titulo = tipo==='empresa' ? t('rp_titulo_emp') : t('rp_titulo_manej');
   return '<div class="card resumo-plat" style="border-top:4px solid '+cor+'">'+
     '<h3 style="margin:0 0 2px">'+esc(titulo)+'</h3>'+
     '<div class="meta" style="margin-bottom:10px">'+esc(t('rp_sub'))+'</div>'+
     itens.map(function(x){
-      return '<div class="rp-item"><span class="rp-ic">'+x[0]+'</span>'+
+      return '<div class="rp-item"><span class="rp-ic">'+(ICO[x[0]]?ico(x[0],22):x[0])+'</span>'+
         '<div><b>'+esc(x[1])+'</b><div class="meta">'+esc(x[2])+'</div></div></div>';
     }).join('')+'</div>';
 }
@@ -4233,7 +4235,7 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<div class="two"><div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="mCPF(this)"></div>'+
     '<div><label>CR</label><input id="f_cr"></div></div>'+
     campoTel('f_tel','Telefone')+
-    campoTel('f_wa','WhatsApp')+
+    campoTel('f_wa','WhatsApp','',true)+
     '<label>Endereço</label><textarea id="f_end"></textarea>'+
     '<div class="two"><div><label>Latitude *</label><input id="f_lat" inputmode="decimal"></div><div><label>Longitude *</label><input id="f_lng" inputmode="decimal"></div></div>'+
     gpsButton('f_lat','f_lng')+'</div>'+
@@ -4306,6 +4308,9 @@ function avisoCaptchaAusente(msg){
   box.innerHTML='<div class="card" style="border-left:5px solid var(--alerta);margin:0">'+
     '<div class="meta">🔒 '+esc(msg)+' O cadastro fica indisponível até o administrador configurar. '+
     'Já tem conta? <b onclick="nav(\'login\')" style="color:var(--laranja);cursor:pointer">Entrar</b>.</div></div>'; }
+/* WhatsApp virou obrigatório nos dois cadastros. Só conta dígito, porque o
+   campo é mascarado e o código do país vem de um select à parte. */
+function whatsOk(id){ return soDig(val(id)).length>=8; }
 function validaComum(){
   var ac=document.getElementById('f_aceite');
   if(!ac || !ac.checked){ toast('Role e aceite os termos de uso para continuar'); return false; }
@@ -4317,6 +4322,7 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   if(senha!==senha2){toast('Senhas não conferem');return;}
   if(!nome){toast('Informe o nome');return;}
   if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização — use o GPS ou o mapa');return;}
+  if(!whatsOk('f_wa')){toast('Informe o WhatsApp');return;}
   if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
   server('apiRegistrar',{tipo:'manejador',email:login,login:login,senha:senha,nome:nome,
@@ -4339,7 +4345,7 @@ VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('cr
     '<label>Segmento *</label><select id="fe_seg">'+SEGMENTOS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><textarea id="fe_desc" placeholder="O que sua empresa oferece"></textarea>'+
     campoTel('fe_tel','Telefone')+
-    campoTel('fe_wa','WhatsApp')+
+    campoTel('fe_wa','WhatsApp','',true)+
 
     '<label>Cidade</label><input id="fe_cidade">'+
     '<label>Endereço / sede</label><input id="fe_end">'+
@@ -4362,6 +4368,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   if(senha!==senha2){toast('Senhas não conferem');return;}
   if(!nome){toast('Informe o nome da empresa');return;}
   if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede');return;}
+  if(!whatsOk('fe_wa')){toast('Informe o WhatsApp da empresa');return;}
   if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
   server('apiRegistrar',{tipo:'empresa',email:login,login:login,senha:senha,nome:nome,segmento:val('fe_seg'),
@@ -4584,15 +4591,15 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'liberar\')">\u2705 Liberar perfil</button><button class="btn sm sec grow" onclick="resolverDen(\''+g.donoTipo+'\',\''+g.donoId+'\',\'manter\')">\u26d4 Manter bloqueado</button></div></div>';
     }).join('') : '<div class="empty"><div class="big">\ud83d\udea9</div>Nenhuma den\u00fancia no momento.</div>';
     app('<div class="hero-bloco"><h2>\ud83d\udee1\ufe0f Administra\u00e7\u00e3o</h2><p>Envie avisos aos usu\u00e1rios e analise as den\u00fancias.</p></div>'+
-      '<div class="card" id="painelCard"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcca Painel da plataforma</h3></div><button class="ib" onclick="carregarPainel()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<div class="card" id="painelCard" data-adm="denuncias"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcca Painel da plataforma</h3></div><button class="ib" onclick="carregarPainel()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<div id="painelBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 8px">\ud83d\udce2 Enviar aviso</h3>'+
+      '<div class="card" data-adm="avisos"><h3 style="margin:0 0 8px">\ud83d\udce2 Enviar aviso</h3>'+
       '<label>T\u00edtulo *</label><input id="av_tit" placeholder="Ex: Nova fun\u00e7\u00e3o dispon\u00edvel">'+
       '<label>Mensagem *</label><textarea id="av_msg" placeholder="Escreva o comunicado"></textarea>'+
       '<div class="two"><div><label>Para</label><select id="av_pub"><option>Todos</option><option>Manejadores</option><option>Empresas</option></select></div>'+
       '<div><label>Dias vis\u00edvel</label><input id="av_dias" inputmode="numeric" value="7"></div></div>'+
       '<button class="btn" onclick="enviarAviso(this)">Enviar aviso</button><div id="avList" style="margin-top:12px"></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udfc6 Campanha de premia\u00e7\u00e3o</h3><div class="meta" style="margin-bottom:8px">Fica em destaque no menu de todos os usu\u00e1rios enquanto estiver ativa.</div>'+
+      '<div class="card" data-adm="campanha"><h3 style="margin:0 0 4px">\ud83c\udfc6 Campanha de premia\u00e7\u00e3o</h3><div class="meta" style="margin-bottom:8px">Fica em destaque no menu de todos os usu\u00e1rios enquanto estiver ativa.</div>'+
       '<label>T\u00edtulo *</label><input id="cp_tit" placeholder="Ex: Pr\u00eamio do m\u00eas — 1\u00ba lugar do ranking">'+
       '<div class="two"><div><label>Patrocinador</label><select id="cp_pat"><option value="">— selecione a empresa —</option></select></div>'+
       '<div><label>Pr\u00eamio</label><input id="cp_pre" placeholder="Ex: R$ 500 em produtos"></div></div>'+
@@ -4600,12 +4607,12 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Encerra em</label><input id="cp_fim" type="datetime-local">'+
       '<button class="btn" onclick="criarCampanha(this)">Ativar campanha</button><div id="cpList" style="margin-top:12px"></div>'+
       '<div class="row" style="margin-top:10px"><button class="btn sec grow" onclick="diagCampanha(this)">🔧 Por que o destaque não aparece?</button></div><div id="cpDiag" style="margin-top:8px"></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcf0 Artigos do blog</h3><div class="meta">Publique textos na tela inicial. Os mais recentes aparecem no topo.</div></div><button class="ib" onclick="novoArtigo()" title="Novo artigo">＋</button></div>'+
+      '<div class="card" data-adm="artigos"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcf0 Artigos do blog</h3><div class="meta">Publique textos na tela inicial. Os mais recentes aparecem no topo.</div></div><button class="ib" onclick="novoArtigo()" title="Novo artigo">＋</button></div>'+
       '<div id="artAdmBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcec Fila de patrocínios</h3><div class="meta">Propostas enviadas pelas empresas. Colocar no ar cria a campanha da lateral e tira a anterior.</div></div><button class="ib" onclick="carregarPatrociniosAdm()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<div class="card" data-adm="campanha"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcec Fila de patrocínios</h3><div class="meta">Propostas enviadas pelas empresas. Colocar no ar cria a campanha da lateral e tira a anterior.</div></div><button class="ib" onclick="carregarPatrociniosAdm()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<label>Mostrar</label><select id="pa_filtro" onchange="carregarPatrociniosAdm()"><option value="fila">Na fila</option><option value="no_ar">No ar</option><option value="encerrado">Encerradas</option><option value="recusado">Recusadas</option><option value="todos">Todas</option></select>'+
       '<div id="patrBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83c\udfa7 Suporte ao cliente</h3><div class="meta">Canais de contato e chamados recebidos.</div></div><button class="ib" onclick="carregarChamados()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<div class="card" data-adm="suporte"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83c\udfa7 Suporte ao cliente</h3><div class="meta">Canais de contato e chamados recebidos.</div></div><button class="ib" onclick="carregarChamados()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<div class="two"><div><label>Telefone</label><input id="sp_tel" placeholder="(00) 0000-0000"></div>'+
       '<div><label>WhatsApp</label><input id="sp_wa" placeholder="DDD+n\u00famero"></div></div>'+
       '<label>E-mail de contato</label><input id="sp_email" type="email" placeholder="suporte@seudominio.com">'+
@@ -4613,20 +4620,20 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Mensagem de boas-vindas</label><textarea id="sp_txt"></textarea>'+
       '<button class="btn" onclick="salvarSuporte(this)">Salvar canais de contato</button>'+
       '<h3 style="margin:16px 0 6px">\ud83d\udcec Chamados</h3><div id="chamBox"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83e\uddfe Pagamentos dos clientes</h3><div class="meta">Resolva aqui quem pagou e n\u00e3o teve o plano liberado.</div></div><button class="ib" onclick="carregarPagsAdm()" title="Atualizar">\ud83d\udd04</button></div><div id="pagAdm"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcb3 Pagamento (Mercado Pago)</h3><div class="meta" style="margin-bottom:8px">Verifica a conta e quais meios de pagamento est\u00e3o dispon\u00edveis.</div><button class="btn sec" onclick="diagMP(this)">Verificar configura\u00e7\u00e3o</button><div id="mpDiag" style="margin-top:10px"></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udcb0 Preços dos planos</h3><div class="meta">Valores cobrados em cada período. Mínimo de R$ 1,00 por exigência do Mercado Pago.</div>'+
+      '<div class="card" data-adm="pagamentos"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83e\uddfe Pagamentos dos clientes</h3><div class="meta">Resolva aqui quem pagou e n\u00e3o teve o plano liberado.</div></div><button class="ib" onclick="carregarPagsAdm()" title="Atualizar">\ud83d\udd04</button></div><div id="pagAdm"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<div class="card" data-adm="pagamentos"><h3 style="margin:0 0 4px">\ud83d\udcb3 Pagamento (Mercado Pago)</h3><div class="meta" style="margin-bottom:8px">Verifica a conta e quais meios de pagamento est\u00e3o dispon\u00edveis.</div><button class="btn sec" onclick="diagMP(this)">Verificar configura\u00e7\u00e3o</button><div id="mpDiag" style="margin-top:10px"></div></div>'+
+      '<div class="card" data-adm="planos"><h3 style="margin:0 0 4px">\ud83d\udcb0 Preços dos planos</h3><div class="meta">Valores cobrados em cada período. Mínimo de R$ 1,00 por exigência do Mercado Pago.</div>'+
       '<div id="precoBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf9a\ufe0f Acessos de cada plano</h3><div class="meta" style="margin-bottom:8px">Defina o que cada plano libera. Use <b>-1</b> para ilimitado e <b>0</b> para bloquear.</div><div id="limBox"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udd11 Redefinir senha de usu\u00e1rio</h3><div class="meta" style="margin-bottom:8px">Gera uma senha nova. Informe-a ao usu\u00e1rio por um canal seguro.</div>'+
+      '<div class="card" data-adm="planos"><h3 style="margin:0 0 4px">\ud83c\udf9a\ufe0f Acessos de cada plano</h3><div class="meta" style="margin-bottom:8px">Defina o que cada plano libera. Use <b>-1</b> para ilimitado e <b>0</b> para bloquear.</div><div id="limBox"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\ud83d\udd11 Redefinir senha de usu\u00e1rio</h3><div class="meta" style="margin-bottom:8px">Gera uma senha nova. Informe-a ao usu\u00e1rio por um canal seguro.</div>'+
       '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
       '<label>Nova senha (vazio = gerar autom\u00e1tica)</label><input id="rp_senha" placeholder="deixe vazio para gerar">'+
       '<button class="btn" onclick="adminReset(this)">Redefinir senha</button><div id="rpRes" style="margin-top:10px"></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83d\udce7 Envio de e-mail (Resend)</h3><div class="meta" style="margin-bottom:8px">Dispara um e-mail de verdade e mostra o erro exato se falhar.</div>'+
+      '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\ud83d\udce7 Envio de e-mail</h3><div class="meta" style="margin-bottom:8px">Dispara um e-mail de verdade e mostra o erro exato se falhar.</div>'+
       '<label>Enviar teste para</label><input id="de_dest" type="email" placeholder="seu@email.com">'+
       '<button class="btn sec" onclick="diagEmail(this)">Testar envio</button><div id="emDiag" style="margin-top:10px"></div></div>'+
-      '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcdc Termos de uso e privacidade</h3><div class="meta">Texto exibido no cadastro. Protegido contra altera\u00e7\u00e3o acidental.</div></div><button class="ib" id="tmLapis" onclick="editarTermo()" title="Editar termo">\u270f\ufe0f</button></div><div id="tmBox"></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\ud83c\udf81 Liberar acesso (cortesia)</h3><div class="meta" style="margin-bottom:8px">D\u00ea acesso gratuito por tempo determinado \u2014 para testes ou parceiros.</div>'+
+      '<div class="card" data-adm="ajustes"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcdc Termos de uso e privacidade</h3><div class="meta">Texto exibido no cadastro. Protegido contra altera\u00e7\u00e3o acidental.</div></div><button class="ib" id="tmLapis" onclick="editarTermo()" title="Editar termo">\u270f\ufe0f</button></div><div id="tmBox"></div></div>'+
+      '<div class="card" data-adm="planos"><h3 style="margin:0 0 4px">\ud83c\udf81 Liberar acesso (cortesia)</h3><div class="meta" style="margin-bottom:8px">D\u00ea acesso gratuito por tempo determinado \u2014 para testes ou parceiros.</div>'+
       '<label>Quem recebe</label><select id="ct_destino" onchange="mudouDestino()"><option value="login">Um usu\u00e1rio espec\u00edfico</option><option value="manejadores">Todos os manejadores</option><option value="empresas">Todas as empresas</option><option value="todos">Todos os usu\u00e1rios</option><option value="novos:7">Cadastrados nos \u00faltimos 7 dias</option><option value="novos:30">Cadastrados nos \u00faltimos 30 dias</option></select>'+
       '<div id="ct_loginBox"><label>Login do usu\u00e1rio *</label><input id="ct_login" placeholder="login cadastrado"></div>'+
       '<div id="ct_conta" class="meta" style="margin:4px 0"></div>'+
@@ -4634,8 +4641,8 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<div><label>Dias</label><input id="ct_dias" inputmode="numeric" value="30"></div></div>'+
       '<label>Observa\u00e7\u00e3o</label><input id="ct_obs" placeholder="ex: teste, parceiro, influenciador">'+
       '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
-      '<div class="card"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
-      '<h3 style="margin:18px 4px 8px">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
+      '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\u2699\ufe0f Ajustes da plataforma</h3><div class="meta" style="margin-bottom:8px">Mude as regras sem precisar de programa\u00e7\u00e3o. Vale para todos, na hora.</div><div id="paramBox"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<h3 style="margin:18px 4px 8px" data-adm="denuncias">\ud83d\udea9 Den\u00fancias</h3>'+denHtml);
     montarAbasAdmin();   // agrupa em abas e carrega só a aba aberta
   }).catch(function(){ app('<div class="empty">Acesso restrito ao administrador.</div>'); }); };
 /* ===== ABAS DA ADMINISTRAÇÃO =====
@@ -4653,7 +4660,7 @@ var ADM_SECOES=[
                    load:['carregarPagsAdm']},
   {k:'planos',     nome:'🎚️ Planos',     titulos:['💰 Preços dos planos','🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
                    load:['carregarParametros','carregarLimites','carregarAssinaturas']},
-  {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📧 Envio de e-mail (Resend)','📜 Termos de uso e privacidade'],
+  {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📧 Envio de e-mail','📜 Termos de uso e privacidade'],
                    load:['carregarParametros','carregarTermoAdm']}
 ];
 var ADM_TAB='denuncias', ADM_PRONTO={};
@@ -4661,15 +4668,23 @@ function montarAbasAdmin(){
   var app=document.getElementById('app'); if(!app) return;
   var filhos=Array.prototype.slice.call(app.children);
   var mapa={}; ADM_SECOES.forEach(function(sc){ mapa[sc.k]=[]; });
-  var atual=null;
+  /* Agrupa pelo atributo data-adm, NÃO pelo texto do título. Casar por texto
+     estava deixando todas as abas vazias: o iconizar troca o emoji do <h3>
+     por um <svg> antes daqui, e fora do pt o traduzirDOM ainda troca a frase
+     inteira. Resultado: nenhum card entrava em nenhuma seção, os botões não
+     respondiam e as caixas ficavam girando para sempre.
+     O arrasto (secao) continua: elemento sem atributo cai na seção do
+     anterior — é assim que os cards de denúncia seguem o título deles. */
+  var secao=null, achou=0;
   filhos.forEach(function(el){
-    if(el.classList && el.classList.contains('hero-bloco')) return;   // fica sempre visível
-    var txt=(el.textContent||'').replace(/\s+/g,' ');
-    for(var i=0;i<ADM_SECOES.length;i++){
-      if(ADM_SECOES[i].titulos.some(function(t){ return txt.indexOf(t)===0 || txt.indexOf(t)>=0 && txt.indexOf(t)<40; })){ atual=ADM_SECOES[i].k; break; }
-    }
-    if(atual) mapa[atual].push(el);
+    if(el.classList && el.classList.contains('hero-bloco')) return;
+    var k=el.getAttribute && el.getAttribute('data-adm');
+    if(k && mapa[k]){ secao=k; achou++; }
+    if(secao) mapa[secao].push(el);
   });
+  /* Rede de segurança: se nada foi reconhecido, não monta aba nenhuma e deixa
+     a lista corrida na tela. Melhor um admin feio do que um admin vazio. */
+  if(!achou) return;
   var barra=document.createElement('div'); barra.className='adm-abas';
   barra.innerHTML=ADM_SECOES.map(function(sc){
     return '<button class="adm-aba" data-k="'+sc.k+'" onclick="admAba(\''+sc.k+'\')">'+sc.nome+'</button>'; }).join('');
@@ -4680,6 +4695,7 @@ function montarAbasAdmin(){
     mapa[sc.k].forEach(function(el){ box.appendChild(el); });
     app.appendChild(box);
   });
+  traduzirDOM(barra); iconizar(barra);
   ADM_PRONTO={}; admAba(ADM_TAB);
 }
 window.admAba=function(k){
@@ -4727,11 +4743,12 @@ window.diagEmail=function(btn){
     btn.disabled=false; btn.textContent=rot;
     var env=d.envio||{};
     el.innerHTML='<div class="card" style="margin:0">'+
-      '<div>'+(d.temChave?'✅':'❌')+' <span>'+(d.temChave?'Chave RESEND_API_KEY configurada':'Chave RESEND_API_KEY ausente')+'</span></div>'+
+      '<div>'+(d.temChave?'✅':'❌')+' <span>'+(d.temChave?'Provedor de envio configurado':'Nenhum provedor de e-mail configurado')+'</span>'+
+        (d.provedor?' <b class="no-i18n">'+esc(d.provedor)+'</b>':'')+'</div>'+
       '<div class="meta" style="margin-top:6px">Remetente: <b class="no-i18n">'+esc(d.remetente||'')+'</b></div>'+
-      (d.sandbox?'<div style="margin-top:8px;padding:10px;background:#fff4e5;border-radius:8px"><div class="meta">⚠️ Remetente de teste da Resend: só entrega para o e-mail dono da conta Resend. Configure EMAIL_REMETENTE com um domínio verificado.</div></div>':'')+
+      (d.sandbox?'<div style="margin-top:8px;padding:10px;background:#fff4e5;border-radius:8px"><div class="meta">⚠️ Remetente de domínio de teste do provedor. Configure EMAIL_REMETENTE com um domínio seu, autenticado por DKIM.</div></div>':'')+
       (env.ok
-        ? '<div style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:8px"><div class="meta">✅ E-mail aceito pela Resend. Confira a caixa de entrada e o spam.</div></div>'
+        ? '<div style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:8px"><div class="meta">✅ E-mail aceito pelo provedor. Confira a caixa de entrada e o spam.</div></div>'
         : '<div style="margin-top:10px;padding:10px;background:#fbe3e0;border-radius:8px"><div class="meta">❌ Falha no envio:</div><div class="meta no-i18n" style="margin-top:4px">'+esc(String(env.erro||'').slice(0,400))+'</div></div>')+
       (d.ultimaFalha
         ? '<details style="margin-top:8px"><summary class="meta" style="cursor:pointer">Última falha registrada</summary><div class="meta no-i18n" style="margin-top:6px">'+esc(d.ultimaFalha)+'</div></details>'
