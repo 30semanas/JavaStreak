@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2204';
+var APP_VER = 'vJS.250726.2210';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,23 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Entrega 8: limites por plano --- */
+    'Cevas por manejo':'Feeders per session',
+    'Rotas por manejo':'Routes per session',
+    'Amigos por manejo':'Friends per session',
+    /* --- Entrega 6: compartilhar ceva e propriedade --- */
+    'Compartilhar ceva':'Share feeder',
+    'Compartilhar propriedade':'Share property',
+    'Compartilhe com outro manejador informando o login dele. Ele precisa aceitar.':'Share with another hunter by entering his login. He has to accept.',
+    'Compartilhando…':'Sharing…',
+    'Remover este compartilhamento?':'Remove this share?',
+    'Ceva compartilhada por':'Feeder shared by',
+    'Propriedade compartilhada por':'Property shared by',
+    'Aceitando, ela passa a aparecer no seu mapa.':'By accepting, it starts showing on your map.',
+    'Recusar? O dono precisa enviar de novo.':'Decline? The owner will have to send it again.',
+    'convite pendente':'pending invitation',
+    'convites pendentes':'pending invitations',
+    'compartilhada':'shared',
     /* --- Entrega 7: guiamento dentro do manejo --- */
     'Só dá para guiar dentro de um manejo aberto':'Guiding only works inside an open session',
     'Este manejo não tem rota':'This session has no route',
@@ -1896,6 +1913,23 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Entrega 8: limites por plano --- */
+    'Cevas por manejo':'Comederos por manejo',
+    'Rotas por manejo':'Rutas por manejo',
+    'Amigos por manejo':'Amigos por manejo',
+    /* --- Entrega 6: compartilhar ceva e propriedade --- */
+    'Compartilhar ceva':'Compartir comedero',
+    'Compartilhar propriedade':'Compartir propiedad',
+    'Compartilhe com outro manejador informando o login dele. Ele precisa aceitar.':'Comparta con otro manejador informando su login. Él debe aceptar.',
+    'Compartilhando…':'Compartiendo…',
+    'Remover este compartilhamento?':'¿Quitar este compartido?',
+    'Ceva compartilhada por':'Comedero compartido por',
+    'Propriedade compartilhada por':'Propiedad compartida por',
+    'Aceitando, ela passa a aparecer no seu mapa.':'Al aceptar, pasa a aparecer en su mapa.',
+    'Recusar? O dono precisa enviar de novo.':'¿Rechazar? El dueño tendrá que enviarlo de nuevo.',
+    'convite pendente':'invitación pendiente',
+    'convites pendentes':'invitaciones pendientes',
+    'compartilhada':'compartida',
     /* --- Entrega 7: guiamento dentro do manejo --- */
     'Só dá para guiar dentro de um manejo aberto':'Solo se guía dentro de un manejo abierto',
     'Este manejo não tem rota':'Este manejo no tiene ruta',
@@ -3494,6 +3528,7 @@ function corpoPropriedades(){
       '<div class="meta">'+(p.autorizacaoNum?'Autorização nº '+esc(p.autorizacaoNum):'sem autorização')+(p.autorizacaoValidade?' · válida até '+fmtData(p.autorizacaoValidade):'')+'</div>'+
       '<div class="meta">'+(p.temLimite?'<span class="pill ok">'+trFrase('limite desenhado')+'</span>':'<span class="pill gray">'+trFrase('sem limite')+'</span>')+'</div>'+
       (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
+      '<button class="ib" onclick="abrirCompartilhar(\'propriedade\',\''+escJs(p.id)+'\',\''+escJs(p.nome||'')+'\')" title="Compartilhar">🔗</button>'+
       '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar">✏️</button>'+
       '<button class="ib" onclick="excluirProp(\''+p.id+'\')" title="Excluir">🗑️</button></div>';
   }).join('') : '<div class="meta" style="padding:14px 0">Nenhuma propriedade cadastrada.</div>';
@@ -5178,7 +5213,8 @@ VIEWS.espera=function(){ setTitulo('Espera – Cevas'); setCrumb('Manejo','Esper
   server('apiListarCevas').then(function(l){ CACHE.ceva=l;
     var html=l.length? l.map(function(c){ return '<div class="card"><div class="row">'+
       (c.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(c.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:26px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">🌽</div>')+
-      '<div class="grow click" onclick="abrirCeva(\''+c.id+'\')"><h3>'+esc(c.nome||'Ceva')+'</h3><div class="meta"><span class="pill">'+esc(c.tipo||'—')+'</span><br>'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+acoes('ceva',c.id)+'</div></div>'; }).join('')
+      '<div class="grow click" onclick="abrirCeva(\''+c.id+'\')"><h3>'+esc(c.nome||'Ceva')+'</h3><div class="meta"><span class="pill">'+esc(c.tipo||'—')+'</span><br>'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+
+      '<button class="ib" onclick="abrirCompartilhar(\'ceva\',\''+escJs(c.id)+'\',\''+escJs(c.nome||'Ceva')+'\')" title="Compartilhar">🔗</button>'+acoes('ceva',c.id)+'</div></div>'; }).join('')
       : '<div class="empty"><div class="big">🌽</div>Nenhuma ceva cadastrada.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'cevaForm\')">＋ Nova Ceva</button>'); }); };
 VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'); setCrumb('Espera',ed?'Editar':'Nova');
@@ -6117,9 +6153,10 @@ VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
       (m.souDono===false?'<br>'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+' · '+trFrase('você só registra abate'):'')+'</div>'+
       '<div class="meta" style="margin-top:4px">Toque para ver'+(m.souDono===false?'.':' ou encerrar.')+'</div></div>' : '';
   }).catch(function(){});
-  server('apiMeusConvitesManejo').then(function(l){ MEUS_CONVITES=l||[]; var el=document.getElementById('mnConvites'); if(!el) return;
+  Promise.all([ server('apiMeusConvitesManejo'), server('apiMeusConvitesCompart').catch(function(){return [];}) ])
+  .then(function(res){ MEUS_CONVITES=(res[0]||[]).concat(res[1]||[]); var el=document.getElementById('mnConvites'); if(!el) return;
     el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
-      '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite de manejo':'convites de manejo')+'</h3>'+
+      '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite pendente':'convites pendentes')+'</h3>'+
       '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
   }).catch(function(){}); };
 window.novoManejo=function(){
@@ -6130,6 +6167,37 @@ window.novoManejo=function(){
   .catch(function(){ MANEJO_EDIT=null; nav('manejoForm'); }); };
 window.criarRotaManual=function(){ STATE.modalidade='manejo'; STATE.rotaSoManual=true; nav('rotaForm'); };
 window.novaRota=function(){ STATE.rotaSoManual=false; nav('rotaForm'); };
+
+/* ---- Compartilhar ceva e propriedade (entrega 6) ---- */
+var COMPART_ALVO=null;
+window.abrirCompartilhar=function(tipo,id,nome){ COMPART_ALVO={tipo:tipo,id:id,nome:nome}; nav('compartilharItem'); };
+VIEWS.compartilharItem=function(){ var a=COMPART_ALVO; if(!a){ voltar(); return; }
+  var rot = a.tipo==='ceva' ? 'Compartilhar ceva' : 'Compartilhar propriedade';
+  setTitulo(rot); setCrumb('Manejo','Compartilhar');
+  app('<div class="card"><h3 style="margin:0 0 4px">🔗 '+esc(a.nome||'')+'</h3>'+
+    '<div class="meta">Compartilhe com outro manejador informando o <b>login</b> dele. Ele precisa aceitar.</div>'+
+    '<label>Login do manejador *</label><input id="cp_login" placeholder="usuário do manejador">'+
+    '<button class="btn" onclick="enviarCompartItem(this)">Compartilhar</button></div>'+
+    '<div id="cpList"><div class="loading"><div class="spin"></div></div></div>');
+  carregarCompartItem(); };
+function carregarCompartItem(){ var a=COMPART_ALVO; if(!a) return;
+  server('apiCompartilhamentos',a.tipo,a.id).then(function(l){ var el=document.getElementById('cpList'); if(!el) return;
+    el.innerHTML=(l&&l.length)? '<div class="card"><h3 style="margin:0 0 6px">'+trFrase('Compartilhado com')+'</h3>'+
+      l.map(function(c){ var pill=c.status==='aceito'?'<span class="pill ok">'+trFrase('aceitou')+'</span>':'<span class="pill warn">'+trFrase('aguardando')+'</span>';
+        return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow">'+esc(c.paraNome||'')+' '+pill+'</div>'+
+          '<button class="ib" onclick="revogarCompartItem(\''+escJs(c.id)+'\')" title="Remover">🗑️</button></div>'; }).join('')+'</div>'
+      : '<div class="meta" style="margin-top:12px;text-align:center">'+trFrase('Ainda não compartilhada com ninguém.')+'</div>';
+  }).catch(function(){}); }
+window.enviarCompartItem=function(btn){ var a=COMPART_ALVO, login=val('cp_login');
+  if(!login){ toast('Informe o login do manejador'); return; }
+  btn.disabled=true; btn.textContent='Compartilhando…';
+  server('apiCompartilhar',a.tipo,a.id,login).then(function(r){ toast(trFrase('Convite enviado a')+' '+((r&&r.nome)||login));
+      btn.disabled=false; btn.textContent='Compartilhar'; setVal('cp_login',''); carregarCompartItem(); })
+    .catch(function(e){ btn.disabled=false; btn.textContent='Compartilhar'; toast((e&&e.message)||'Erro'); }); };
+window.revogarCompartItem=function(id){ var a=COMPART_ALVO; if(!a) return;
+  if(!confirm(trFrase('Remover este compartilhamento?'))) return;
+  server('apiRevogarCompartilhamento',a.tipo,id).then(function(){ toast('Removido'); carregarCompartItem(); })
+    .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
 /* ---- Manejo: estado, formulário, lista, detalhe e encerramento ---- */
 var MANEJO_EDIT=null, MANEJO_ABERTO=null, MANEJO_ATUAL=null, MANEJO_ABA='aberto', MANEJO_OPTS={cevas:[],rotas:[],canis:[],props:[]}
@@ -6298,14 +6366,27 @@ window.sairDoManejo=function(){ var m=MANEJO_ATUAL; if(!m||!m.participacaoId){ t
 
 /* Convites recebidos: só depois do aceite o manejo entra no histórico do amigo. */
 VIEWS.manejoConvites=function(){ setTitulo('Convites'); setCrumb('Manejo','Convites'); loadingBox();
-  server('apiMeusConvitesManejo').then(function(l){ MEUS_CONVITES=l||[];
-    app(MEUS_CONVITES.length ? MEUS_CONVITES.map(function(c){
+  Promise.all([ server('apiMeusConvitesManejo'), server('apiMeusConvitesCompart').catch(function(){return [];}) ])
+  .then(function(res){ MEUS_CONVITES=res[0]||[]; var compart=res[1]||[];
+    var blocoCompart = compart.map(function(c){
+      return '<div class="card"><h3 style="margin:0 0 4px">'+(c.tipo==='ceva'?'🌽':'🏞️')+' '+esc(c.itemNome||'')+'</h3>'+
+        '<div class="meta">'+trFrase(c.tipo==='ceva'?'Ceva compartilhada por':'Propriedade compartilhada por')+' '+esc(c.donoNome||'—')+'</div>'+
+        '<div class="meta" style="margin-top:4px">'+trFrase('Aceitando, ela passa a aparecer no seu mapa.')+'</div>'+
+        '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="responderCompart(\''+escJs(c.tipo)+'\',\''+escJs(c.id)+'\',\'aceito\',this)">Aceitar</button>'+
+        '<button class="btn sm sec grow" onclick="responderCompart(\''+escJs(c.tipo)+'\',\''+escJs(c.id)+'\',\'recusado\',this)">Recusar</button></div></div>'; }).join('');
+    app((MEUS_CONVITES.length||compart.length) ? (MEUS_CONVITES.map(function(c){
       return '<div class="card"><h3 style="margin:0 0 4px">🤝 '+esc(c.manejoNome||'Manejo')+'</h3>'+
         '<div class="meta">'+trFrase('Convidado por')+' '+esc(c.donoNome||'—')+' · '+rotuloTipoManejo(c.tipo)+' · '+fmtDataHora(c.criadoEm)+'</div>'+
         '<div class="meta" style="margin-top:4px">'+trFrase('Aceitando, você poderá registrar abates neste manejo.')+'</div>'+
         '<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" onclick="responderConvite(\''+escJs(c.id)+'\',\'aceito\',this)">Aceitar</button>'+
-        '<button class="btn sm sec grow" onclick="responderConvite(\''+escJs(c.id)+'\',\'recusado\',this)">Recusar</button></div></div>'; }).join('')
+        '<button class="btn sm sec grow" onclick="responderConvite(\''+escJs(c.id)+'\',\'recusado\',this)">Recusar</button></div></div>'; }).join('')+blocoCompart)
       : '<div class="empty"><div class="big">🤝</div>'+trFrase('Nenhum convite pendente.')+'</div>'); }); };
+window.responderCompart=function(tipo,id,resp,btn){
+  if(resp==='recusado' && !confirm(trFrase('Recusar? O dono precisa enviar de novo.'))) return;
+  btn.disabled=true; btn.textContent='…';
+  server('apiResponderCompartilhamento',tipo,id,resp).then(function(){
+      toast(resp==='aceito'?'Convite aceito ✔':'Convite recusado'); render(); })
+    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
 window.responderConvite=function(id,resp,btn){
   if(resp==='recusado' && !confirm(trFrase('Recusar o convite? Ele some da sua lista e o dono precisa convidar de novo.'))) return;
   btn.disabled=true; btn.textContent='…';
@@ -6630,8 +6711,14 @@ function carregarClimaCevas(){
     return CLIMA_CEVAS; }).catch(function(){ return CLIMA_CEVAS; }); }
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
-  /* Limites das minhas propriedades: fundo de tudo, só para o dono. */
+  /* Limites: os meus (da rede) e os que amigos compartilharam comigo. */
   desenharLimitesEm(MAPLAYER, (NETDATA&&NETDATA.propriedades)||[], pts);
+  desenharLimitesEm(MAPLAYER, d.propriedadesCompart||[], pts);
+  /* Ceva de amigo: só entra aqui depois que eu aceitei o compartilhamento. */
+  if(MAPFILTER.espera) (d.cevasCompart||[]).forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
+    var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+' <span class="pill gray">'+trFrase('compartilhada')+'</span></h4>'+
+      '<div class="meta">'+trFrase('Convidado por')+' '+esc(c.donoNome||'—')+'<br><b>Tipo:</b> '+esc(c.tipo||'—')+'</div></div>';
+    add(L.marker([la,ln],{icon:cevaIcon(null)}).bindPopup(pop),la,ln); });
   if(MAPFILTER.espera) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
     var alHoje=al?al.tipo:'';
