@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2139';
+var APP_VER = 'vJS.250726.2148';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,22 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Entrega 5: limite da propriedade --- */
+    'Limite da propriedade':'Property boundary',
+    'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Tap the map to mark the property corners. From 3 points on, the area closes by itself.',
+    'pontos':'points',
+    'área':'area',
+    '↶ Desfazer':'↶ Undo',
+    '💾 Salvar limite':'💾 Save boundary',
+    'Desenhar limite no mapa':'Draw boundary on the map',
+    'Redesenhar limite no mapa':'Redraw boundary on the map',
+    'O limite aparece no seu mapa e é exigido no manejo livre.':'The boundary shows on your map and is required for a free session.',
+    'limite desenhado':'boundary drawn',
+    'sem limite':'no boundary',
+    'desenhado':'drawn',
+    'ainda não desenhado':'not drawn yet',
+    'Limite salvo ✔':'Boundary saved ✔',
+    'Marque ao menos 3 pontos para fechar a área':'Mark at least 3 points to close the area',
     /* --- Entrega 4: amigos e convites --- */
     'Amigos no manejo':'Friends in this session',
     'Login do amigo':'Friend login',
@@ -1851,6 +1867,22 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Entrega 5: limite da propriedade --- */
+    'Limite da propriedade':'Límite de la propiedad',
+    'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Toque el mapa para marcar las esquinas de la propiedad. A partir de 3 puntos el área se cierra sola.',
+    'pontos':'puntos',
+    'área':'área',
+    '↶ Desfazer':'↶ Deshacer',
+    '💾 Salvar limite':'💾 Guardar límite',
+    'Desenhar limite no mapa':'Dibujar límite en el mapa',
+    'Redesenhar limite no mapa':'Redibujar límite en el mapa',
+    'O limite aparece no seu mapa e é exigido no manejo livre.':'El límite aparece en su mapa y es exigido en el manejo libre.',
+    'limite desenhado':'límite dibujado',
+    'sem limite':'sin límite',
+    'desenhado':'dibujado',
+    'ainda não desenhado':'aún no dibujado',
+    'Limite salvo ✔':'Límite guardado ✔',
+    'Marque ao menos 3 pontos para fechar a área':'Marque al menos 3 puntos para cerrar el área',
     /* --- Entrega 4: amigos e convites --- */
     'Amigos no manejo':'Amigos en el manejo',
     'Login do amigo':'Login del amigo',
@@ -3402,6 +3434,7 @@ function corpoPropriedades(){
     return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
       '<div class="meta">'+(p.dono?'Proprietário: '+esc(p.dono):'sem proprietário')+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
       '<div class="meta">'+(p.autorizacaoNum?'Autorização nº '+esc(p.autorizacaoNum):'sem autorização')+(p.autorizacaoValidade?' · válida até '+fmtData(p.autorizacaoValidade):'')+'</div>'+
+      '<div class="meta">'+(p.temLimite?'<span class="pill ok">'+trFrase('limite desenhado')+'</span>':'<span class="pill gray">'+trFrase('sem limite')+'</span>')+'</div>'+
       (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
       '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar">✏️</button>'+
       '<button class="ib" onclick="excluirProp(\''+p.id+'\')" title="Excluir">🗑️</button></div>';
@@ -3456,8 +3489,79 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<div><label>Longitude</label><input id="pr_lng" inputmode="decimal" value="'+esc(p.lng||'')+'"></div></div>'+
     gpsButton('pr_lat','pr_lng')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
+    '<div class="meta" style="margin:10px 0 4px"><b>'+trFrase('Limite da propriedade')+'</b> — '+
+      (PROPEDIT&&PROPEDIT.temLimite? trFrase('desenhado')+' ('+((PROPEDIT.limite||[]).length)+' '+trFrase('pontos')+')' : trFrase('ainda não desenhado'))+'</div>'+
+    '<button class="btn sec" onclick="desenharLimite()">🗺️ '+trFrase(PROPEDIT&&PROPEDIT.temLimite?'Redesenhar limite no mapa':'Desenhar limite no mapa')+'</button>'+
+    '<div class="meta" style="margin:4px 0 10px;font-size:12px">O limite aparece no seu mapa e é exigido no manejo livre.</div>'+
     '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
+function desenharLimitesEm(layer, props, pts){
+  (props||[]).forEach(function(p){
+    var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; }).filter(function(xy){ return ptOk(xy[0],xy[1]); });
+    if(poly.length<3) return;
+    L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'6,4'})
+      .addTo(layer).bindPopup('<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4><div class="meta">'+trFrase('Limite da propriedade')+'</div></div>');
+    if(pts) poly.forEach(function(xy){ pts.push(xy); });
+  }); }
+
+/* ---- Limite da propriedade: polígono desenhado por cliques (entrega 5) ---- */
+var LIM_DRAW=null;
+window.desenharLimite=function(){
+  var p=PROPEDIT||{};
+  LIM_DRAW={ propId:p.id||'', nome:val('pr_nome')||p.nome||'Propriedade',
+    pontos:(p.limite&&p.limite.length?p.limite.slice():[]),
+    volta:{ nome:val('pr_nome'), dono:val('pr_dono'), documentoDono:val('pr_docdono'),
+      autorizacaoNum:val('pr_autnum'), autorizacaoValidade:val('pr_autval'),
+      lat:val('pr_lat'), lng:val('pr_lng'), obs:val('pr_obs') } };
+  nav('propLimite'); };
+VIEWS.propLimite=function(){ if(!LIM_DRAW){ voltar(); return; }
+  setTitulo('Limite da propriedade'); setCrumb('Propriedades','Limite');
+  app('<div class="card"><h3 style="margin:0 0 4px">🗺️ '+esc(LIM_DRAW.nome)+'</h3>'+
+    '<div class="meta" style="margin-bottom:6px">Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.</div>'+
+    '<div class="dash"><div class="kpi"><b id="limPts">0</b><span>pontos</span></div><div class="kpi"><b id="limArea">—</b><span>área</span></div></div>'+
+    '<div id="limMap" style="height:50vh;min-height:300px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<div class="row" style="gap:8px;margin-top:10px"><button class="btn sec grow" onclick="limiteDesfazer()">↶ Desfazer</button><button class="btn sec grow" onclick="limiteLimpar()">🗑️ Limpar</button></div>'+
+    '<button class="btn" style="margin-top:8px" onclick="salvarLimite(this)">💾 Salvar limite</button>'+
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  var map=L.map('limMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
+  addBase(map); ROUTEMAP=map; LIM_DRAW.layer=L.featureGroup().addTo(map);
+  map.on('click',function(e){ LIM_DRAW.pontos.push({lat:+e.latlng.lat.toFixed(6),lng:+e.latlng.lng.toFixed(6)}); redesenharLimite(); });
+  setTimeout(function(){ map.invalidateSize();
+    if(LIM_DRAW.pontos.length){ try{ map.fitBounds(LIM_DRAW.pontos.map(function(p){return [p.lat,p.lng];}),{padding:[40,40],maxZoom:16}); }catch(e){} }
+    else { var la=coordNumF(LIM_DRAW.volta.lat), ln=coordNumF(LIM_DRAW.volta.lng);
+      if(ptOk(la,ln)) map.setView([la,ln],15);
+      else if(navigator.geolocation) navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP===map) map.setView([pos.coords.latitude,pos.coords.longitude],15); },function(){},{enableHighAccuracy:true,timeout:8000}); }
+  },150);
+  redesenharLimite(); };
+function coordNumF(v){ var n=parseFloat(String(v==null?'':v).replace(',','.')); return isNaN(n)?null:n; }
+function redesenharLimite(){ if(!LIM_DRAW||!LIM_DRAW.layer) return; LIM_DRAW.layer.clearLayers();
+  var pts=LIM_DRAW.pontos.map(function(p){return [p.lat,p.lng];});
+  if(pts.length>2) L.polygon(pts,{color:'#2f7d3a',weight:3,fillColor:'#2f7d3a',fillOpacity:.18}).addTo(LIM_DRAW.layer);
+  else if(pts.length===2) L.polyline(pts,{color:'#2f7d3a',weight:3,dashArray:'6,6'}).addTo(LIM_DRAW.layer);
+  pts.forEach(function(xy,i){ L.circleMarker(xy,{radius:i===0?7:5,color:'#fff',fillColor:i===0?'#b23b3b':'#2f7d3a',fillOpacity:1,weight:2}).addTo(LIM_DRAW.layer); });
+  var e; if(e=document.getElementById('limPts')) e.textContent=pts.length;
+  if(e=document.getElementById('limArea')) e.textContent = pts.length>2 ? fmtArea(areaPoligono(LIM_DRAW.pontos)) : '—'; }
+window.limiteDesfazer=function(){ if(LIM_DRAW&&LIM_DRAW.pontos.length){ LIM_DRAW.pontos.pop(); redesenharLimite(); } };
+window.limiteLimpar=function(){ if(LIM_DRAW){ LIM_DRAW.pontos=[]; redesenharLimite(); } };
+/* área aproximada em m² pela fórmula do shoelace, com os graus convertidos para metros */
+function areaPoligono(pts){ if(!pts||pts.length<3) return 0;
+  var latRef=pts.reduce(function(s,p){return s+p.lat;},0)/pts.length;
+  var mLat=110574, mLng=111320*Math.cos(latRef*Math.PI/180), soma=0;
+  for(var i=0;i<pts.length;i++){ var a=pts[i], b=pts[(i+1)%pts.length];
+    soma += (a.lng*mLng)*(b.lat*mLat) - (b.lng*mLng)*(a.lat*mLat); }
+  return Math.abs(soma/2); }
+function fmtArea(m2){ if(!m2) return '—';
+  var ha=m2/10000; return ha>=100 ? (ha/100).toFixed(2).replace('.',',')+' km²' : ha.toFixed(ha>=10?1:2).replace('.',',')+' ha'; }
+window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
+  if(LIM_DRAW.pontos.length && LIM_DRAW.pontos.length<3){ toast('Marque ao menos 3 pontos para fechar a área'); return; }
+  var v=LIM_DRAW.volta;
+  var d={ nome:v.nome||LIM_DRAW.nome, dono:v.dono, documentoDono:v.documentoDono, autorizacaoNum:v.autorizacaoNum,
+    autorizacaoValidade:v.autorizacaoValidade, lat:v.lat, lng:v.lng, obs:v.obs, limite:LIM_DRAW.pontos };
+  if(!d.nome){ toast('Informe o nome da propriedade'); return; }
+  if(LIM_DRAW.propId) d.id=LIM_DRAW.propId;
+  btn.disabled=true; btn.textContent='Salvando…';
+  server('apiSalvarPropriedade',d).then(function(){ toast('Limite salvo ✔'); LIM_DRAW=null; PROPEDIT=null; voltarPropriedades(); })
+    .catch(function(e){ btn.disabled=false; btn.textContent='💾 Salvar limite'; toast((e&&e.message)||'Erro'); }); };
 window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
@@ -4599,6 +4703,7 @@ function montarNetMap(d){ var card=document.getElementById('netMapCard'); if(!ca
   var map=L.map('netMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
   addBase(map);
   ROUTEMAP=map; var layer=L.featureGroup().addTo(map);
+  desenharLimitesEm(layer, d.propriedades||[], pts);
   (d.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return; pts.push([la,ln]); L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).addTo(layer).bindPopup(function(){ return netPopEmpresa(e); }); });
   (d.manejadores||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return; pts.push([la,ln]);
     if(m.eu){ L.marker([la,ln],{icon:avatarIcon(m,52,true)}).addTo(layer).bindPopup('<div class="pop"><h4>📍 Você está aqui</h4></div>'); }
@@ -6323,6 +6428,8 @@ function carregarClimaCevas(){
     return CLIMA_CEVAS; }).catch(function(){ return CLIMA_CEVAS; }); }
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
+  /* Limites das minhas propriedades: fundo de tudo, só para o dono. */
+  desenharLimitesEm(MAPLAYER, (NETDATA&&NETDATA.propriedades)||[], pts);
   if(MAPFILTER.espera) d.cevas.forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var abs=d.abates.filter(function(a){return a.cevaId===c.id;}), al=d.ultimoAlimento[c.id];
     var alHoje=al?al.tipo:'';
