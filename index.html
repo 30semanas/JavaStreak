@@ -944,7 +944,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1657';
+var APP_VER = 'vJS.260726.1705';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1800,6 +1800,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Indique um amigo: quando ele criar a conta e confirmar o e-mail, você ganha':'Invite a friend: when they create an account and confirm their email, you get',
+    'dias de Mateiro.':'days of Mateiro.',
+    'Divulgar promoção de indicação':'Advertise the referral promotion',
+    'Dias de Mateiro por indicação':'Days of Mateiro per referral',
     '📧 Envio de e-mail (Resend)':'📧 Email delivery (Resend)',
     'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Sends a real email and shows the exact error if it fails.',
     'Enviar teste para':'Send test to',
@@ -2856,6 +2860,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Indique um amigo: quando ele criar a conta e confirmar o e-mail, você ganha':'Invita a un amigo: cuando cree la cuenta y confirme su correo, ganas',
+    'dias de Mateiro.':'días de Mateiro.',
+    'Divulgar promoção de indicação':'Divulgar la promoción de referidos',
+    'Dias de Mateiro por indicação':'Días de Mateiro por referido',
     '📧 Envio de e-mail (Resend)':'📧 Envío de correo (Resend)',
     'Dispara um e-mail de verdade e mostra o erro exato se falhar.':'Envía un correo real y muestra el error exacto si falla.',
     'Enviar teste para':'Enviar prueba a',
@@ -3675,7 +3683,7 @@ function aplicarAuth(r){
   // conta nova nascia sem sessão: tudo depois falhava com "não autenticado".
   if(r && r.token) salvarToken(r.token);
   aplicarIdiomaDaConta(r && r.idioma);
-  STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin;
+  STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin; STATE.promoInd=r.promoInd||null;
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); }
@@ -5417,9 +5425,18 @@ function carregarConvites(){
           '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
       return MEUS_CONVITES; }); }
 window.irParaConvites=function(){ STATE.stack=['manejoHub','manejoConvites']; render(); };
+/* Subtítulo da tela inicial: instruções do menu ou o anúncio da promoção de
+   indicação, conforme o interruptor do painel de admin (PROMO_INDICACAO_ATIVA).
+   Frase fixa pelo trFrase, número fora — nunca concatenar a frase inteira. */
+function subInicio(){
+  var pi=STATE.promoInd||{};
+  if(pi.ativa) return trFrase('Indique um amigo: quando ele criar a conta e confirmar o e-mail, você ganha')+
+    ' '+(pi.dias||10)+' '+trFrase('dias de Mateiro.');
+  return trFrase('Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.');
+}
 VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crumb').innerHTML='';
   var nome=(STATE.manejador&&STATE.manejador.nome)?STATE.manejador.nome.split(' ')[0]:'';
-  app(heroFoto('inicio',trFrase('Bem-vindo,')+' '+nome,trFrase('Use o menu lateral para navegar: espera, rotas, cães, armadilhas, abates, agenda e mapa.'),'JavaStreak')+
+  app(heroFoto('inicio',trFrase('Bem-vindo,')+' '+nome,subInicio(),'JavaStreak')+
     '<div id="inicioConvites"></div><div id="inicioAlerta"></div>'+
     '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
     '<div id="blogBox" style="margin-top:4px"><div class="loading"><div class="spin"></div></div></div>'+
@@ -7253,7 +7270,7 @@ function renderCevaPanel(){
    ============================================================ */
 function iniciar(){ loadingBox('Conectando ao servidor…');
   server('apiPing').then(function(p){ STATE.appNome='JavaStreak'; setTitulo(STATE.appNome);
-    if(AUTH.token){ return server('apiBoot').then(function(b){ aplicarIdiomaDaConta(b.idioma); STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin;
+    if(AUTH.token){ return server('apiBoot').then(function(b){ aplicarIdiomaDaConta(b.idioma); STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin; STATE.promoInd=b.promoInd||null;
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
         aplicarFundo(); render(); iniciarPromoPoll(); })
