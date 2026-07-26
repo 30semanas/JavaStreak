@@ -969,7 +969,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2025';
+var APP_VER = 'vJS.260726.2048';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1053,21 +1053,15 @@ var FRASES = {
     'Nenhum cavalo cadastrado.':'No horse registered.',
     'Nenhuma embarcação cadastrada.':'No vessel registered.',
     'Nenhum veículo cadastrado.':'No vehicle registered.',
-    'Controles de manutenção':'Maintenance controls',
     'Histórico de manutenção':'Maintenance history',
     'Registrar manutenção':'Register maintenance',
     'Editar manutenção':'Edit maintenance',
     'Nenhuma manutenção registrada ainda.':'No maintenance registered yet.',
-    'Editar controles':'Edit controls',
     'Documentos e vencimentos ficam no menu Documentação.':'Documents and due dates live in the Documents menu.',
-    'Horas de motor':'Engine hours',
     'Manutenção salva ✔':'Maintenance saved ✔',
-    'Controles salvos ✔':'Controls saved ✔',
-    'Salvar controles':'Save controls',
     'Trajetos gravados por GPS':'Tracks recorded by GPS',
     'Abertos e encerrados · abates de cada um':'Open and closed · takes of each one',
     'Excluir este abate? Esta ação não pode ser desfeita.':'Delete this take? This cannot be undone.',
-    'Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.':'Registration, taxes and other documents live in Documents → Vehicles, with due-date alerts in the calendar.',
     'Rotas de pesca':'Fishing routes',
     'Próximo KM':'Next mileage',
     'Próximas horas':'Next engine hours',
@@ -1517,7 +1511,6 @@ var FRASES = {
     'Conte o que aconteceu, com o máximo de detalhes':'Tell us what happened, in as much detail as possible',
     'Convidar':'Invite',
     'Convite criado:':'Invite created:',
-    'Correia dentada (troca)':'Timing belt (replacement)',
     'CPF/CNPJ do proprietário':'Owner\'s tax ID',
     'Criar conta de empresa':'Create company account',
     'Criar conta e entrar':'Create account and sign in',
@@ -1611,7 +1604,6 @@ var FRASES = {
     'Informe um número de dias':'Enter a number of days',
     'Instagram':'Instagram',
     'Item não encontrado':'Item not found',
-    'KM atual':'Current mileage',
     'Lançar promoção':'Launch promotion',
     'Latitude':'Latitude',
     'Latitude (sede)':'Latitude (HQ)',
@@ -1709,8 +1701,6 @@ var FRASES = {
     'Propriedade salva ✔':'Property saved ✔',
     'Proprietário':'Owner',
     'Próxima':'Next',
-    'Próxima revisão':'Next service',
-    'Próxima troca de óleo':'Next oil change',
     'Quantidade':'Quantity',
     'Quem deve ver (público-alvo)':'Who should see it (audience)',
     'Quem escreveu (padrão: Redação)':'Who wrote it (default: Editorial)',
@@ -1775,9 +1765,7 @@ var FRASES = {
     'Toque no mapa para marcar o ponto':'Tap the map to mark the point',
     'Transporte':'Vehicle',
     'Transporte cadastrado ✔':'Vehicle registered ✔',
-    'Troca de pneus':'Tire change',
     'Troféu adicionado ✔':'Trophy added ✔',
-    'Última revisão':'Last service',
     'Uma linha sobre a empresa':'One line about the company',
     'Uma ou duas frases que abrem o texto':'One or two sentences that open the text',
     'Unidade':'Unit',
@@ -2182,21 +2170,15 @@ var FRASES = {
     'Nenhum cavalo cadastrado.':'Ningún caballo registrado.',
     'Nenhuma embarcação cadastrada.':'Ninguna embarcación registrada.',
     'Nenhum veículo cadastrado.':'Ningún vehículo registrado.',
-    'Controles de manutenção':'Controles de mantenimiento',
     'Histórico de manutenção':'Historial de mantenimiento',
     'Registrar manutenção':'Registrar mantenimiento',
     'Editar manutenção':'Editar mantenimiento',
     'Nenhuma manutenção registrada ainda.':'Ningún mantenimiento registrado todavía.',
-    'Editar controles':'Editar controles',
     'Documentos e vencimentos ficam no menu Documentação.':'Los documentos y vencimientos están en el menú Documentación.',
-    'Horas de motor':'Horas de motor',
     'Manutenção salva ✔':'Mantenimiento guardado ✔',
-    'Controles salvos ✔':'Controles guardados ✔',
-    'Salvar controles':'Guardar controles',
     'Trajetos gravados por GPS':'Trayectos grabados por GPS',
     'Abertos e encerrados · abates de cada um':'Abiertos y cerrados · abates de cada uno',
     'Excluir este abate? Esta ação não pode ser desfeita.':'¿Eliminar este abate? Esta acción no se puede deshacer.',
-    'Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.':'La licencia, los impuestos y demás documentos están en Documentación → Vehículos, con aviso de vencimiento en la agenda.',
     'Rotas de pesca':'Rutas de pesca',
     'Próximo KM':'Próximo KM',
     'Próximas horas':'Próximas horas',
@@ -2646,7 +2628,6 @@ var FRASES = {
     'Conte o que aconteceu, com o máximo de detalhes':'Cuéntanos qué pasó, con el máximo detalle',
     'Convidar':'Invitar',
     'Convite criado:':'Invitación creada:',
-    'Correia dentada (troca)':'Correa de distribución (cambio)',
     'CPF/CNPJ do proprietário':'CPF/CNPJ del propietario',
     'Criar conta de empresa':'Crear cuenta de empresa',
     'Criar conta e entrar':'Crear cuenta e ingresar',
@@ -2740,7 +2721,6 @@ var FRASES = {
     'Informe um número de dias':'Indica un número de días',
     'Instagram':'Instagram',
     'Item não encontrado':'Elemento no encontrado',
-    'KM atual':'KM actual',
     'Lançar promoção':'Lanzar promoción',
     'Latitude':'Latitud',
     'Latitude (sede)':'Latitud (sede)',
@@ -2838,8 +2818,6 @@ var FRASES = {
     'Propriedade salva ✔':'Propiedad guardada ✔',
     'Proprietário':'Propietario',
     'Próxima':'Próxima',
-    'Próxima revisão':'Próxima revisión',
-    'Próxima troca de óleo':'Próximo cambio de aceite',
     'Quantidade':'Cantidad',
     'Quem deve ver (público-alvo)':'Quién debe ver (público objetivo)',
     'Quem escreveu (padrão: Redação)':'Quién escribió (predeterminado: Redacción)',
@@ -2904,9 +2882,7 @@ var FRASES = {
     'Toque no mapa para marcar o ponto':'Toca el mapa para marcar el punto',
     'Transporte':'Vehículo',
     'Transporte cadastrado ✔':'Vehículo registrado ✔',
-    'Troca de pneus':'Cambio de neumáticos',
     'Troféu adicionado ✔':'Trofeo añadido ✔',
-    'Última revisão':'Última revisión',
     'Uma linha sobre a empresa':'Una línea sobre la empresa',
     'Uma ou duas frases que abrem o texto':'Una o dos frases que abren el texto',
     'Unidade':'Unidad',
@@ -6135,22 +6111,10 @@ VIEWS.transpDetail=function(){ var t=STATE.transporte;
         return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px"><span class="pill '+cls+'">'+esc(s.tipo)+'</span> '+esc(s.descricao||'')+'</h3><div class="meta">'+fmtData(s.data)+al+(s.obs?'<br>'+esc(s.obs):'')+'</div></div>'+acoes('saudeTransp',s.id)+'</div></div>'; }).join('') : '<div class="empty">Nenhum registro de saúde ainda.</div>';
       document.getElementById('tsaudeList').innerHTML=html; fab('<button class="btn" onclick="novo(\'transpSaudeForm\')">＋ Registrar saúde/agenda</button>'); });
   } else if(isMecanico(t.tipo)){
-    var h=diaHoje(); var mesAtual=new Date().getMonth()+1;
-    var meses=['—','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    var docLinha=function(label,valor,alerta){ return '<div class="row" style="padding:8px 0;border-bottom:1px solid var(--linha)"><div class="grow">'+label+'</div><b'+(alerta?' style="color:var(--danger)"':'')+'>'+(valor||'—')+'</b></div>'; };
-    var atrasadaRev = t.proximaRevisao && String(t.proximaRevisao).substring(0,10)<h;
-    var atrasadaOleo = t.proximaTrocaOleo && String(t.proximaTrocaOleo).substring(0,10)<h;
-    var docHtml='<div class="card"><h3 style="margin:0 0 6px">🔧 '+trFrase('Controles de manutenção')+'</h3>'+
-      docLinha((isEmbarcacao(t.tipo)?'⛵ ':'🚗 ')+trFrase(isEmbarcacao(t.tipo)?'Horas de motor':'KM atual'), t.kmAtual?esc(t.kmAtual)+(isEmbarcacao(t.tipo)?' h':' km'):'')+
-      docLinha('🔧 Última revisão', t.ultimaRevisao?fmtData(t.ultimaRevisao):'')+
-      docLinha('🔧 Próxima revisão', t.proximaRevisao?fmtData(t.proximaRevisao):'', atrasadaRev)+
-      docLinha('🛢️ Próxima troca de óleo', t.proximaTrocaOleo?fmtData(t.proximaTrocaOleo):'', atrasadaOleo)+
-      docLinha('⚙️ Correia dentada', t.correiaDentada?fmtData(t.correiaDentada):'', t.correiaDentada&&String(t.correiaDentada).substring(0,10)<h)+
-      docLinha('🛞 Troca de pneus', t.trocaPneus?fmtData(t.trocaPneus):'', t.trocaPneus&&String(t.trocaPneus).substring(0,10)<h)+
-      (t.obs?'<div class="meta" style="margin-top:8px">'+esc(t.obs)+'</div>':'')+
-      '<div class="meta" style="margin-top:8px">'+trFrase('Documentos e vencimentos ficam no menu Documentação.')+'</div>'+
-      '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="nav(\'docVeiculo\')">✏️ '+trFrase('Editar controles')+'</button></div>';
-    app(ficha+docHtml+'<h3 style="margin:14px 4px 6px">🛠️ '+trFrase('Histórico de manutenção')+'</h3><div id="manutList"><div class="loading"><div class="spin"></div></div></div>');
+    /* O cartão de controles fixos e a tela de edição dele foram removidos:
+       agora tudo passa pelo histórico, que é o que alimenta a agenda.
+       Sobra a ficha, o histórico e o botão de registrar. */
+    app(ficha+'<h3 style="margin:14px 4px 6px">🛠️ '+trFrase('Histórico de manutenção')+'</h3><div id="manutList"><div class="loading"><div class="spin"></div></div></div>');
     carregarManutencoes(t.id);
     fab('<button class="btn" onclick="novo(\'manutForm\')">＋ '+trFrase('Registrar manutenção')+'</button>');
   } else {
@@ -6218,20 +6182,6 @@ window.salvarSaudeTransp=function(btn){ btn.disabled=true; btn.textContent='Salv
 
 var MESES_OPT='<option value="">—</option>'+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map(function(m,i){return '<option value="'+(i+1)+'">'+m+' ('+(i+1)+')</option>';}).join('');
 function _setData(id,v){ if(v){ var e=document.getElementById(id); if(e) e.value=String(v).substring(0,10); } }
-VIEWS.docVeiculo=function(){ var t=STATE.transporte; setTitulo('Controles de manutenção'); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo),'Manutenção');
-  app('<div class="card">'+
-    '<div class="meta" style="margin-bottom:8px">'+trFrase('Licenciamento, IPVA e demais documentos ficam em Documentação → Veículos, com aviso de vencimento na agenda.')+'</div>'+
-    '<label>KM atual</label><input id="dv_km" inputmode="numeric" value="'+esc(t.kmAtual||'')+'">'+
-    '<div class="two"><div><label>Última revisão</label><input id="dv_urev" type="date"></div><div><label>Próxima revisão</label><input id="dv_prev" type="date"></div></div>'+
-    '<label>Próxima troca de óleo</label><input id="dv_oleo" type="date">'+
-    '<div class="two"><div><label>Correia dentada (troca)</label><input id="dv_correia" type="date"></div><div><label>Troca de pneus</label><input id="dv_pneus" type="date"></div></div>'+
-    '<label>Observações</label><textarea id="dv_obs">'+esc(t.obs||'')+'</textarea>'+
-    '<button class="btn" onclick="salvarDocVeiculo(this)">Salvar controles</button></div>');
-  _setData('dv_urev',t.ultimaRevisao); _setData('dv_prev',t.proximaRevisao); _setData('dv_oleo',t.proximaTrocaOleo); _setData('dv_correia',t.correiaDentada); _setData('dv_pneus',t.trocaPneus); };
-window.salvarDocVeiculo=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
-  var d={ kmAtual:val('dv_km'), ultimaRevisao:val('dv_urev'), proximaRevisao:val('dv_prev'), proximaTrocaOleo:val('dv_oleo'), correiaDentada:val('dv_correia'), trocaPneus:val('dv_pneus'), obs:val('dv_obs') };
-  server('apiEditar','transporte',STATE.transporte.id,d).then(function(){ for(var k in d) STATE.transporte[k]=d[k]; toast('Controles salvos ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar documentação'; }); };
-
 VIEWS.transpForm=function(){ var ed=!!EDIT; var cat=ed?categoriaTransp(EDIT.tipo):catAtual();
   /* No HARAS o tipo é sempre Cavalo — não faz sentido perguntar. */
   var soCavalo = (cat==='aras');
@@ -6766,7 +6716,10 @@ VIEWS.matilha=function(){ var k=STATE.canil; setTitulo(k.nome||'Canil'); setCrum
     var html='<div class="card rustic-hero"><div class="row"><h2 class="grow" style="margin:0">🏠 '+esc(k.nome||'Canil')+'</h2><button class="ib" onclick="editItem(\'canil\',\''+k.id+'\')" title="Editar canil">✏️</button></div><div class="meta" style="margin-top:4px">'+(l.length||0)+' cão(es) na matilha'+(k.lat&&k.lng?' · '+mapaLink(k.lat,k.lng):'')+(k.obs?'<br>'+esc(k.obs):'')+'</div></div>'+
       (l.length? l.map(function(c){ return '<div class="card"><div class="row">'+
       (c.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(c.fotoUrl))+'">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:var(--areia);display:flex;align-items:center;justify-content:center">🐕</div>')+
-      '<div class="grow click" onclick="abrirCao(\''+c.id+'\')"><h3>'+esc(c.nome)+'</h3><div class="meta"><span class="pill">'+esc(c.funcao||'—')+'</span> '+esc(c.raca||'')+'<br>'+(c.sexo?esc(c.sexo)+' · ':'')+(idade(c.dataNascimento)||'')+'</div></div>'+acoes('cao',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum cão neste canil ainda.<br>Toque em <b>Novo cão</b>.</div>');
+      '<div class="grow click" onclick="abrirCao(\''+c.id+'\')"><h3>'+esc(c.nome)+'</h3>'+
+      '<div class="meta"><span class="pill">'+esc(c.funcao||'—')+'</span> '+esc(c.raca||'')+'<br>'+(c.sexo?esc(c.sexo)+' · ':'')+(idade(c.dataNascimento)||'')+'</div>'+
+      '<button class="btn sm sec" style="width:auto;margin:7px 0 2px" onclick="event.stopPropagation();abrirCao(\''+c.id+'\')">'+trFrase('Ver saúde')+'</button>'+
+      '</div>'+acoes('cao',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum cão neste canil ainda.<br>Toque em <b>Novo cão</b>.</div>');
     app(html); fab('<button class="btn" onclick="novo(\'caoForm\')">＋ Novo cão</button>'); }).catch(erroTela); };
 
 VIEWS.caoForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar cão':'Novo cão'); setCrumb('Matilha',esc(STATE.canil.nome),ed?'Editar':'Novo');
