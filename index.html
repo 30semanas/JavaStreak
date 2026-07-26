@@ -945,7 +945,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1728';
+var APP_VER = 'vJS.260726.1807';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1801,6 +1801,51 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    '🔞 Conteúdo para maiores de 18 anos':'🔞 Content for adults 18+',
+    'O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.':'JavaStreak is a wild boar management tool intended for people aged 18 or over who hold the legal permits required for the activity.',
+    'Tenho 18 anos ou mais':'I am 18 or older',
+    'Se você tem menos de 18 anos, feche esta página.':'If you are under 18, please close this page.',
+    '📧 Confirme seu e-mail':'📧 Confirm your email',
+    'Confirmar e entrar':'Confirm and sign in',
+    'Não achou? Procure no spam e na aba Promoções.':'Can\'t find it? Check spam and the Promotions tab.',
+    'Confirmando…':'Confirming…',
+    'Digite o código de 6 dígitos':'Enter the 6-digit code',
+    'Conta confirmada ✔ Bem-vindo!':'Account confirmed ✔ Welcome!',
+    'Código reenviado ✔':'Code resent ✔',
+    'Não foi possível reenviar':'Could not resend',
+    'Código inválido':'Invalid code',
+    'Confirme seu e-mail para entrar':'Confirm your email to sign in',
+    'Conta criada — confirme seu e-mail':'Account created — confirm your email',
+    'Confirmar e-mail':'Confirm email',
+    'Alguém indicou o JavaStreak para você?':'Did someone refer JavaStreak to you?',
+    'Sim, fui indicado':'Yes, I was referred',
+    'E-mail de quem indicou *':'Referrer\'s email *',
+    'Conferindo…':'Checking…',
+    '✅ Indicação confirmada':'✅ Referral confirmed',
+    '❌ Esse e-mail não tem conta confirmada no JavaStreak':'❌ That email has no confirmed JavaStreak account',
+    'Não foi possível conferir agora':'Could not check right now',
+    'Informe o e-mail de quem indicou':'Enter the referrer\'s email',
+    'Confira o e-mail de quem indicou — ele precisa ter conta confirmada':'Check the referrer\'s email — the account must be confirmed',
+    'Quem indicou precisa ter conta confirmada':'The referrer must have a confirmed account',
+    'Informe a data de nascimento':'Enter your date of birth',
+    'É preciso ter 18 anos ou mais para criar a conta':'You must be 18 or older to create an account',
+    'Data de nascimento *':'Date of birth *',
+    '🤝 Indicações':'🤝 Referrals',
+    'Quem indicou quem e quantos dias já foram creditados.':'Who referred whom and how many days were credited.',
+    '✅ Confirmar conta na mão':'✅ Confirm account manually',
+    'Saída de emergência para quando o e-mail não chega. Libera o acesso e paga a indicação pendente.':'Emergency exit for when the email never arrives. Grants access and pays the pending referral.',
+    'Confirmar conta':'Confirm account',
+    'Essa conta já estava confirmada.':'This account was already confirmed.',
+    '✅ Conta confirmada. A pessoa já consegue entrar.':'✅ Account confirmed. They can sign in now.',
+    'dias creditados':'days credited',
+    'aguardando confirmação':'awaiting confirmation',
+    'no total':'in total',
+    'creditadas':'credited',
+    'pendentes':'pending',
+    'A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.':'The promotion banner is off in Settings. Referrals are still being paid.',
+    'Quem mais indica':'Top referrers',
+    'Últimas indicações':'Latest referrals',
+    'Nenhuma indicação ainda.':'No referrals yet.',
     'Indique um amigo: quando ele criar a conta e confirmar o e-mail, você ganha':'Invite a friend: when they create an account and confirm their email, you get',
     'dias de Mateiro.':'days of Mateiro.',
     'Divulgar promoção de indicação':'Advertise the referral promotion',
@@ -2861,6 +2906,51 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    '🔞 Conteúdo para maiores de 18 anos':'🔞 Contenido para mayores de 18 años',
+    'O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.':'JavaStreak es una herramienta de manejo de jabalí destinada a personas de 18 años o más que cuenten con las autorizaciones legales exigidas.',
+    'Tenho 18 anos ou mais':'Tengo 18 años o más',
+    'Se você tem menos de 18 anos, feche esta página.':'Si eres menor de 18 años, cierra esta página.',
+    '📧 Confirme seu e-mail':'📧 Confirma tu correo',
+    'Confirmar e entrar':'Confirmar y entrar',
+    'Não achou? Procure no spam e na aba Promoções.':'¿No lo encuentras? Revisa el spam y la pestaña Promociones.',
+    'Confirmando…':'Confirmando…',
+    'Digite o código de 6 dígitos':'Escribe el código de 6 dígitos',
+    'Conta confirmada ✔ Bem-vindo!':'¡Cuenta confirmada ✔ Bienvenido!',
+    'Código reenviado ✔':'Código reenviado ✔',
+    'Não foi possível reenviar':'No se pudo reenviar',
+    'Código inválido':'Código inválido',
+    'Confirme seu e-mail para entrar':'Confirma tu correo para entrar',
+    'Conta criada — confirme seu e-mail':'Cuenta creada — confirma tu correo',
+    'Confirmar e-mail':'Confirmar correo',
+    'Alguém indicou o JavaStreak para você?':'¿Alguien te recomendó JavaStreak?',
+    'Sim, fui indicado':'Sí, me recomendaron',
+    'E-mail de quem indicou *':'Correo de quien te recomendó *',
+    'Conferindo…':'Verificando…',
+    '✅ Indicação confirmada':'✅ Recomendación confirmada',
+    '❌ Esse e-mail não tem conta confirmada no JavaStreak':'❌ Ese correo no tiene cuenta confirmada en JavaStreak',
+    'Não foi possível conferir agora':'No se pudo verificar ahora',
+    'Informe o e-mail de quem indicou':'Indica el correo de quien te recomendó',
+    'Confira o e-mail de quem indicou — ele precisa ter conta confirmada':'Revisa el correo de quien te recomendó — la cuenta debe estar confirmada',
+    'Quem indicou precisa ter conta confirmada':'Quien recomienda debe tener cuenta confirmada',
+    'Informe a data de nascimento':'Indica tu fecha de nacimiento',
+    'É preciso ter 18 anos ou mais para criar a conta':'Debes tener 18 años o más para crear la cuenta',
+    'Data de nascimento *':'Fecha de nacimiento *',
+    '🤝 Indicações':'🤝 Recomendaciones',
+    'Quem indicou quem e quantos dias já foram creditados.':'Quién recomendó a quién y cuántos días se acreditaron.',
+    '✅ Confirmar conta na mão':'✅ Confirmar cuenta manualmente',
+    'Saída de emergência para quando o e-mail não chega. Libera o acesso e paga a indicação pendente.':'Salida de emergencia cuando el correo no llega. Habilita el acceso y paga la recomendación pendiente.',
+    'Confirmar conta':'Confirmar cuenta',
+    'Essa conta já estava confirmada.':'Esta cuenta ya estaba confirmada.',
+    '✅ Conta confirmada. A pessoa já consegue entrar.':'✅ Cuenta confirmada. Ya puede entrar.',
+    'dias creditados':'días acreditados',
+    'aguardando confirmação':'esperando confirmación',
+    'no total':'en total',
+    'creditadas':'acreditadas',
+    'pendentes':'pendientes',
+    'A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.':'La difusión de la promoción está apagada en Ajustes. Las recomendaciones siguen pagándose.',
+    'Quem mais indica':'Quiénes más recomiendan',
+    'Últimas indicações':'Últimas recomendaciones',
+    'Nenhuma indicação ainda.':'Aún no hay recomendaciones.',
     'Indique um amigo: quando ele criar a conta e confirmar o e-mail, você ganha':'Invita a un amigo: cuando cree la cuenta y confirme su correo, ganas',
     'dias de Mateiro.':'días de Mateiro.',
     'Divulgar promoção de indicação':'Divulgar la promoción de referidos',
@@ -3448,7 +3538,7 @@ var EMOJI_ICO={ '＋':'adicionar','✏️':'editar','🗑️':'excluir','🔗':'
   '🔎':'buscar','📜':'arquivo','📡':'global','🔑':'bloqueio','🚚':'garagem','📞':'telefone','👍':'confirmar','✉️':'email','❌':'fechar','📸':'camera','↩️':'atualizar',
   '✍️':'editar','★':'estrela','🏠':'inicio','☰':'menu','🕐':'relogio','👎':'fechar','🏅':'estrela','📆':'calendario','⏰':'relogio','🔥':'notificacao','💡':'ia',
   '🧰':'ajustes','🗓️':'calendario','🖨️':'arquivo','🧭':'rotas','🧑':'usuario','👤':'usuario','👥':'usuario','🛰️':'global','⛰️':'areas',
-  '⏹️':'fechar','✖️':'fechar','🚫':'fechar','🔁':'atualizar' };
+  '⏹️':'fechar','✖️':'fechar','🚫':'fechar','🔁':'atualizar','🔞':'bloqueio' };
 function iconizarEl(el){
   var n=el.firstChild;
   if(!n || n.nodeType!==3) return;
@@ -3650,9 +3740,26 @@ var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'A
 var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
 /* Tela de abertura: texto profissional, sem ícones, e dois caminhos claros
    (entrar / criar conta). É a primeira coisa que quem não está logado vê. */
+/* Porta de maioridade: primeira coisa que aparece para quem abre o link.
+   A resposta fica no aparelho — quem já confirmou não vê de novo. */
+var MAIOR_CHAVE='js_maior18';
+function jaConfirmouIdade(){ try{ return localStorage.getItem(MAIOR_CHAVE)==='1'; }catch(e){ return false; } }
+window.confirmarMaioridade=function(){
+  try{ localStorage.setItem(MAIOR_CHAVE,'1'); }catch(e){}
+  render();
+};
+function portaIdade(){
+  return '<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
+    '<div class="card" style="border-top:4px solid var(--alerta)">'+
+    '<h3 style="margin:0 0 6px">🔞 Conteúdo para maiores de 18 anos</h3>'+
+    '<p style="font-size:14.5px;line-height:1.6;margin:0 0 12px">O JavaStreak é uma ferramenta de manejo de javali destinada a pessoas com 18 anos ou mais, que possuam as autorizações legais exigidas para a atividade.</p>'+
+    '<button class="btn" onclick="confirmarMaioridade()">Tenho 18 anos ou mais</button>'+
+    '<div class="meta" style="text-align:center;margin-top:10px">Se você tem menos de 18 anos, feche esta página.</div></div>';
+}
 VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
   STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null;
   document.getElementById('crumb').innerHTML='';
+  if(!jaConfirmouIdade()){ app(portaIdade()); return; }
   var t=STATE.loginTipo||'manejador';
   var texto = (t==='empresa') ? t18n('bv_texto_emp') : t18n('bv_texto_manej');
   app('<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:300px"></div>'+
@@ -3663,6 +3770,36 @@ VIEWS.bemvindo=function(){ setTitulo(STATE.appNome);
     '<button class="btn sec" style="margin-top:10px" onclick="nav(\''+(t==='empresa'?'registrarEmpresa':'registrar')+'\')">'+t18n('criarConta')+'</button>'+
     '<div style="text-align:center;margin-top:12px;font-size:11px;color:#cfc9bd">'+APP_VER+'</div>');
 };
+
+/* Confirmação de conta por código. Chega aqui vindo do cadastro ou de um
+   login recusado por e-mail não confirmado. */
+var CONF_EMAIL='';
+VIEWS.confirmarEmail=function(){ setTitulo('Confirmar e-mail'); setCrumb('Confirmar e-mail');
+  var alvo=CONF_EMAIL||'';
+  app('<div style="text-align:center;margin:10px 0 2px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:280px"></div>'+
+    '<div class="card"><h3 style="margin:0 0 6px">📧 Confirme seu e-mail</h3>'+
+    '<div class="meta" style="margin-bottom:10px">Enviamos um código de 6 dígitos para <b class="no-i18n">'+esc(alvo)+'</b>. Ele vale por 24 horas.</div>'+
+    '<label>Código *</label><input id="cf_cod" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:8px;font-size:22px">'+
+    '<button class="btn" onclick="confirmarEmailAgora(this)">Confirmar e entrar</button>'+
+    '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="reenviarCodigo(this)">Reenviar código</button>'+
+    '<button class="btn sec" onclick="go(\'bemvindo\')">Voltar</button></div>'+
+    '<div class="meta" style="margin-top:10px">Não achou? Procure no spam e na aba Promoções.</div></div>');
+};
+window.confirmarEmailAgora=function(btn){
+  var cod=val('cf_cod');
+  if(!cod||cod.replace(/\D/g,'').length!==6){ toast('Digite o código de 6 dígitos'); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Confirmando…');
+  server('apiConfirmarEmail',CONF_EMAIL,cod).then(function(r){
+    aplicarAuth(r); toast('Conta confirmada ✔ Bem-vindo!');
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Código inválido'); });
+};
+window.reenviarCodigo=function(btn){
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Enviando…');
+  server('apiReenviarCodigo',CONF_EMAIL).then(function(){
+    btn.disabled=false; btn.textContent=rot; toast('Código reenviado ✔');
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível reenviar'); });
+};
+function irConfirmar(email){ CONF_EMAIL=email; STATE.stack=['confirmarEmail']; render(); }
 
 VIEWS.login=function(){ setTitulo(STATE.appNome); STATE.manejador=null; STATE.empresa=null; AUTH.manejador=null; document.getElementById('crumb').innerHTML='';
   var t=STATE.loginTipo||'manejador';
@@ -4162,7 +4299,15 @@ function iniciarPromoPoll(){
 window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha'); if(!login||!senha){toast('Preencha login e senha');return;}
   btn.disabled=true; btn.textContent='Entrando…';
   server('apiLogin',login,senha).then(function(r){ aplicarAuth(r); })
-  .catch(function(){ btn.disabled=false; btn.textContent='Entrar'; }); };
+  .catch(function(e){ btn.disabled=false; btn.textContent='Entrar';
+    /* Senha certa, e-mail ainda não confirmado: leva para o código em vez de
+       deixar a pessoa presa num "login inválido" que não é o caso. */
+    if(e&&e.message==='EMAIL_NAO_CONFIRMADO'){
+      irConfirmar(normEmail(login));
+      server('apiReenviarCodigo',login).catch(function(){});
+      toast('Confirme seu e-mail para entrar');
+    } }); };
+function normEmail(x){ return String(x||'').trim().toLowerCase(); }
 
 window.sairCadastro=function(){ STATE.stack=['bemvindo']; render(); };
 window.trocarCadastro=function(tipo){ STATE.loginTipo=tipo; STATE.stack=[tipo==='empresa'?'registrarEmpresa':'registrar']; render(); };
@@ -4227,10 +4372,11 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="meta" style="margin:-6px 0 8px">'+t('cad_email_ajuda')+'</div>'+
     '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password"></div>'+
-    '<div><label>Confirmar *</label><input id="f_senha2" type="password" autocomplete="new-password"></div></div></div>'+
+    '<div><label>Confirmar *</label><input id="f_senha2" type="password" autocomplete="new-password"></div></div>'+
+    blocoIndicacao()+'</div>'+
     '<div class="card"><h3>Dados do manejador</h3>'+
     '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
-    '<div class="two"><div><label>Data de nascimento</label><input id="f_nasc" type="date"></div>'+
+    '<div class="two"><div><label>Data de nascimento *</label><input id="f_nasc" type="date"></div>'+
     '<div><label>Sexo *</label><select id="f_sexo"><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div></div>'+
     '<div class="two"><div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="mCPF(this)"></div>'+
     '<div><label>CR</label><input id="f_cr"></div></div>'+
@@ -4245,6 +4391,44 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
     '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Conta de empresa</button></div></div>');
   carregarDesafio(); };
+/* ---- Indicação: pergunta primeiro, campo depois ---- */
+var IND_OK=null;   // null = não checado, true/false = resultado do servidor
+function blocoIndicacao(){
+  return '<div style="margin-top:6px"><label>Alguém indicou o JavaStreak para você?</label>'+
+    '<select id="f_temInd" onchange="mudouIndicacao()"><option value="nao">Não</option><option value="sim">Sim, fui indicado</option></select></div>'+
+    '<div id="f_indBox" style="display:none">'+
+    '<label>E-mail de quem indicou *</label>'+
+    '<input id="f_ind" type="email" placeholder="email@dequemindicou.com" oninput="limparIndicador()" onblur="checarIndicador()">'+
+    '<div id="f_indMsg" class="meta" style="margin:-4px 0 8px"></div></div>';
+}
+window.mudouIndicacao=function(){
+  var box=document.getElementById('f_indBox'); if(!box) return;
+  var sim=val('f_temInd')==='sim';
+  box.style.display=sim?'block':'none';
+  if(!sim){ IND_OK=null; var m=document.getElementById('f_indMsg'); if(m) m.textContent=''; }
+};
+window.limparIndicador=function(){ IND_OK=null; var m=document.getElementById('f_indMsg'); if(m) m.textContent=''; };
+window.checarIndicador=function(){
+  var m=document.getElementById('f_indMsg'); if(!m) return;
+  var e=val('f_ind');
+  if(!e||e.indexOf('@')<0){ IND_OK=null; m.textContent=''; return; }
+  m.textContent=trFrase('Conferindo…');
+  server('apiValidarIndicador',e).then(function(r){
+    IND_OK=!!r.valido;
+    m.innerHTML = IND_OK
+      ? '<span style="color:var(--verde)">'+trFrase('✅ Indicação confirmada')+'</span>'
+      : '<span style="color:var(--danger)">'+trFrase('❌ Esse e-mail não tem conta confirmada no JavaStreak')+'</span>';
+  }).catch(function(){ IND_OK=null; m.textContent=trFrase('Não foi possível conferir agora'); });
+};
+/* Devolve o e-mail do indicador, ou false se a checagem impede seguir. */
+function indicacaoParaEnviar(){
+  if(val('f_temInd')!=='sim') return '';
+  var e=val('f_ind');
+  if(!e){ toast('Informe o e-mail de quem indicou'); return false; }
+  if(IND_OK!==true){ toast('Confira o e-mail de quem indicou — ele precisa ter conta confirmada'); checarIndicador(); return false; }
+  return e;
+}
+
 /* ---- termo e verificação (usados nos dois cadastros) ---- */
 var DESAFIO=null;
 function blocoTermo(){
@@ -4323,21 +4507,37 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   if(!nome){toast('Informe o nome');return;}
   if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização — use o GPS ou o mapa');return;}
   if(!whatsOk('f_wa')){toast('Informe o WhatsApp');return;}
+  if(!val('f_nasc')){toast('Informe a data de nascimento');return;}
+  if(!maior18(val('f_nasc'))){toast('É preciso ter 18 anos ou mais para criar a conta');return;}
+  var ind=indicacaoParaEnviar(); if(ind===false) return;
   if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
   server('apiRegistrar',{tipo:'manejador',email:login,login:login,senha:senha,nome:nome,
     dataNascimento:val('f_nasc'),sexo:val('f_sexo'),cpf:val('f_cpf'),cr:val('f_cr'),
     telefone:telCompleto('f_tel'),whatsapp:telCompleto('f_wa'),
     endereco:val('f_end'),lat:val('f_lat'),lng:val('f_lng'),
-    aceiteTermo:true, versaoTermo:TERMO_VERSAO,
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, indicadoPor:ind,
     captcha:CAPTCHA_TOKEN})
-  .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha(); }); };
+  .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
+    aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
+  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha();
+    if(e&&e.message==='INDICADOR_INVALIDO') toast('Quem indicou precisa ter conta confirmada'); }); };
+
+/* 18 anos completos, contados no fuso local. */
+function maior18(nasc){
+  if(!/^\d{4}-\d{2}-\d{2}/.test(String(nasc||''))) return false;
+  var d=new Date(String(nasc).substring(0,10)+'T12:00:00');
+  if(isNaN(d.getTime())) return false;
+  var h=new Date(), a=h.getFullYear()-d.getFullYear(), m=h.getMonth()-d.getMonth();
+  if(m<0||(m===0&&h.getDate()<d.getDate())) a--;
+  return a>=18 && a<=120;
+}
 VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('criarConta'),t('empresa'));
   app(resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
+    blocoIndicacao()+
     '<label>CNPJ</label><input id="fe_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)">'+
     '</div>'+
     '<div class="card"><h3>Dados da empresa</h3>'+
@@ -4369,15 +4569,17 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   if(!nome){toast('Informe o nome da empresa');return;}
   if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede');return;}
   if(!whatsOk('fe_wa')){toast('Informe o WhatsApp da empresa');return;}
+  var indE=indicacaoParaEnviar(); if(indE===false) return;
   if(!validaComum())return;
   btn.disabled=true; btn.textContent='Criando…';
   server('apiRegistrar',{tipo:'empresa',email:login,login:login,senha:senha,nome:nome,segmento:val('fe_seg'),
     descricao:val('fe_desc'),telefone:telCompleto('fe_tel'),whatsapp:telCompleto('fe_wa'),
     cidade:val('fe_cidade'),endereco:val('fe_end'),lat:val('fe_lat'),lng:val('fe_lng'),
     instagram:val('fe_insta'),facebook:val('fe_face'),site:val('fe_site'),foto:fotoData('fe_foto'),
-    aceiteTermo:true, versaoTermo:TERMO_VERSAO,
+    aceiteTermo:true, versaoTermo:TERMO_VERSAO, maiorIdade:true, indicadoPor:indE,
     captcha:CAPTCHA_TOKEN, cnpj:val('fe_cnpj')})
-  .then(function(r){ aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
+  .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
+    aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao();
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
@@ -4629,6 +4831,11 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>E-mail do usu\u00e1rio *</label><input id="rp_login" placeholder="email@cadastrado.com">'+
       '<label>Nova senha (vazio = gerar autom\u00e1tica)</label><input id="rp_senha" placeholder="deixe vazio para gerar">'+
       '<button class="btn" onclick="adminReset(this)">Redefinir senha</button><div id="rpRes" style="margin-top:10px"></div></div>'+
+      '<div class="card" data-adm="planos"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83e\udd1d Indica\u00e7\u00f5es</h3><div class="meta">Quem indicou quem e quantos dias j\u00e1 foram creditados.</div></div><button class="ib" onclick="carregarIndicacoes()" title="Atualizar">\ud83d\udd04</button></div>'+
+      '<div id="indBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\u2705 Confirmar conta na m\u00e3o</h3><div class="meta" style="margin-bottom:8px">Sa\u00edda de emerg\u00eancia para quando o e-mail n\u00e3o chega. Libera o acesso e paga a indica\u00e7\u00e3o pendente.</div>'+
+      '<label>E-mail do usu\u00e1rio *</label><input id="cf_login" type="email" placeholder="email@cadastrado.com">'+
+      '<button class="btn sec" onclick="adminConfirmar(this)">Confirmar conta</button><div id="cfRes" style="margin-top:10px"></div></div>'+
       '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\ud83d\udce7 Envio de e-mail</h3><div class="meta" style="margin-bottom:8px">Dispara um e-mail de verdade e mostra o erro exato se falhar.</div>'+
       '<label>Enviar teste para</label><input id="de_dest" type="email" placeholder="seu@email.com">'+
       '<button class="btn sec" onclick="diagEmail(this)">Testar envio</button><div id="emDiag" style="margin-top:10px"></div></div>'+
@@ -4659,7 +4866,7 @@ var ADM_SECOES=[
   {k:'pagamentos', nome:'🧾 Pagamentos', titulos:['🧾 Pagamentos dos clientes','💳 Pagamento (Mercado Pago)'],
                    load:['carregarPagsAdm']},
   {k:'planos',     nome:'🎚️ Planos',     titulos:['💰 Preços dos planos','🎚️ Acessos de cada plano','🎁 Liberar acesso (cortesia)'],
-                   load:['carregarParametros','carregarLimites','carregarAssinaturas']},
+                   load:['carregarParametros','carregarLimites','carregarAssinaturas','carregarIndicacoes']},
   {k:'ajustes',    nome:'⚙️ Ajustes',    titulos:['⚙️ Ajustes da plataforma','🔑 Redefinir senha de usuário','📧 Envio de e-mail','📜 Termos de uso e privacidade'],
                    load:['carregarParametros','carregarTermoAdm']}
 ];
@@ -4733,6 +4940,44 @@ window.darCortesia=function(btn){ var d=val('ct_destino');
   .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
 var LIMDADOS=null;
+window.adminConfirmar=function(btn){
+  var el=document.getElementById('cfRes'), lg=val('cf_login');
+  if(!lg){ el.innerHTML='<div class="meta">Informe o e-mail</div>'; traduzirDOM(el); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Confirmando…');
+  server('apiAdminConfirmarEmail',lg).then(function(r){
+    btn.disabled=false; btn.textContent=rot;
+    el.innerHTML='<div class="meta">'+trFrase(r.jaEra?'Essa conta já estava confirmada.':'✅ Conta confirmada. A pessoa já consegue entrar.')+'</div>';
+    traduzirDOM(el);
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot;
+    el.innerHTML='<div class="meta no-i18n">'+esc((e&&e.message)||'')+'</div>'; });
+};
+function carregarIndicacoes(){
+  var el=document.getElementById('indBox'); if(!el) return;
+  server('apiListarIndicacoes').then(function(d){
+    el=document.getElementById('indBox'); if(!el) return;
+    var linhas=(d.ultimas||[]).map(function(i){
+      return '<div class="row" style="padding:7px 0;border-bottom:1px solid var(--linha)"><div class="grow">'+
+        '<b class="no-i18n">'+esc(i.indicador||'')+'</b> <span class="meta">→</span> <span class="no-i18n">'+esc(i.indicado||'')+'</span>'+
+        '<div class="meta">'+fmtData(i.criadoEm)+'</div></div>'+
+        '<span class="pill '+(i.status==='creditada'?'ok':'warn')+'">'+
+        (i.status==='creditada'?(i.dias+' '+trFrase('dias creditados')):trFrase('aguardando confirmação'))+'</span></div>';
+    }).join('');
+    var rank=(d.ranking||[]).slice(0,10).map(function(r){
+      return '<div class="row" style="padding:5px 0"><div class="grow no-i18n">'+esc(r.login)+'</div>'+
+        '<span class="meta">'+r.creditadas+'/'+r.total+' · '+r.dias+'d</span></div>';
+    }).join('');
+    el.innerHTML='<div class="row" style="gap:10px;margin-bottom:8px">'+
+      '<div class="grow"><b>'+d.total+'</b> <span class="meta">'+trFrase('no total')+'</span></div>'+
+      '<div><b>'+d.creditadas+'</b> <span class="meta">'+trFrase('creditadas')+'</span></div>'+
+      '<div><b>'+d.pendentes+'</b> <span class="meta">'+trFrase('pendentes')+'</span></div></div>'+
+      (d.promoAtiva?'':'<div class="meta" style="padding:8px;background:#fff4e5;border-radius:8px;margin-bottom:8px">'+trFrase('A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.')+'</div>')+
+      (rank?('<h4 style="margin:10px 0 4px">'+trFrase('Quem mais indica')+'</h4>'+rank):'')+
+      (linhas?('<h4 style="margin:12px 0 4px">'+trFrase('Últimas indicações')+'</h4><div class="lista-rolagem">'+linhas+'</div>')
+             :'<div class="meta">'+trFrase('Nenhuma indicação ainda.')+'</div>');
+    traduzirDOM(el); iconizar(el);
+  }).catch(function(e){ var x=document.getElementById('indBox');
+    if(x) x.innerHTML='<div class="meta">Não foi possível carregar: <span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div>'; });
+}
 window.diagEmail=function(btn){
   var el=document.getElementById('emDiag');
   var dest=(document.getElementById('de_dest')||{}).value||'';
