@@ -854,7 +854,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2117';
+var APP_VER = 'vJS.250726.2127';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -915,6 +915,20 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    /* --- Entrega 3: abate dentro do manejo --- */
+    'O abate agora pertence a um manejo, e você não tem manejo aberto.':'Takes now belong to a management session, and you have no open session.',
+    'Abatido por':'Taken by',
+    'eu':'me',
+    'Quem abateu *':'Who took it *',
+    'Rota *':'Route *',
+    'Abates deste manejo':'Takes in this session',
+    'Nenhum abate neste manejo ainda.':'No takes in this session yet.',
+    'Registrar abate':'Register take',
+    'Histórico de todos os abates':'History of every take',
+    'Manejo livre':'Free session',
+    'Sem manejo aberto':'No open session',
+    'Escolha a ceva do abate':'Pick the feeder for this take',
+    'Escolha a rota do abate':'Pick the route for this take',
     /* --- Entrega 2: manejo (sessão de caça) --- */
     '● Manejo aberto':'● Open session',
     'Toque para ver ou encerrar.':'Tap to view or close it.',
@@ -1809,6 +1823,20 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    /* --- Entrega 3: abate dentro do manejo --- */
+    'O abate agora pertence a um manejo, e você não tem manejo aberto.':'El abate ahora pertenece a un manejo, y usted no tiene manejo abierto.',
+    'Abatido por':'Abatido por',
+    'eu':'yo',
+    'Quem abateu *':'Quién abatió *',
+    'Rota *':'Ruta *',
+    'Abates deste manejo':'Abates de este manejo',
+    'Nenhum abate neste manejo ainda.':'Ningún abate en este manejo todavía.',
+    'Registrar abate':'Registrar abate',
+    'Histórico de todos os abates':'Historial de todos los abates',
+    'Manejo livre':'Manejo libre',
+    'Sem manejo aberto':'Sin manejo abierto',
+    'Escolha a ceva do abate':'Elija el comedero del abate',
+    'Escolha a rota do abate':'Elija la ruta del abate',
     /* --- Entrega 2: manejo (sessão de caça) --- */
     '● Manejo aberto':'● Manejo abierto',
     'Toque para ver ou encerrar.':'Toque para ver o cerrar.',
@@ -3167,7 +3195,7 @@ function porMes(abates){ var m={};
   abates.forEach(function(a){ var s=String(a.dataHora||a.dataCadastro||''); var k=s.substring(0,7); if(k) m[k]=(m[k]||0)+1; });
   return Object.keys(m).sort().slice(-6).map(function(k){ var p=k.split('-'); return {label:p[1]+'/'+p[0].substring(2), value:m[k]}; }); }
 
-var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'Armadilha':'#b23b3b' };
+var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'Armadilha':'#b23b3b', 'Livre':'#6b5b8a' };
 
 /* ============================================================
    LOGIN / REGISTRO
@@ -5523,8 +5551,9 @@ window.salvarArm=function(btn){ btn.disabled=true; btn.textContent='Salvando…'
 /* ============================================================
    ABATES
    ============================================================ */
-var TIPOS_MANEJO=['Espera','Cães','Espreita','Armadilha'];
+var TIPOS_MANEJO=['Espera','Cães','Espreita','Armadilha','Livre'];
 var ABATEOPTS={ cevas:[], transportes:[], armadilhas:[], caes:[] };
+var ABATE_MANEJO=null;
 
 /* ---- Condições do abate: lua e tempo ----
    O valor gravado é o texto simples (sem emoji), igual à lista do backend.
@@ -5738,7 +5767,7 @@ VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
       moduloCard('🗺️','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()")+
       moduloCard('🎯','Novo manejo','Sessão de caça: ceva, rota ou livre',true,"novoManejo()")+
       moduloCard('📋','Manejos','Abertos e encerrados',true,"nav('manejoLista')")+
-      moduloCard('🐗','Abates (temporário)','Sai daqui na entrega 3, quando o abate passa a ser dentro do manejo',true,"nav('abates')");
+      moduloCard('🐗','Abates','Histórico de todos os abates',true,"nav('abates')");
   app('<div id="mnAberto"></div>'+cards);
   fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>');
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; var el=document.getElementById('mnAberto'); if(!el) return;
@@ -5851,8 +5880,22 @@ function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status
       '<label>Animais avistados *</label><input id="mn_avist" inputmode="numeric" value="0">'+
       '<button class="btn" style="background:linear-gradient(#7a2e2e,#5d2222)" onclick="encerrarManejo(this)">🔒 Encerrar manejo</button></div>'
     : '<div class="card"><div class="meta">Manejo encerrado — somente leitura.</div></div>';
-  app(ficha+acoes);
+  app(ficha+'<h3 style="margin:14px 4px 6px">🐗 '+trFrase('Abates deste manejo')+'</h3><div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>'+acoes);
+  if(aberto) fab('<button class="btn" onclick="registrarAbateNoManejo()">＋ Registrar abate</button>');
+  carregarAbatesDoManejo(m.id);
 }
+window.registrarAbateNoManejo=function(){ EDIT=null; nav('abateForm'); };
+function carregarAbatesDoManejo(id){
+  server('apiAbatesDoManejo',id).then(function(l){ var el=document.getElementById('mnAbates'); if(!el) return;
+    el.innerHTML = (l&&l.length) ? l.map(function(a){
+      return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+esc(a.quantidade||'1')+' animal(is)'+
+        (a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'</h3>'+
+        '<div class="meta">'+fmtDataHora(a.dataHora)+
+        (a.cevaNome?' · '+trFrase('Ceva')+': '+esc(a.cevaNome):'')+(a.rotaNome?' · '+trFrase('Rota')+': '+esc(a.rotaNome):'')+
+        '<br>'+trFrase('Abatido por')+' '+esc(a.abatidoPorNome||'—')+(a.souEu?' ('+trFrase('eu')+')':'')+
+        (a.obs?'<br>'+esc(a.obs):'')+'</div></div></div></div>'; }).join('')
+      : '<div class="empty">'+trFrase('Nenhum abate neste manejo ainda.')+'</div>';
+  }).catch(function(){}); }
 window.editarManejo=function(){ MANEJO_EDIT=MANEJO_ATUAL; nav('manejoForm'); };
 window.encerrarManejo=function(btn){ var m=MANEJO_ATUAL; if(!m) return;
   var n=parseInt(String(val('mn_avist')||'0').replace(/[^0-9]/g,''),10); if(!(n>=0)) n=0;
@@ -5872,18 +5915,33 @@ VIEWS.abates=function(){ setTitulo('Abates'); setCrumb('Manejo','Abates'); loadi
     l.sort(function(a,b){ return String(b.dataHora).localeCompare(String(a.dataHora)); });
     var html=l.length? l.map(function(a){ var cor=TIPO_COR[a.tipoManejo]||'#666';
       return '<div class="card"><div class="row"><div class="grow"><h3><span class="pill" style="background:'+cor+'">'+esc(a.tipoManejo||'—')+'</span> '+esc(a.quantidade||'1')+' animal(is)</h3>'+
-        '<div class="meta">'+localAbate(a)+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+'<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
+        '<div class="meta">'+localAbate(a)+fmtDataHora(a.dataHora)+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+condResumo(a)+
+        (a.manejoNome?'<br>'+trFrase('Manejo')+': '+esc(a.manejoNome):'')+(a.abatidoPorNome?' · '+trFrase('Abatido por')+' '+esc(a.abatidoPorNome):'')+
+        '<br>'+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+acoes('abate',a.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🎯</div>Nenhum abate registrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'abateForm\')">＋ Registrar abate</button>'); }); };
 
-VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Abates',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
-  Promise.all([ serverOpc('apiListarCevas'), serverOpc('apiListarTransportes'), serverOpc('apiListarArmadilhas'), serverOpc('apiListarTodosCaes'), serverOpc('apiListarCanis'), serverOpc('apiListarRotas'), serverOpc('apiListarPropriedades') ])
-  .then(function(res){ ABATEOPTS.cevas=res[0]; ABATEOPTS.transportes=res[1]; ABATEOPTS.armadilhas=res[2]; ABATEOPTS.caes=res[3]; ABATEOPTS.canis=res[4]; ABATEOPTS.rotas=res[5]; ABATEOPTS.props=res[6];
-    app('<div class="card"><label>Tipo de manejo *</label><select id="ab_tipo" onchange="renderAbateCtx()">'+
-        TIPOS_MANEJO.map(function(t){return '<option value="'+t+'">'+rotuloManejo(t)+'</option>';}).join('')+'</select>'+
-        '<div id="abateCtx"></div>'+
-        '<label>Propriedade</label><select id="ab_prop"><option value="">— não informada —</option>'+
-        (ABATEOPTS.props||[]).map(function(p){ return '<option value="'+p.id+'"'+(EDIT&&EDIT.propriedadeId===p.id?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>'+
-        ((ABATEOPTS.props||[]).length?'':'<div class="meta" style="margin:-6px 0 8px">Cadastre propriedades em <b>Documentação → Propriedade</b>.</div>')+
+VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Manejo',ed?'Editar':'Abate'); loadingBox('Carregando…');
+  var pManejo = ed ? Promise.resolve(null) : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):server('apiManejoAberto'));
+  pManejo.then(function(m){
+    if(!ed && !m){ app('<div class="card"><div class="empty"><div class="big">🎯</div>'+
+        'O abate agora pertence a um manejo, e você não tem manejo aberto.</div>'+
+        '<button class="btn" onclick="voltarENovoManejo()">＋ NOVO MANEJO</button></div>'); return; }
+    ABATE_MANEJO = m || null;
+    var cevas=(m&&m.cevas)||[], rotas=(m&&m.rotas)||[], gente=(m&&m.participantes)||[];
+    var ctx = ed
+      ? '<div class="meta" style="margin-bottom:8px">'+trFrase('Manejo')+': <b>'+esc(EDIT.manejoNome||'—')+'</b>'+
+        (EDIT.abatidoPorNome?' · '+trFrase('Abatido por')+' '+esc(EDIT.abatidoPorNome):'')+'</div>'
+      : '<div class="meta" style="margin-bottom:8px">'+trFrase('Manejo')+': <b>'+esc(m.nome||'')+'</b> · '+rotuloTipoManejo(m.tipo)+'</div>'+
+        (cevas.length? '<label>Ceva'+(m.tipo==='ceva'?' *':'')+'</label><select id="ab_ceva" onchange="carregarAlimentosCeva();renderCondCeva()">'+
+            (cevas.length>1||m.tipo!=='ceva'?'<option value="">'+trFrase('Selecione…')+'</option>':'')+
+            cevas.map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>'; }).join('')+'</select>'+
+            '<label>Alimento na ceva</label><select id="ab_alim"><option value="">—</option></select><div id="ab_cond"></div>' : '')+
+        (rotas.length? '<label>Rota'+(m.tipo==='rota'?' *':'')+'</label><select id="ab_rota">'+
+            (rotas.length>1||m.tipo!=='rota'?'<option value="">'+trFrase('Selecione…')+'</option>':'')+
+            rotas.map(function(r){ return '<option value="'+esc(r.id)+'">'+esc(r.nome)+'</option>'; }).join('')+'</select>' : '')+
+        '<label>Quem abateu *</label><select id="ab_quem">'+
+          gente.map(function(g){ return '<option value="'+esc(g.id)+'">'+esc(g.nome||'—')+(g.dono?' ('+trFrase('eu')+')':'')+'</option>'; }).join('')+'</select>';
+    app('<div class="card">'+ctx+
         '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local" onchange="sugerirLua()"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
         '<div class="two"><div><label>Sexo</label><select id="ab_sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Misto</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
         '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
@@ -5894,14 +5952,15 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<input id="ab_foto" type="file" accept="image/*" capture="environment"><img id="ab_prev" class="foto-prev">'+
         '<button class="btn" onclick="salvarAbate(this)">'+(ed?'Salvar alterações':'Registrar abate')+'</button></div>');
     document.getElementById('ab_dh').value = ed&&EDIT.dataHora?String(EDIT.dataHora).substring(0,16):nowLocal();
-    if(ed){ setVal('ab_tipo',EDIT.tipoManejo); setVal('ab_sexo',EDIT.sexo); }
+    if(ed) setVal('ab_sexo',EDIT.sexo);
     COND_MODO='passado'; COND_AUTO=null; COND_BUSCANDO=false;
-    /* Abate novo: já sugere a fase da lua da data. Edição: respeita o que está gravado. */
     if(ed&&pv('luaFase')){ var sl=document.getElementById('ab_lua'); if(sl) sl.setAttribute('data-manual','1'); }
     bindFoto('ab_foto','ab_prev');
-    renderAbateCtx();
+    if(!ed && cevas.length===1 && m.tipo==='ceva'){ carregarAlimentosCeva(); renderCondCeva(); }
   }); };
-function rotuloManejo(t){ return {'Espera':'Espera (com ceva)','Cães':'Meu canil','Espreita':'Rotas de manejo','Armadilha':'Armadilha'}[t]||t; }
+window.voltarENovoManejo=function(){ STATE.stack=['manejoHub']; render(); novoManejo(); };
+
+function rotuloManejo(t){ return {'Espera':'Espera (com ceva)','Cães':'Meu canil','Espreita':'Rotas de manejo','Armadilha':'Armadilha','Livre':'Manejo livre'}[t]||t; }
 function avisoModalidade(chave,nome){
   return '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0">'+
     '<div class="meta">🔒 <b>'+esc(nome)+'</b> não está incluída no seu plano atual. '+
@@ -5944,27 +6003,30 @@ window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var se
   if(ceva && !val('ab_lat')){ setVal('ab_lat',ceva.lat); setVal('ab_lng',ceva.lng); }
   if(!cid){ sel.innerHTML='<option value="">—</option>'; return; }
   server('apiListarAlimentos',cid).then(function(l){ sel.innerHTML='<option value="">—</option>'+l.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+' ('+fmtData(a.data)+')</option>';}).join(''); if(preselect) setVal('ab_alim',preselect); }); };
-window.salvarAbate=function(btn){ var tipo=val('ab_tipo'); var d={ tipoManejo:tipo, dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'), lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo') };
-  if(tipo==='Espera'){ d.cevaId=val('ab_ceva'); d.alimentoId=val('ab_alim'); if(!d.cevaId){toast('Selecione a ceva');return;}
-    if(COND_MODO==='tempoReal'){ if(!(COND_AUTO&&COND_AUTO.ok)){toast('Aguarde a consulta do tempo ou use o modo Passado');return;}
-      d.modo='tempoReal'; delete d.luaFase; delete d.condicaoTempo; } }
-  if(tipo==='Espreita'){ d.rotaId=val('ab_rota'); if(!d.rotaId){toast('Selecione a rota de manejo');return;} }
-  if(tipo==='Armadilha'){ d.armadilhaId=val('ab_arm'); if(!d.armadilhaId){toast('Selecione a armadilha');return;} }
-  if(tipo==='Cães'){ d.canilId=val('ab_canil'); if(!d.canilId){toast('Selecione a matilha (canil)');return;} var ids=[].slice.call(document.querySelectorAll('#ab_caes input:checked')).map(function(c){return c.value;}); if(!ids.length){toast('Selecione ao menos 1 cão da matilha');return;} d.caesIds=ids.join(','); }
-  if(tipo!=='Espera'){ delete d.luaFase; delete d.condicaoTempo; delete d.modo; }
-  d.propriedadeId=val('ab_prop')||'';
+window.salvarAbate=function(btn){
+  var d={ dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'),
+    lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo') };
   if(!d.dataHora){toast('Informe data e hora');return;}
+  if(EDIT){
+    btn.disabled=true; btn.textContent='Salvando…';
+    server('apiEditar','abate',EDIT.id,{ dataHora:d.dataHora, quantidade:d.quantidade, sexo:d.sexo, pesoAprox:d.pesoAprox,
+      lat:d.lat, lng:d.lng, obs:d.obs, luaFase:d.luaFase||'', condicaoTempo:d.condicaoTempo||'', foto:fotoData('ab_foto') })
+      .then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); })
+      .catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; });
+    return;
+  }
+  var m=ABATE_MANEJO; if(!m){ toast('Sem manejo aberto'); return; }
+  d.manejoId=m.id; d.cevaId=val('ab_ceva'); d.rotaId=val('ab_rota'); d.alimentoId=val('ab_alim'); d.abatidoPor=val('ab_quem');
+  if(m.tipo==='ceva' && !d.cevaId){ toast('Escolha a ceva do abate'); return; }
+  if(m.tipo==='rota' && !d.rotaId){ toast('Escolha a rota do abate'); return; }
+  if(d.cevaId && COND_MODO==='tempoReal'){
+    if(!(COND_AUTO&&COND_AUTO.ok)){ toast('Aguarde a consulta do tempo ou use o modo Passado'); return; }
+    d.modo='tempoReal'; delete d.luaFase; delete d.condicaoTempo; }
+  if(!d.cevaId){ delete d.luaFase; delete d.condicaoTempo; delete d.modo; }
   btn.disabled=true; btn.textContent='Salvando…';
-  if(EDIT){ server('apiEditar','abate',EDIT.id,{tipoManejo:d.tipoManejo,dataHora:d.dataHora,quantidade:d.quantidade,sexo:d.sexo,pesoAprox:d.pesoAprox,lat:d.lat,lng:d.lng,obs:d.obs,cevaId:d.cevaId||'',alimentoId:d.alimentoId||'',caesIds:d.caesIds||'',canilId:d.canilId||'',rotaId:d.rotaId||'',armadilhaId:d.armadilhaId||'',propriedadeId:d.propriedadeId||'',luaFase:d.luaFase||'',condicaoTempo:d.condicaoTempo||'',foto:fotoData('ab_foto')}).then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; }); }
-  else { d.foto=fotoData('ab_foto'); server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Registrar abate'; }); } };
-
-/* ============================================================
-   AGENDA DE SAÚDE (cães + cavalos) — com calendário
-   ============================================================ */
-function diaHoje(){ return new Date().toISOString().substring(0,10); }
-function statusProx(prox){ if(!prox) return ''; var p=String(prox).substring(0,10), h=diaHoje(); return p<h?'atrasada':(p===h?'hoje':'proxima'); }
-function pad2(n){ return (n<10?'0':'')+n; }
-var AGENDA=null, AG_MES=null, AG_DIA=null;
+  d.foto=fotoData('ab_foto');
+  server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); MANEJO_ATUAL=null; voltar(); })
+    .catch(function(e){ btn.disabled=false; btn.textContent='Registrar abate'; toast((e&&e.message)||'Erro'); }); };
 
 VIEWS.agenda=function(){ setTitulo('Agenda'); setCrumb('Manejo','Agenda'); loadingBox('Carregando agenda…');
   server('apiAgenda').then(function(itens){ AGENDA=itens;
