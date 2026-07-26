@@ -198,13 +198,23 @@
   .pop h4 .ic-svg{width:17px;height:17px;vertical-align:-3px;margin-right:5px}
   .btn.sec .ic-svg{stroke:#8a5a30}
   .sb-item:hover{filter:brightness(1.07);transform:translateX(2px)}
+  /* Card "Manejos" com sessão aberta: pulsa verde e leva o selo no canto */
+  .menu-card.manejo-aberto{position:relative;border:2px solid #2f6330;
+    animation:pulsaAberto 2.6s ease-in-out infinite}
+  .menu-card.manejo-aberto .selo-aberto{position:absolute;top:-9px;right:12px;background:#2f6330;color:#fff;
+    font-size:11px;font-weight:700;letter-spacing:.3px;padding:3px 10px;border-radius:999px;
+    box-shadow:0 2px 4px rgba(0,0,0,.28);font-family:system-ui,sans-serif;text-transform:uppercase}
+  @keyframes pulsaAberto{
+    0%,100%{box-shadow:0 0 0 0 rgba(47,99,48,.5)}
+    50%{box-shadow:0 0 0 9px rgba(47,99,48,0)} }
+  @media (prefers-reduced-motion:reduce){ .menu-card.manejo-aberto{animation:none} }
   /* MANEJO em destaque no topo, pulsando devagar */
-  .sb-item.destaque{background:repeating-linear-gradient(88deg,rgba(0,0,0,.06) 0 3px,rgba(255,255,255,.04) 3px 9px),linear-gradient(180deg,#3f7a3a 0%,#2f6330 55%,#255127 100%);
-    border-color:#1e3f1c;color:#fff;animation:pulsaManejo 2.8s ease-in-out infinite}
-  .sb-item.destaque .sb-num{background:#f6e8cc;color:#2f6330}
+  .sb-item.destaque{background:repeating-linear-gradient(88deg,rgba(0,0,0,.06) 0 3px,rgba(255,255,255,.04) 3px 9px),linear-gradient(180deg,#f08a2e 0%,#e0741a 55%,#c25f12 100%);
+    border-color:#8a4410;color:#fff;animation:pulsaManejo 2.8s ease-in-out infinite}
+  .sb-item.destaque .sb-num{background:#fff;color:#c25f12}
   @keyframes pulsaManejo{
-    0%,100%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 0 rgba(90,180,90,.55);transform:scale(1)}
-    50%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 7px rgba(90,180,90,0);transform:scale(1.02)} }
+    0%,100%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 0 rgba(255,122,26,.6);transform:scale(1)}
+    50%{box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 7px rgba(255,122,26,0);transform:scale(1.02)} }
   @media (prefers-reduced-motion:reduce){ .sb-item.destaque{animation:none} }
   .sb-item .sb-num{margin-left:auto;background:#f6e8cc;color:#6b3f1d;border-radius:10px;font-size:11px;padding:1px 7px;font-family:system-ui,sans-serif}
   .sb-item.active{box-shadow:0 3px 8px rgba(0,0,0,.45),inset 0 0 0 2px #ee8a2e,inset 0 1px 0 rgba(255,255,255,.18)}
@@ -933,7 +943,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.250726.2309';
+var APP_VER = 'vJS.250726.2323';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -994,6 +1004,7 @@ function t(chave){
 }
 var FRASES = {
   en:{
+    'desde':'since',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Boundary center',
     'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'The drawing sets the property location (center of the area), shows on your map and is required for a free session.',
@@ -2031,6 +2042,7 @@ var FRASES = {
     'oculta':'hidden'
   },
   es:{
+    'desde':'desde',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Centro del límite',
     'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'El dibujo define la ubicación de la propiedad (centro del área), aparece en su mapa y es exigido en el manejo libre.',
@@ -5852,7 +5864,7 @@ window.cancelarRota=function(){ if(!confirm('Descartar esta gravação?'))return
    Rota  → traçado + meu ponto. Ceva → meu ponto + a ceva, sem traçado.
    Livre → meu ponto dentro do limite. Em todos, o limite da propriedade
    aparece se existir. Fora de manejo aberto não se guia. */
-var GUIA_CTX=null;
+var GUIA_CTX=null, GUIA_DADOS=null;
 window.iniciarGuiamento=function(){
   var m=MANEJO_ATUAL; if(!m||m.status!=='aberto'){ toast('Só dá para guiar dentro de um manejo aberto'); return; }
   if(m.tipo==='rota'){
@@ -5873,43 +5885,48 @@ function escolherNoManejo(titulo, itens, fn){
     itens.map(function(i){ return '<button class="btn sec" style="margin-bottom:6px" onclick="'+fn+'(\''+escJs(i.id)+'\')">'+esc(i.nome)+'</button>'; }).join('')+
     '<button class="btn" style="margin-top:6px" onclick="render()">Cancelar</button></div>'); }
 
+/* Os dados do guiamento vêm de apiManejoGuia: a ceva e a rota do manejo
+   chegam para quem pode registrar nele, dono ou amigo convidado. Elas não
+   entram na lista nem no mapa do amigo — existem só dentro deste manejo. */
+function dadosGuia(){
+  var m=MANEJO_ATUAL; if(!m) return Promise.reject(new Error('Sem manejo'));
+  if(GUIA_DADOS && GUIA_DADOS.id===m.id) return Promise.resolve(GUIA_DADOS);
+  return server('apiManejoGuia',m.id).then(function(d){ GUIA_DADOS=d; return d; }); }
 window.abrirGuiaRotaDoManejo=function(rotaId){
-  server('apiListarRotas').then(function(l){
-    var r=(l||[]).filter(function(x){return x.id===rotaId;})[0];
+  dadosGuia().then(function(d){
+    var r=(d.rotas||[]).filter(function(x){return x.id===rotaId;})[0];
     if(!r){ toast('Rota não encontrada'); return; }
     if(!(r.pontos||[]).length){ toast('Esta rota não tem traçado GPS para guiar'); return; }
     CACHE.rota=(CACHE.rota||[]).concat([r]); ROTA_GUIA=r;
-    GUIA_CTX={ modo:'rota', manejoId:(MANEJO_ATUAL||{}).id };
-    carregarLimitesGuia().then(function(){ nav('rotaGuia'); });
+    GUIA_CTX={ modo:'rota', manejoId:(MANEJO_ATUAL||{}).id, limites:limitesDoGuia(d,r) };
+    nav('rotaGuia');
   }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
 window.abrirGuiaCeva=function(cevaId){
-  server('apiListarCevas').then(function(l){
-    var c=(l||[]).filter(function(x){return x.id===cevaId;})[0];
+  dadosGuia().then(function(d){
+    var c=(d.cevas||[]).filter(function(x){return x.id===cevaId;})[0];
     if(!c){ toast('Ceva não encontrada'); return; }
     var la=coord(c.lat), ln=coord(c.lng);
     if(!ptOk(la,ln)){ toast('Esta ceva não tem coordenada gravada'); return; }
-    GUIA_CTX={ modo:'ceva', ceva:{ id:c.id, nome:c.nome||'Ceva', lat:la, lng:ln }, manejoId:(MANEJO_ATUAL||{}).id };
-    carregarLimitesGuia().then(function(){ nav('guiaPonto'); });
+    GUIA_CTX={ modo:'ceva', ceva:{ id:c.id, nome:c.nome||'Ceva', lat:la, lng:ln },
+      manejoId:(MANEJO_ATUAL||{}).id, limites:limitesDoGuia(d,null,{lat:la,lng:ln}) };
+    nav('guiaPonto');
   }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
 
 window.abrirGuiaLivre=function(){
-  GUIA_CTX={ modo:'livre', manejoId:(MANEJO_ATUAL||{}).id };
-  carregarLimitesGuia().then(function(){ nav('guiaPonto'); }); };
+  dadosGuia().then(function(d){
+    GUIA_CTX={ modo:'livre', manejoId:(MANEJO_ATUAL||{}).id, limites:(d.limites||[]) };
+    nav('guiaPonto');
+  }).catch(function(e){ toast((e&&e.message)||'Erro'); }); };
+/* Entram os limites do manejo/rota e qualquer um que contenha o ponto de partida. */
+function limitesDoGuia(d, rota, ponto){
+  var base=(d.limites||[]).slice();
+  var ref = ponto || (rota && (rota.pontos||[])[0]) || null;
+  if(!ref) return base;
+  var ids={}; base.forEach(function(p){ ids[p.id]=1; });
+  (d.limites||[]).forEach(function(p){ if(!ids[p.id] && pontoDentro(ref,p.limite)) base.push(p); });
+  return base; }
 
-/* Limites que entram no mapa do guiamento: o do manejo e qualquer um que
-   contenha o ponto de referência (é a regra "rota dentro da propriedade"). */
-function carregarLimitesGuia(){
-  return server('apiListarPropriedades').then(function(props){
-    var m=MANEJO_ATUAL||{}, ref=null;
-    if(GUIA_CTX.modo==='ceva') ref=GUIA_CTX.ceva;
-    else if(GUIA_CTX.modo==='rota' && ROTA_GUIA && (ROTA_GUIA.pontos||[]).length) ref=ROTA_GUIA.pontos[0];
-    GUIA_CTX.limites=(props||[]).filter(function(p){
-      if(!p.temLimite) return false;
-      if(m.propriedade && String(m.propriedade.id)===String(p.id)) return true;
-      if(ROTA_GUIA && String(ROTA_GUIA.propriedadeId||'')===String(p.id)) return true;
-      return ref ? pontoDentro(ref, p.limite) : false; });
-  }).catch(function(){ GUIA_CTX.limites=[]; }); }
 /* ponto dentro do polígono: raycasting simples */
 function pontoDentro(pt, poly){
   if(!pt||!poly||poly.length<3) return false;
@@ -5969,8 +5986,9 @@ window.guiarRota=function(id){ ROTA_GUIA=(CACHE.rota||[]).filter(function(r){ret
   /* Guiar só dentro de manejo aberto: sem isso a caçada acontece fora de qualquer registro. */
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null;
     if(!m){ toast('Abra um manejo para guiar'); nav('manejoHub'); return; }
-    GUIA_CTX={ modo:'rota', manejoId:m.id }; MANEJO_ATUAL=m;
-    carregarLimitesGuia().then(function(){ nav('rotaGuia'); }); })
+    MANEJO_ATUAL=m; GUIA_DADOS=null;
+    dadosGuia().then(function(d){ GUIA_CTX={ modo:'rota', manejoId:m.id, limites:limitesDoGuia(d,ROTA_GUIA) }; nav('rotaGuia'); })
+      .catch(function(){ GUIA_CTX={ modo:'rota', manejoId:m.id, limites:[] }; nav('rotaGuia'); }); })
   .catch(function(){ toast('Abra um manejo para guiar'); }); };
 VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STATE.stack=['espreita','rotas']; render(); return; }
   setTitulo('Guia: '+r.nome); setCrumb('Rotas','Guia');
@@ -6433,23 +6451,31 @@ function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
    Novo manejo / Manejos chegam na entrega 2 (tabelas manejos/manejopart).
    ============================================================ */
 VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
-  var cards=moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
+  var cards='<div id="mnManejos"></div>'+
+      moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
       moduloCard('rotas','Rotas','Trajetos gravados por GPS',true,"abrirRotas('manejo')")+
-      moduloCard('areas','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()")+
-      moduloCard('painel','Manejos','Abertos e encerrados · abates de cada um',true,"nav('manejoLista')");
-  app('<div id="mnAberto"></div><div id="mnConvites"></div>'+cards);
+      moduloCard('areas','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()");
+  app('<div id="mnConvites"></div>'+cards);
+  pintarCardManejos(null);
   fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>');
-  server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; var el=document.getElementById('mnAberto'); if(!el) return;
-    el.innerHTML = m ? '<div class="card click" style="border-left:5px solid var(--danger)" onclick="abrirManejo(\''+escJs(m.id)+'\')">'+
-      '<h3 style="margin:0 0 4px">● Manejo aberto</h3><div class="meta">'+esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · desde '+fmtDataHora(m.criadoEm)+
-      (m.souDono===false?'<br>'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+' · '+trFrase('você só registra abate'):'')+'</div>'+
-      '<div class="meta" style="margin-top:4px">Toque para ver'+(m.souDono===false?'.':' ou encerrar.')+'</div></div>' : '';
-  }).catch(function(){});
+  server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; pintarCardManejos(m); }).catch(function(){ pintarCardManejos(null); });
   carregarConvites().then(function(){ var el=document.getElementById('mnConvites'); if(!el) return;
     el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
       '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite pendente':'convites pendentes')+'</h3>'+
       '<div class="meta">'+trFrase('Toque para aceitar ou recusar.')+'</div></div>' : '';
   }).catch(function(){}); };
+/* O card "Manejos" mora no topo. Com manejo aberto ele pulsa em verde e
+   mostra o selo no canto; sem manejo aberto, é um card comum. */
+function pintarCardManejos(m){
+  var el=document.getElementById('mnManejos'); if(!el) return;
+  var aberto=!!m;
+  var sub = aberto
+    ? esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · '+trFrase('desde')+' '+fmtDataHora(m.criadoEm)+
+      (m.souDono===false?' · '+trFrase('Convidado por')+' '+esc(m.donoNome||'—'):'')
+    : trFrase('Abertos e encerrados · abates de cada um');
+  el.innerHTML='<div class="card menu-card click'+(aberto?' manejo-aberto':'')+'" onclick="nav(\'manejoLista\')">'+
+    '<div class="ic">'+ico('painel')+'</div><div class="txt"><h3>'+trFrase('Manejos')+'</h3><p>'+sub+'</p></div>'+
+    (aberto?'<span class="selo-aberto">1 '+trFrase('aberto')+'</span>':'')+'<div class="chev">›</div></div>'; }
 window.novoManejo=function(){
   var meuAberto=function(m){ return m && m.souDono!==false; };
   if(meuAberto(MANEJO_ABERTO)){ toast('Você já tem um manejo aberto'); abrirManejo(MANEJO_ABERTO.id); return; }
