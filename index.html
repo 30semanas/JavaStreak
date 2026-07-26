@@ -888,6 +888,7 @@
 <symbol id="js-e12" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-9.5A4.5 4.5 0 0 1 12 7.6a4.5 4.5 0 0 1 7.5 2.9C19.5 15.4 12 20 12 20z"/></symbol>
 <symbol id="js-e13" viewBox="0 0 24 24"><path d="m12 3.5 2.7 5.5 6 .9-4.3 4.2 1 6L12 17.3 6.6 20.1l1-6L3.3 9.9l6-.9z"/></symbol>
 <symbol id="js-e14" viewBox="0 0 24 24"><path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-3.8L6 21z"/></symbol>
+<symbol id="js-e16" viewBox="0 0 24 24"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></symbol>
 <symbol id="js-e15" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
 <symbol id="js-h1" viewBox="0 0 24 24"><path d="M5.5 20.5V12a6.5 6.5 0 0 1 13 0v8.5h-3V12a3.5 3.5 0 0 0-7 0v8.5z"/><circle cx="7" cy="14" r=".45"/><circle cx="7" cy="17.2" r=".45"/><circle cx="17" cy="14" r=".45"/><circle cx="17" cy="17.2" r=".45"/></symbol>
 </defs></svg>
@@ -967,7 +968,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.1831';
+var APP_VER = 'vJS.260726.2003';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1823,6 +1824,18 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Promoção no ar':'Promotion live',
+    'Promoção fora do ar':'Promotion off',
+    'A tela inicial anuncia, e a chave aparece no menu de cada manejador.':'The home screen advertises it, and the key shows in every hunter\'s menu.',
+    'Nada é anunciado e a chave fica escondida. Indicações pendentes continuam sendo pagas.':'Nothing is advertised and the key stays hidden. Pending referrals are still paid.',
+    'Ligar':'Turn on',
+    'Desligar':'Turn off',
+    'Promoção ligada ✔':'Promotion turned on ✔',
+    'Promoção desligada ✔':'Promotion turned off ✔',
+    'Não foi possível salvar':'Could not save',
+    'Não foi possível carregar as manutenções':'Could not load maintenance records',
+    'Não foi possível excluir':'Could not delete',
+    'Abra o item pela lista':'Open the item from the list',
     'Que tipo de conta você quer criar?':'What kind of account do you want to create?',
     'Cevas, rotas, cães, abates e troféus':'Baits, routes, dogs, harvests and trophies',
     'Loja no mapa, promoções e vitrine':'Shop on the map, deals and storefront',
@@ -1872,7 +1885,6 @@ var FRASES = {
     'no total':'in total',
     'creditadas':'credited',
     'pendentes':'pending',
-    'A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.':'The promotion banner is off in Settings. Referrals are still being paid.',
     'Quem mais indica':'Top referrers',
     'Últimas indicações':'Latest referrals',
     'Nenhuma indicação ainda.':'No referrals yet.',
@@ -2936,6 +2948,18 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Promoção no ar':'Promoción activa',
+    'Promoção fora do ar':'Promoción apagada',
+    'A tela inicial anuncia, e a chave aparece no menu de cada manejador.':'La pantalla inicial la anuncia y la clave aparece en el menú de cada manejador.',
+    'Nada é anunciado e a chave fica escondida. Indicações pendentes continuam sendo pagas.':'No se anuncia nada y la clave queda oculta. Las recomendaciones pendientes se siguen pagando.',
+    'Ligar':'Activar',
+    'Desligar':'Apagar',
+    'Promoção ligada ✔':'Promoción activada ✔',
+    'Promoção desligada ✔':'Promoción apagada ✔',
+    'Não foi possível salvar':'No se pudo guardar',
+    'Não foi possível carregar as manutenções':'No se pudieron cargar los mantenimientos',
+    'Não foi possível excluir':'No se pudo eliminar',
+    'Abra o item pela lista':'Abre el elemento desde la lista',
     'Que tipo de conta você quer criar?':'¿Qué tipo de cuenta quieres crear?',
     'Cevas, rotas, cães, abates e troféus':'Cebos, rutas, perros, abates y trofeos',
     'Loja no mapa, promoções e vitrine':'Tienda en el mapa, promociones y escaparate',
@@ -2985,7 +3009,6 @@ var FRASES = {
     'no total':'en total',
     'creditadas':'acreditadas',
     'pendentes':'pendientes',
-    'A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.':'La difusión de la promoción está apagada en Ajustes. Las recomendaciones siguen pagándose.',
     'Quem mais indica':'Quiénes más recomiendan',
     'Últimas indicações':'Últimas recomendaciones',
     'Nenhuma indicação ainda.':'Aún no hay recomendaciones.',
@@ -3415,11 +3438,11 @@ function updateHeader(){
 var NAV_MANEJADOR=[
   {v:'manejoHub', label:'Manejo',            icon:'abate', destaque:true},
   {v:'inicio',    label:'Início',            icon:'inicio'},
+  {v:'agenda',    label:'Agenda',            icon:'agenda'},
   {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
   {v:'espreita',  label:'Transportes',       icon:'espreita'},
   {v:'caes',      label:'Meu canil',         icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
-  {v:'agenda',    label:'Agenda',            icon:'agenda'},
   {v:'documentacao',label:'Documentação',  icon:'documentacao'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
@@ -3559,6 +3582,9 @@ function pintarChave(){
   if(STATE.tipo==='empresa' || !AUTH.token){ el.className='sb-chave'; el.innerHTML=''; return; }
   if(!MINHA_CHAVE) return;
   var d=MINHA_CHAVE;
+  /* Promoção desligada: a chave some. Não faz sentido oferecer uma chave que
+     não paga nada. Volta sozinha quando o admin religar. */
+  if(!d.ativa){ el.className='sb-chave'; el.innerHTML=''; return; }
   el.className='sb-chave on';
   el.innerHTML='<div class="rot">'+trFrase('Sua chave de indicação')+'</div>'+
     '<div class="linha"><code id="sbChaveTxt" class="no-i18n">'+esc(d.chave)+'</code>'+
@@ -3611,7 +3637,7 @@ var EMOJI_ICO={ '＋':'adicionar','✏️':'editar','🗑️':'excluir','🔗':'
   '🕒':'relogio','🌐':'global','☁️':'nuvem','🔔':'notificacao','💬':'mensagem','📧':'email',
   '📱':'telefone','▶️':'play','🔓':'bloqueio','🎥':'camera','🖼️':'camera',
   '🚩':'mapa','🏪':'pagamentos','💳':'pagamentos','📬':'email','🔄':'atualizar','🧾':'arquivo','📣':'avisos','📰':'artigos','✕':'fechar','📢':'avisos','🌿':'areas',
-  '🎚️':'ajustes','🎧':'suporte','✓':'confirmar','🎁':'favorito','🏁':'mapa','●':'notificacao','🌙':'global','📌':'favorito','📝':'editar','←':'avancar','⚙️':'ajustes',
+  '🎚️':'ajustes','🎧':'suporte','✓':'confirmar','🎁':'favorito','🏁':'mapa','●':'notificacao','🌙':'global','📌':'favorito','📝':'editar','←':'voltar','⬅️':'voltar','◀':'voltar','⚙️':'ajustes',
   '🔎':'buscar','📜':'arquivo','📡':'global','🔑':'bloqueio','🚚':'garagem','📞':'telefone','👍':'confirmar','✉️':'email','❌':'fechar','📸':'camera','↩️':'atualizar',
   '✍️':'editar','★':'estrela','🏠':'inicio','☰':'menu','🕐':'relogio','👎':'fechar','🏅':'estrela','📆':'calendario','⏰':'relogio','🔥':'notificacao','💡':'ia',
   '🧰':'ajustes','🗓️':'calendario','🖨️':'arquivo','🧭':'rotas','🧑':'usuario','👤':'usuario','👥':'usuario','🛰️':'global','⛰️':'areas',
@@ -3779,7 +3805,23 @@ function pvCoord(f){ var v=pv(f); if(v==='') return ''; var n=parseFloat(String(
   if(f==='lat' && (n<-90||n>90)) return ''; if(f==='lng' && (n<-180||n>180)) return ''; return v; }
 function acoes(ent,id){ return '<div class="acoes"><button class="ib" onclick="editItem(\''+ent+'\',\''+id+'\')" title="Editar">✏️</button><button class="ib" onclick="delItem(\''+ent+'\',\''+id+'\')" title="Excluir">🗑️</button></div>'; }
 window.editItem=function(ent,id){ EDIT=(CACHE[ent]||[]).filter(function(x){return String(x.id)===String(id);})[0]; if(!EDIT){toast('Item não encontrado');return;} nav(FORMVIEW[ent]); };
-window.delItem=function(ent,id){ if(!confirm('Excluir este item? Esta ação não pode ser desfeita.'))return; server('apiExcluir',ent,id).then(function(){ toast('Excluído ✔'); render(); }); };
+window.delItem=function(ent,id){ if(!confirm('Excluir este item? Esta ação não pode ser desfeita.'))return;
+  server('apiExcluir',ent,id).then(function(){
+    toast('Excluído ✔');
+    /* Se estávamos vendo o detalhe do que acabou de sumir, o render() seguinte
+       tentaria desenhar um objeto que não existe mais e derrubava a tela.
+       Limpa a referência e volta uma casa. */
+    var det={transporte:'transpDetail', canil:'matilha', cao:'caoDetalhe'};
+    if(ent==='transporte' && STATE.transporte && String(STATE.transporte.id)===String(id)){
+      STATE.transporte=null; voltar(); return;
+    }
+    if(det[ent] && STATE.stack && STATE.stack[STATE.stack.length-1]===det[ent]){ voltar(); return; }
+    render();
+  }).catch(function(e){
+    /* Sem este catch a promessa era recusada em silêncio: o item continuava na
+       tela, nenhuma mensagem aparecia, e parecia que o app tinha travado. */
+    toast((e&&e.message)||'Não foi possível excluir');
+  }); };
 function novo(view){ EDIT=null; nav(view); }
 
 /* foto -> dataURL (redimensiona/comprime) */
@@ -5059,6 +5101,15 @@ window.adminConfirmar=function(btn){
   }).catch(function(e){ btn.disabled=false; btn.textContent=rot;
     el.innerHTML='<div class="meta no-i18n">'+esc((e&&e.message)||'')+'</div>'; });
 };
+window.togglePromo=function(liga,btn){
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiPromoIndicacaoAtiva',!!liga).then(function(){
+    toast(liga?'Promoção ligada ✔':'Promoção desligada ✔');
+    /* Recarrega o card e o próprio estado do app: a chave no menu depende
+       deste mesmo parâmetro. */
+    MINHA_CHAVE=null; carregarChave(); carregarIndicacoes();
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível salvar'); });
+};
 function carregarIndicacoes(){
   var el=document.getElementById('indBox'); if(!el) return;
   server('apiListarIndicacoes').then(function(d){
@@ -5078,7 +5129,11 @@ function carregarIndicacoes(){
       '<div class="grow"><b>'+d.total+'</b> <span class="meta">'+trFrase('no total')+'</span></div>'+
       '<div><b>'+d.creditadas+'</b> <span class="meta">'+trFrase('creditadas')+'</span></div>'+
       '<div><b>'+d.pendentes+'</b> <span class="meta">'+trFrase('pendentes')+'</span></div></div>'+
-      (d.promoAtiva?'':'<div class="meta" style="padding:8px;background:#fff4e5;border-radius:8px;margin-bottom:8px">'+trFrase('A divulgação da promoção está desligada em Ajustes. As indicações continuam sendo pagas.')+'</div>')+
+      '<div class="row" style="align-items:center;gap:10px;padding:10px;border-radius:10px;margin-bottom:10px;background:'+(d.promoAtiva?'#e8f5e9':'#fff4e5')+'">'+
+        '<div class="grow"><b>'+trFrase(d.promoAtiva?'Promoção no ar':'Promoção fora do ar')+'</b>'+
+        '<div class="meta">'+trFrase(d.promoAtiva?'A tela inicial anuncia, e a chave aparece no menu de cada manejador.':'Nada é anunciado e a chave fica escondida. Indicações pendentes continuam sendo pagas.')+'</div></div>'+
+        '<button class="btn sm '+(d.promoAtiva?'sec':'')+'" style="width:auto;flex:none" onclick="togglePromo('+(d.promoAtiva?'0':'1')+',this)">'+
+        trFrase(d.promoAtiva?'Desligar':'Ligar')+'</button></div>'+
       (rank?('<h4 style="margin:10px 0 4px">'+trFrase('Quem mais indica')+'</h4>'+rank):'')+
       (linhas?('<h4 style="margin:12px 0 4px">'+trFrase('Últimas indicações')+'</h4><div class="lista-rolagem">'+linhas+'</div>')
              :'<div class="meta">'+trFrase('Nenhuma indicação ainda.')+'</div>');
@@ -5895,7 +5950,7 @@ var ICO={ painel:'a1', avisos:'a2', artigos:'a3', patrocinio:'a4', suporte:'a5',
   global:'d8', nuvem:'d9', codigo:'d10', camera:'d11', play:'d12', link:'d13', bloqueio:'d14',
   ver:'d15', ia:'d16', buscar:'e1', filtrar:'e2', adicionar:'e3', editar:'e4', excluir:'e5',
   confirmar:'e6', fechar:'e7', avancar:'e8', atualizar:'e9', baixar:'e10', enviar:'e11',
-  favorito:'e12', estrela:'e13', salvar:'e14', menu:'e15',
+  favorito:'e12', estrela:'e13', salvar:'e14', menu:'e15', voltar:'e16',
   haras:'h1' };
 function ico(nome,px){
   var id=ICO[nome]; if(!id) return '';
@@ -6029,7 +6084,11 @@ window.novoTransporte=function(){ EDIT=null; nav('transpForm'); };
 function isAnimalTransp(t){ return t==='Cavalo'; }
 window.abrirTransporte=function(id){ STATE.transporte=(CACHE.transporte||[]).filter(function(t){return t.id===id;})[0]; nav('transpDetail'); };
 var TIPOS_SAUDE_CAVALO=['Vacina','Vermífugo','Ferrageamento','Casqueamento','Consulta','Exame','Odontológico','Medicação','Outro'];
-VIEWS.transpDetail=function(){ var t=STATE.transporte; setTitulo(t.tipo); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo));
+VIEWS.transpDetail=function(){ var t=STATE.transporte;
+  /* Recarregar a página com a tela aberta zera o CACHE e t vinha vazio; o
+     acesso a t.tipo estourava e a tela ficava em branco. */
+  if(!t||!t.tipo){ toast('Abra o item pela lista'); STATE.stack=['transportes']; render(); return; }
+  setTitulo(t.tipo); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo));
   var ficha='<div class="card rustic-hero"><div class="row">'+(t.fotoUrl?'<img class="thumb" src="'+esc(imgSrc(t.fotoUrl))+'" style="width:82px;height:82px">':'<div class="ic" style="width:64px;height:64px;font-size:28px;border-radius:10px;background:#efe3cc;display:flex;align-items:center;justify-content:center">'+iconeTransp(t.tipo)+'</div>')+
     '<div class="grow"><h2 style="margin:0 0 2px;font-size:19px">'+iconeTransp(t.tipo)+' '+esc(t.tipo)+'</h2><div class="meta">'+esc(t.identificacao||'')+(t.obs?'<br>'+esc(t.obs):'')+'</div></div></div>'+
     '<button class="btn sm sec" style="margin-top:10px;width:auto" onclick="editItem(\'transporte\',\''+t.id+'\')">✏️ Editar / trocar foto</button></div>';
@@ -6069,7 +6128,11 @@ function isEmbarcacao(t){ return categoriaTransp(t)==='marina'; }
 var TIPOS_MANUT=['Revisão','Troca de óleo','Filtros','Pneus','Freios','Correia dentada','Bateria','Motor',
   'Hélice','Casco','Elétrica','Suspensão','Lavagem','Outro'];
 function carregarManutencoes(id){
-  server('apiListarManutencao',id).then(function(l){ CACHE.manutencao=l||[]; var el=document.getElementById('manutList'); if(!el) return;
+  server('apiListarManutencao',id).catch(function(e){
+    var el=document.getElementById('manutList');
+    if(el) el.innerHTML='<div class="meta">'+trFrase('Não foi possível carregar as manutenções')+': <span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div>';
+    return null;
+  }).then(function(l){ if(l===null) return; CACHE.manutencao=l||[]; var el=document.getElementById('manutList'); if(!el) return;
     el.innerHTML=(l&&l.length)? l.map(function(m){
       var prox = m.proximaData?('<br><span class="pill warn">'+trFrase('Próxima')+': '+fmtData(m.proximaData)+'</span>'):'';
       var pkm  = m.proximoKm?(' <span class="pill gray">'+esc(m.proximoKm)+'</span>'):'';
@@ -7355,6 +7418,10 @@ window.salvarAbate=function(btn){
   server('apiCriarAbate',d).then(function(){ toast('Abate registrado ✔'); MANEJO_ATUAL=null; voltar(); })
     .catch(function(e){ btn.disabled=false; btn.textContent='Registrar abate'; toast((e&&e.message)||'Erro'); }); };
 
+/* Estas três nunca foram declaradas. Ler variável inexistente lança
+   ReferenceError, e a tela da Agenda morria antes de desenhar qualquer coisa
+   ("AG_MES is not defined"). Atribuir cria global implícita; LER, não. */
+var AGENDA=[], AG_MES=null, AG_DIA=null;
 VIEWS.agenda=function(){ setTitulo('Agenda'); setCrumb('Manejo','Agenda'); loadingBox('Carregando agenda…');
   server('apiAgenda').then(function(itens){ AGENDA=itens||[];
     if(!AG_MES){ var h=new Date(); AG_MES=new Date(h.getFullYear(),h.getMonth(),1); }
