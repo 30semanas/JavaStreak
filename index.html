@@ -1033,7 +1033,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.1323';
+var APP_VER = 'vJS.270726.1339';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1981,6 +1981,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'ilimitado':'unlimited',
+    'Vitrine com':'Storefront with',
+    'produtos':'products',
+    'Patrocinar destaques e ranking':'Sponsor highlights and ranking',
     'Número = quantidade (-1 é ilimitado, 0 bloqueia). Sim/Não = dá ou tira o acesso ao recurso.':'Number = quantity (-1 is unlimited, 0 blocks). Yes/No = grants or removes access to the feature.',
     'Ter vitrine':'Has a storefront',
     'Lançar promoção relâmpago':'Launch flash promotions',
@@ -3187,6 +3191,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'ilimitado':'ilimitado',
+    'Vitrine com':'Escaparate con',
+    'produtos':'productos',
+    'Patrocinar destaques e ranking':'Patrocinar destacados y ranking',
     'Número = quantidade (-1 é ilimitado, 0 bloqueia). Sim/Não = dá ou tira o acesso ao recurso.':'Número = cantidad (-1 es ilimitado, 0 bloquea). Sí/No = da o quita el acceso al recurso.',
     'Ter vitrine':'Tener escaparate',
     'Lançar promoção relâmpago':'Lanzar promoción relámpago',
@@ -4927,12 +4935,7 @@ VIEWS.planos=function(){ setTitulo('Planos'); setCrumb('Planos'); loadingBox('Ca
           '<div class="plano-top"><div class="plano-nome">'+esc(p.nome)+'</div>'+(atual?'<span class="plano-badge">ativo</span>':'')+'</div>'+
           '<div class="plano-preco">'+precoFmt(p.precos&&p.precos[PERIODO_SEL])+'</div>'+
           economia(p.precos)+
-          '<ul class="plano-lista">'+
-            '<li class="sim"><span>✓</span>Presença no mapa da rede</li>'+
-            '<li class="sim"><span>✓</span>Promoções relâmpago</li>'+
-            '<li class="sim"><span>✓</span>Patrocinar destaques e ranking</li>'+
-            '<li class="sim"><span>✓</span>Vitrine com <b>'+p.produtos+'</b> produtos</li>'+
-          '</ul>'+
+          '<ul class="plano-lista">'+itensEmpresa(p)+'</ul>'+
           (atual?'<div class="plano-ativo">Ativo até '+fmtData(meu.fim)+'</div>'
                 :'<button class="plano-btn" onclick="assinar(\''+p.plano+'\')">Assinar '+esc(p.nome)+'</button>')+
           '</div>'; }).join('')+'</div>';
@@ -4973,6 +4976,24 @@ function economia(precos){ if(!precos) return '<div class="plano-eco"></div>';
   return '<div class="plano-eco"></div>'; }
 var PERIODO_SEL='MES';
 window.setPeriodo=function(p){ PERIODO_SEL=p; render(); };
+/* Monta a lista do card de empresa a partir do que o admin configurou.
+   Antes eram quatro linhas fixas: desligar um recurso na tabela de acessos
+   não mudava nada aqui, e o card prometia o que o plano não entregava. */
+function itensEmpresa(p){
+  if(!p.limites||!p.rotulos){                 // servidor antigo: mantém o texto de sempre
+    return '<li class="sim"><span>✓</span>'+trFrase('Presença no mapa da rede')+'</li>'+
+      '<li class="sim"><span>✓</span>'+trFrase('Promoções relâmpago')+'</li>'+
+      '<li class="sim"><span>✓</span>'+trFrase('Patrocinar destaques e ranking')+'</li>'+
+      '<li class="sim"><span>✓</span>'+trFrase('Vitrine com')+' <b>'+(p.produtos||0)+'</b> '+trFrase('produtos')+'</li>';
+  }
+  var liga=p.liga||{};
+  return Object.keys(p.rotulos).map(function(k){
+    var v=p.limites[k], ehLiga=!!liga[k], sim=(v!==0);
+    var txt=trFrase(p.rotulos[k]);
+    if(!ehLiga && sim) txt=txt+': <b>'+(v===-1?trFrase('ilimitado'):v)+'</b>';
+    return '<li class="'+(sim?'sim':'nao')+'"><span>'+(sim?'✓':'✕')+'</span>'+txt+'</li>';
+  }).join('');
+}
 function precoFmt(v){ if(v==null) return ''; var n=Number(v)||0;
   var sufixo = PERIODO_SEL==='MES'?'/mês':(PERIODO_SEL==='SEM'?'/semestre':'/ano');
   return 'R$ '+n.toFixed(2).replace('.',',')+'<span>'+sufixo+'</span>'; }
