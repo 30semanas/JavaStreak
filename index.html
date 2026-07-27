@@ -541,6 +541,18 @@
   .tb-hamb,.tb-back{background:rgba(20,30,20,.06);border:1px solid var(--linha);color:var(--txt);font-size:17px;
     width:34px;height:34px;border-radius:10px;cursor:pointer;line-height:1;flex:none}
   .tb-hamb:hover,.tb-back:hover{background:rgba(232,85,43,.12);border-color:var(--laranja)}
+  /* O menu lateral é a porta para quase tudo no celular, e o botão passava
+     despercebido. Agora é laranja, maior, com um leve pulso nos primeiros
+     segundos para o dedo achar. */
+  .tb-hamb{background:linear-gradient(180deg,var(--laranja),#c9481f);border-color:transparent;
+    color:#fff;width:42px;height:42px;font-size:20px;border-radius:12px;
+    box-shadow:0 3px 12px rgba(232,85,43,.45);animation:hambPulso 2.2s ease-out 3}
+  .tb-hamb:hover{background:linear-gradient(180deg,#f46a3c,var(--laranja));border-color:transparent}
+  .tb-hamb .ic-svg{stroke:#fff;width:22px;height:22px;margin:0}
+  @keyframes hambPulso{0%{box-shadow:0 3px 12px rgba(232,85,43,.45),0 0 0 0 rgba(232,85,43,.55)}
+    70%{box-shadow:0 3px 12px rgba(232,85,43,.45),0 0 0 12px rgba(232,85,43,0)}
+    100%{box-shadow:0 3px 12px rgba(232,85,43,.45),0 0 0 0 rgba(232,85,43,0)}}
+  @media (prefers-reduced-motion:reduce){ .tb-hamb{animation:none} }
   .tb-tit{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--txt)}
   @media(min-width:900px){ body.logged .tb-hamb{display:none} }
   /* sino simples na ponta direita da barra */
@@ -572,14 +584,16 @@
   label{color:var(--txt)}
   /* engrenagem ao lado do nome no menu */
   /* painel de campanha — coluna lateral direita, translúcida */
-  #campPanel{position:fixed;right:0;top:0;bottom:0;width:250px;z-index:900;display:none;
+  /* z-index acima do menu suspenso (1050): aberto, o painel fica POR CIMA em
+     vez de brigar por espaço com a barra. */
+  #campPanel{position:fixed;right:0;top:0;bottom:0;width:250px;z-index:1400;display:none;
     background:linear-gradient(180deg,rgba(19,28,19,.62),rgba(13,20,13,.72));
     backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
     border-left:1px solid rgba(255,255,255,.10);
     box-shadow:-8px 0 26px rgba(0,0,0,.28);
     padding:18px 16px;overflow-y:auto}
   #campPanel.on{display:block}
-  .cp-toggle{position:fixed;right:250px;top:50%;transform:translateY(-50%);z-index:1200;
+  .cp-toggle{position:fixed;right:250px;top:50%;transform:translateY(-50%);z-index:1410;
     width:26px;height:66px;border-radius:12px 0 0 12px;border:1px solid rgba(255,255,255,.18);border-right:none;
     background:linear-gradient(180deg,rgba(232,85,43,.92),rgba(200,67,31,.92));color:#fff;font-size:14px;cursor:pointer;
     box-shadow:-4px 0 14px rgba(0,0,0,.28);transition:right .2s}
@@ -604,7 +618,20 @@
      margin-right anulava o "margin:0 auto" e empurrava tudo para a esquerda. */
   @media(min-width:901px){ body.camp-on.map-mode #mapshell{right:250px} }
   @media(max-width:900px) and (min-width:721px){ body.camp-on.map-mode #mapshell{right:210px} }
-  @media(max-width:900px){ #campPanel{width:210px} .cp-toggle{right:210px} .cp-toggle.fechado{right:0} }
+  /* No celular vira gaveta: ocupa quase a tela, com fundo escuro atrás, e
+     nasce FECHADA. Antes ela cobria a barra superior e o resultado era o
+     layout embaralhado. */
+  @media(max-width:900px){
+    #campPanel{width:min(86vw,320px);padding-top:54px}
+    .cp-toggle{right:min(86vw,320px)}
+    .cp-toggle.fechado{right:0}
+    #campPanel.on:not(.fechado)::before{content:'';position:fixed;inset:0;right:min(86vw,320px);
+      background:rgba(0,0,0,.45);z-index:-1}
+    #campPanel .cp-fechar{display:flex}
+  }
+  .cp-fechar{display:none;position:absolute;top:12px;right:12px;width:34px;height:34px;
+    align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;line-height:1}
   @media(min-width:901px){ body.logged.camp-on{padding-right:250px} }
   @media(max-width:900px) and (min-width:721px){ body.logged.camp-on{padding-right:210px} }
   @media(max-width:720px){ body.logged.camp-on{padding-right:0} }
@@ -956,7 +983,7 @@
   </div>
   <div id="topstrip"></div>
   <nav id="topnav"></nav>
-  <aside id="campPanel"><div class="cp-body" id="cpBody"></div></aside>
+  <aside id="campPanel"><button class="cp-fechar" onclick="toggleCampanha()" title="Fechar">✕</button><div class="cp-body" id="cpBody"></div></aside>
   <div id="ecoTela"><div class="num" id="ecoPts">0</div><div class="txt">Gravando a rota.<br>A tela precisa continuar ligada — o navegador não captura GPS com o aparelho bloqueado.</div><button onclick="fecharEconomia()">Toque para voltar</button></div>
   <button class="cp-toggle" id="cpToggle" onclick="toggleCampanha()" title="Mostrar/ocultar campanha" style="display:none">🏆</button>
 
@@ -1005,7 +1032,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.0844';
+var APP_VER = 'vJS.270726.1245';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -6252,7 +6279,10 @@ var CAMPANHA=null;
 function carregarCampanha(){ if(!AUTH.token) return; server('apiCampanhaAtiva').then(function(c){ CAMPANHA=c||null; pintarCampanha(); }).catch(function(){ CAMPANHA=null; pintarCampanha(); }); }
 /* O destaque reaparece a cada carregamento: fechar vale só para a sessão atual.
    Antes ficava guardado em localStorage e o patrocinador nunca mais era visto. */
-var CAMP_OCULTA=false;
+/* No celular a gaveta nasce fechada: aberta, ela cobria a barra superior e a
+   faixa de saldos, que foi o layout embaralhado relatado. No desktop há
+   espaço reservado (padding no body), então continua aberta. */
+var CAMP_OCULTA=(typeof window!=='undefined' && window.innerWidth<901);
 window.toggleCampanha=function(){ CAMP_OCULTA=!CAMP_OCULTA; pintarCampanha(); };
 function pintarCampanha(){ var el=document.getElementById('campPanel'), body=document.getElementById('cpBody'), tg=document.getElementById('cpToggle');
   if(!el||!body) return;
