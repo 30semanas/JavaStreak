@@ -56,8 +56,9 @@
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
   .mk-svgwrap{background:none;border:0}
   .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-    background:#fff;border:2px solid #2f7d3a;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.35)}
-  .mk-svg .ic-svg{stroke:#2f7d3a;margin:0}
+    background:#fff;border:2px solid currentColor;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  .mk-svg .ic-svg{stroke:currentColor;margin:0}
+  .mk-svg{color:inherit}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
        width:100%;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:600;
@@ -484,6 +485,20 @@
   .hcfg{background:none;border:none;color:#e5dfd2;font-size:15px;cursor:pointer;padding:0 0 0 7px;opacity:.8;vertical-align:middle}
   .hcfg:hover{opacity:1;transform:rotate(35deg)}
   /* barra superior de atalhos principais */
+  #topstrip{display:none;gap:8px;padding:8px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;position:relative;z-index:1050}
+  #topstrip::-webkit-scrollbar{display:none}
+  body.logged #topstrip{display:flex}
+  .ts-card,.ts-btn{flex:0 0 auto;display:flex;align-items:center;gap:7px;white-space:nowrap;
+    padding:7px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.07);color:#f2ede2;font-size:12.5px;cursor:default}
+  .ts-btn{cursor:pointer}
+  .ts-btn:hover{background:rgba(232,85,43,.2);border-color:rgba(232,85,43,.5)}
+  .ts-btn.on{background:linear-gradient(180deg,rgba(232,85,43,.3),rgba(232,85,43,.1));border-color:rgba(232,85,43,.6)}
+  .ts-card b{font-size:14px;color:#ffb27a}
+  .ts-card .rot{opacity:.72;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  .ts-card .ic-svg,.ts-btn .ic-svg{width:16px;height:16px;margin:0;stroke:#ffb27a}
+  .ts-card code{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:#ffb27a;letter-spacing:1px}
   #topnav{position:relative;z-index:1050;display:none;gap:8px;padding:10px 14px;
     background:linear-gradient(180deg,#182318,#121a12);border-bottom:1px solid rgba(255,255,255,.07);
     overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -923,6 +938,7 @@
     <button class="tb-back" id="tbBack" onclick="voltar()" style="display:none">‹</button>
     <div class="tb-tit" id="tbTitulo">JavaStreak</div>
   </div>
+  <div id="topstrip"></div>
   <nav id="topnav"></nav>
   <aside id="campPanel"><div class="cp-body" id="cpBody"></div></aside>
   <div id="ecoTela"><div class="num" id="ecoPts">0</div><div class="txt">Gravando a rota.<br>A tela precisa continuar ligada — o navegador não captura GPS com o aparelho bloqueado.</div><button onclick="fecharEconomia()">Toque para voltar</button></div>
@@ -973,7 +989,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2122';
+var APP_VER = 'vJS.260726.2134';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1812,6 +1828,16 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Seu plano':'Your plan',
+    'sem prazo':'no expiry',
+    'dia':'day',
+    'dias':'days',
+    'Dias de cortesia':'Courtesy days',
+    'Cortesia':'Courtesy',
+    'Dias ganhos indicando amigos':'Days earned by referring friends',
+    'Indicações':'Referrals',
+    'Sua chave':'Your key',
+    'Chegada':'Finish',
     'Visível na rede':'Visible on the network',
     'Oculto na rede':'Hidden on the network',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Set the kennel location — use GPS or type the coordinates',
@@ -2931,6 +2957,16 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Seu plano':'Tu plan',
+    'sem prazo':'sin plazo',
+    'dia':'día',
+    'dias':'días',
+    'Dias de cortesia':'Días de cortesía',
+    'Cortesia':'Cortesía',
+    'Dias ganhos indicando amigos':'Días ganados recomendando amigos',
+    'Indicações':'Recomendaciones',
+    'Sua chave':'Tu clave',
+    'Chegada':'Llegada',
     'Visível na rede':'Visible en la red',
     'Oculto na rede':'Oculto en la red',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Marca la ubicación de la perrera — usa el GPS o escribe las coordenadas',
@@ -3423,7 +3459,10 @@ function render(){
 }
 function updateHeader(){
   var logado = !!AUTH.token;
-  var nome = (STATE.tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+  /* AUTH.manejador é a mesma ficha guardada à parte. Se STATE.manejador for
+     zerado por algum caminho, o nome no cabeçalho não some junto. */
+  var m = STATE.manejador || AUTH.manejador || null;
+  var nome = (STATE.tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((m&&m.nome)||'');
   document.getElementById('hSub').textContent = (logado && nome) ? nome : STATE.appNome;
   document.body.classList.toggle('logged', logado);
   var bell=document.getElementById('hbell'); if(bell) bell.style.display = logado ? 'block':'none';
@@ -3481,7 +3520,8 @@ function buildSidebar(){
   var sv=document.getElementById('sbVer'); if(sv) sv.textContent=APP_VER;
   pintarCampanha();
   var u=document.getElementById('sbUser');
-  if(u){ var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((STATE.manejador&&STATE.manejador.nome)||'');
+  if(u){ var mj=STATE.manejador||AUTH.manejador||null;
+    var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((mj&&mj.nome)||'');
     var cfg=(tipo==='empresa')?'':'<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>';
     u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span><span class="sb-plano-inline" id="sbPlano"></span>'; }
   pintarPlano();          // depois de recriar o bloco, senão o selo é apagado
@@ -3553,6 +3593,47 @@ window.alternarPerfilRede=function(){
     .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
 };
 var SALAS_COMPART_QTD=0;
+/* Faixa acima do menu suspenso: saldos, chave e atalhos.
+   Uma chamada só (apiMeusCreditos) alimenta tudo. */
+var CREDITOS=null;
+function carregarCreditos(){
+  if(!AUTH.token || STATE.tipo==='empresa'){ pintarTopStrip(); return; }
+  server('apiMeusCreditos').then(function(c){ CREDITOS=c; pintarTopStrip(); }).catch(function(){});
+}
+function pintarTopStrip(){
+  var el=document.getElementById('topstrip'); if(!el) return;
+  if(!AUTH.token || STATE.tipo==='empresa'){ el.innerHTML=''; el.style.display='none'; return; }
+  el.style.display='';
+  var c=CREDITOS||{}, h='';
+  var dias=(c.diasPlano===null||c.diasPlano===undefined)?null:c.diasPlano;
+  h+='<div class="ts-card" title="'+trFrase('Seu plano')+'">'+ico('planos',16)+
+     '<span><span class="rot">'+esc(c.planoNome||'—')+'</span><br><b>'+
+     (dias===null?trFrase('sem prazo'):(dias+' '+trFrase(dias===1?'dia':'dias')))+'</b></span></div>';
+  h+='<div class="ts-card" title="'+trFrase('Dias de cortesia')+'">'+ico('favorito',16)+
+     '<span><span class="rot">'+trFrase('Cortesia')+'</span><br><b>'+(c.cortesiaDias||0)+' '+
+     trFrase((c.cortesiaDias===1)?'dia':'dias')+'</b></span></div>';
+  h+='<div class="ts-card" title="'+trFrase('Dias ganhos indicando amigos')+'">'+ico('usuario',16)+
+     '<span><span class="rot">'+trFrase('Indicações')+'</span><br><b>'+(c.indicacaoDias||0)+' '+
+     trFrase((c.indicacaoDias===1)?'dia':'dias')+'</b></span></div>';
+  if(c.promoAtiva && c.chave){
+    h+='<div class="ts-card"><span class="rot">'+trFrase('Sua chave')+'</span>'+
+       '<code id="tsChave" class="no-i18n">'+esc(c.chave)+'</code>'+
+       '<span class="ts-btn" onclick="copiarChaveTopo(this)">'+ico('compartilhar',16)+trFrase('Copiar')+'</span></div>';
+  }
+  var vis=!!(STATE.manejador && STATE.manejador.visivelNetwork==='Sim');
+  h+='<span class="ts-btn'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')">'+
+     ico(vis?'ver':'bloqueio',16)+trFrase(vis?'Visível na rede':'Oculto na rede')+'</span>';
+  h+='<span class="ts-btn" onclick="go(\'trofeus\')">'+ico('estrela',16)+trFrase('Sala de troféu')+'</span>';
+  el.innerHTML=h; traduzirDOM(el);
+}
+window.copiarChaveTopo=function(btn){
+  var el=document.getElementById('tsChave'); if(!el) return;
+  var txt=el.textContent, rot=btn.textContent;
+  var fim=function(){ btn.textContent=trFrase('Copiado ✔'); setTimeout(function(){ btn.innerHTML=ico('compartilhar',16)+trFrase('Copiar'); },1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(fim).catch(function(){ copiaVelha(txt,fim); });
+  } else copiaVelha(txt,fim);
+};
 function buildTopNav(root, tipo){
   var tn=document.getElementById('topnav'); if(!tn) return;
   var base=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR;
@@ -3567,6 +3648,7 @@ function buildTopNav(root, tipo){
   tn.innerHTML=html;
   atualizarBadge();
   carregarChave();
+  if(CREDITOS) pintarTopStrip(); else carregarCreditos();
   setTimeout(posicionarMapShell,0);
 }
 /* Chave de indicação no menu, logo acima de "Ver planos". Buscada uma vez por
@@ -4768,7 +4850,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); MINHA_CHAVE=null;
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); MINHA_CHAVE=null; CREDITOS=null;
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
 /* ============================================================
@@ -6262,9 +6344,9 @@ function fmtDur(ms){ var s=Math.floor(ms/1000), mm=Math.floor(s/60), ss=s%60, hh
   return (hh?hh+'h ':'')+mm+'min '+(ss<10?'0':'')+ss+'s'; }
 function simplificar(pts,max){ max=max||800; if(!pts||pts.length<=max) return pts||[]; var step=pts.length/max, out=[]; for(var i=0;i<pts.length;i+=step) out.push(pts[Math.floor(i)]); out.push(pts[pts.length-1]); return out; }
 /* Marcador com ícone da biblioteca de linha, em vez de emoji. */
-function svgIconMapa(nome,size){ size=size||28;
-  return L.divIcon({ html:'<div class="mk-svg">'+ico(nome,size-8)+'</div>', className:'mk-svgwrap',
-    iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2] }); }
+function svgIconMapa(nome,size,cor){ size=size||28; cor=cor||'#2f7d3a';
+  return L.divIcon({ html:'<div class="mk-svg" style="border-color:'+cor+'">'+ico(nome,size-10)+'</div>',
+    className:'mk-svgwrap', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2] }); }
 function emojiIcon(emoji,size,destaque){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk'+(destaque?' emoji-me':''), iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
 function avatarUrl(o){ o=o||{}; if(o.fotoUrl) return imgSrc(o.fotoUrl); if(o.tipo==='empresa') return AV_STORE; return (String(o.sexo||'').toLowerCase().indexOf('f')===0)?AV_WOMAN:AV_MAN; }
 function avatarIcon(o,size,me){ size=size||46; return L.divIcon({html:'<div class="mk-av'+(me?' me':'')+'" style="background-image:url('+avatarUrl(o)+')"></div>', className:'mk-avwrap', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
@@ -7668,7 +7750,7 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     var qtd=(d.caes||[]).filter(function(c){ return String(c.canilId)===String(k.id); }).length;
     var pop='<div class="pop"><h4>🏠 '+esc(k.nome||'Canil')+'</h4><div class="meta">'+qtd+' '+trFrase(qtd===1?'cão':'cães')+
       (k.obs?'<br>'+esc(k.obs):'')+'</div></div>';
-    add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:'#7a5c2e',fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
+    add(L.marker([la,ln],{icon:svgIconMapa('canil',30,'#7a5c2e')}).bindPopup(pop),la,ln); });
   /* Ceva de amigo: só entra aqui depois que eu aceitei o compartilhamento. */
   if(MAPFILTER.espera) (d.cevasCompart||[]).forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+' <span class="pill gray">'+trFrase('compartilhada')+'</span></h4>'+
@@ -7685,12 +7767,12 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     add(mk,la,ln); });
   if(MAPFILTER.armadilha) d.armadilhas.forEach(function(a){ var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🪤 '+esc(a.tipo)+'</h4><div class="meta"><b>Status:</b> '+esc(a.status||'—')+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>';
-    add(L.circleMarker([la,ln],{radius:8,color:'#7a2a2a',fillColor:'#b23b3b',fillOpacity:.9,weight:2}).bindPopup(pop),la,ln); });
+    add(L.marker([la,ln],{icon:svgIconMapa('armadilha',30,'#b23b3b')}).bindPopup(pop),la,ln); });
   if(MAPFILTER.busca){
     (d.rotas||[]).forEach(function(r){ var line=(r.pontos||[]).map(function(p){return [coord(p.lat),coord(p.lng)];}).filter(function(xy){return ptOk(xy[0],xy[1]);});
       if(line.length>1){ L.polyline(line,{color:'#3b6ea5',weight:4,opacity:.85}).addTo(MAPLAYER); line.forEach(function(xy){pts.push(xy);});
-        L.marker(line[0],{icon:emojiIcon('🚩')}).addTo(MAPLAYER).bindPopup('🚩 Início — '+esc(r.nome||'Rota'));
-        L.marker(line[line.length-1],{icon:emojiIcon('🏁')}).addTo(MAPLAYER).bindPopup('🏁 Chegada — '+esc(r.nome||'Rota')); }
+        L.marker(line[0],{icon:svgIconMapa('rotas',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(trFrase('Início')+' — '+esc(r.nome||'Rota'));
+        L.marker(line[line.length-1],{icon:svgIconMapa('confirmar',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(trFrase('Chegada')+' — '+esc(r.nome||'Rota')); }
     });
     (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
