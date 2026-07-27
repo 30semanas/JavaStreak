@@ -592,6 +592,13 @@
   @media(min-width:901px){ body.logged.camp-on{padding-right:250px} }
   @media(max-width:900px) and (min-width:721px){ body.logged.camp-on{padding-right:210px} }
   @media(max-width:720px){ body.logged.camp-on{padding-right:0} }
+  .chave-card{border-left:5px solid var(--laranja)}
+  .chave-card .linha{display:flex;align-items:center;gap:8px;margin:6px 0 10px}
+  .chave-card code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:19px;font-weight:700;
+    letter-spacing:2px;color:var(--laranja);user-select:all;text-align:center;
+    background:var(--areia);border:1px dashed var(--laranja);border-radius:10px;padding:9px 6px}
+  .chave-passos{margin:0 0 8px;padding-left:20px;font-size:13.5px;line-height:1.65}
+  .chave-passos li{margin-bottom:2px}
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
 .sb-plano{display:none;margin:0 12px 10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:center}
   .pl-tag{font-size:13px;font-weight:800;color:var(--laranja-claro);text-transform:uppercase;letter-spacing:.5px}
@@ -981,7 +988,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2155';
+var APP_VER = 'vJS.260726.2208';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1820,6 +1827,15 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Passe sua chave para o amigo.':'Give your key to your friend.',
+    'Ele escolhe "Sim, tenho uma chave" ao criar a conta e digita ela.':'They pick "Yes, I have a key" when signing up and type it in.',
+    'Quando ele confirmar o e-mail, você ganha':'When they confirm their email, you get',
+    'de Mateiro':'of Mateiro',
+    'Não há limite de amigos. Os dias somam no seu plano atual.':'No limit on friends. The days add to your current plan.',
+    'amigo já entrou por você':'friend has joined through you',
+    'amigos já entraram por você':'friends have joined through you',
+    'dias ganhos':'days earned',
+    'Sua chave de indicação':'Your referral key',
     'PERFIL VISÍVEL':'PROFILE VISIBLE',
     'PERFIL OCULTO':'PROFILE HIDDEN',
     'SALA DE TROFÉU VISÍVEL':'TROPHY ROOM VISIBLE',
@@ -1835,7 +1851,6 @@ var FRASES = {
     'Cortesia':'Courtesy',
     'Dias ganhos indicando amigos':'Days earned by referring friends',
     'Indicações':'Referrals',
-    'Sua chave':'Your key',
     'Chegada':'Finish',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Set the kennel location — use GPS or type the coordinates',
     'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Set the trap location — use GPS or type the coordinates',
@@ -2952,6 +2967,15 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Passe sua chave para o amigo.':'Pasa tu clave a tu amigo.',
+    'Ele escolhe "Sim, tenho uma chave" ao criar a conta e digita ela.':'Elige "Sí, tengo una clave" al crear la cuenta y la escribe.',
+    'Quando ele confirmar o e-mail, você ganha':'Cuando confirme su correo, ganas',
+    'de Mateiro':'de Mateiro',
+    'Não há limite de amigos. Os dias somam no seu plano atual.':'Sin límite de amigos. Los días se suman a tu plan actual.',
+    'amigo já entrou por você':'amigo ya entró por ti',
+    'amigos já entraram por você':'amigos ya entraron por ti',
+    'dias ganhos':'días ganados',
+    'Sua chave de indicação':'Tu clave de recomendación',
     'PERFIL VISÍVEL':'PERFIL VISIBLE',
     'PERFIL OCULTO':'PERFIL OCULTO',
     'SALA DE TROFÉU VISÍVEL':'SALA DE TROFEOS VISIBLE',
@@ -2967,7 +2991,6 @@ var FRASES = {
     'Cortesia':'Cortesía',
     'Dias ganhos indicando amigos':'Días ganados recomendando amigos',
     'Indicações':'Recomendaciones',
-    'Sua chave':'Tu clave',
     'Chegada':'Llegada',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Marca la ubicación de la perrera — usa el GPS o escribe las coordenadas',
     'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Marca la ubicación de la trampa — usa el GPS o escribe las coordenadas',
@@ -3588,8 +3611,8 @@ var SALAS_COMPART_QTD=0;
    Uma chamada só (apiMeusCreditos) alimenta tudo. */
 var CREDITOS=null;
 function carregarCreditos(){
-  if(!AUTH.token || STATE.tipo==='empresa'){ pintarTopStrip(); return; }
-  server('apiMeusCreditos').then(function(c){ CREDITOS=c; pintarTopStrip(); }).catch(function(){});
+  if(!AUTH.token || STATE.tipo==='empresa'){ pintarTopStrip(); pintarChaveInicio(); return; }
+  server('apiMeusCreditos').then(function(c){ CREDITOS=c; pintarTopStrip(); pintarChaveInicio(); }).catch(function(){});
 }
 function pintarTopStrip(){
   var el=document.getElementById('topstrip'); if(!el) return;
@@ -3606,11 +3629,6 @@ function pintarTopStrip(){
   h+='<div class="ts-card" title="'+trFrase('Dias ganhos indicando amigos')+'">'+ico('usuario',16)+
      '<span><span class="rot">'+trFrase('Indicações')+'</span><br><b>'+(c.indicacaoDias||0)+' '+
      trFrase((c.indicacaoDias===1)?'dia':'dias')+'</b></span></div>';
-  if(c.promoAtiva && c.chave){
-    h+='<div class="ts-card"><span class="rot">'+trFrase('Sua chave')+'</span>'+
-       '<code id="tsChave" class="no-i18n">'+esc(c.chave)+'</code>'+
-       '<span class="ts-btn" onclick="copiarChaveTopo(this)">'+ico('compartilhar',16)+trFrase('Copiar')+'</span></div>';
-  }
   /* Estes dois botões são o ÚNICO lugar onde a visibilidade se configura —
      por isso alternam aqui mesmo, em vez de levar para outra tela. */
   var m=STATE.manejador||AUTH.manejador||{};
@@ -3626,9 +3644,42 @@ function pintarTopStrip(){
      ico('engrenagem',17)+'</span>';
   el.innerHTML=h; traduzirDOM(el);
 }
+/* A chave mora no card de boas-vindas, junto das instruções: é onde a pessoa
+   entende para que ela serve. Os dados vêm do mesmo CREDITOS da faixa do topo,
+   sem chamada a mais. */
+function pintarChaveInicio(){
+  var el=document.getElementById('inicioChave'); if(!el) return;
+  var c=CREDITOS;
+  if(!c || !AUTH.token || STATE.tipo==='empresa' || !c.promoAtiva || !c.chave){ el.innerHTML=''; return; }
+  var d=c.promoDias||10;
+  el.innerHTML='<div class="card chave-card">'+
+    '<h3 style="margin:0 0 4px">🤝 '+trFrase('Sua chave de indicação')+'</h3>'+
+    '<div class="linha"><code id="sbChaveTxt" class="no-i18n">'+esc(c.chave)+'</code>'+
+    '<button class="btn sm" style="width:auto" onclick="copiarChave(this)">'+trFrase('Copiar')+'</button></div>'+
+    '<ol class="chave-passos">'+
+      '<li>'+trFrase('Passe sua chave para o amigo.')+'</li>'+
+      '<li>'+trFrase('Ele escolhe "Sim, tenho uma chave" ao criar a conta e digita ela.')+'</li>'+
+      '<li>'+trFrase('Quando ele confirmar o e-mail, você ganha')+' <b>'+d+' '+
+        trFrase(d===1?'dia':'dias')+' '+trFrase('de Mateiro')+'</b>.</li>'+
+    '</ol>'+
+    '<div class="meta">'+trFrase('Não há limite de amigos. Os dias somam no seu plano atual.')+'</div>'+
+    (c.indicacaoQtd ? '<div class="meta" style="margin-top:6px"><b>'+c.indicacaoQtd+'</b> '+
+      trFrase(c.indicacaoQtd===1?'amigo já entrou por você':'amigos já entraram por você')+
+      ' · <b>'+(c.indicacaoDias||0)+'</b> '+trFrase('dias ganhos')+'</div>' : '')+
+    '</div>';
+  traduzirDOM(el); iconizar(el);
+}
+window.copiarChave=function(btn){
+  var el=document.getElementById('sbChaveTxt'); if(!el) return;
+  var txt=el.textContent, rot=btn.textContent;
+  var fim=function(){ btn.textContent=trFrase('Copiado ✔');
+    setTimeout(function(){ btn.textContent=rot; },1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(fim).catch(function(){ copiaVelha(txt,fim); });
+  } else copiaVelha(txt,fim);
+};
 /* Reserva para navegador antigo e para página servida sem HTTPS, onde o
-   clipboard moderno não existe. Foi removida junto com a caixa antiga da
-   chave e continuava sendo chamada — o teste pegou. */
+   clipboard moderno não existe. */
 function copiaVelha(txt,fim){
   try{
     var a=document.createElement('textarea');
@@ -3637,14 +3688,6 @@ function copiaVelha(txt,fim){
     document.body.removeChild(a); fim();
   }catch(e){ toast('Copie a chave manualmente: '+txt); }
 }
-window.copiarChaveTopo=function(btn){
-  var el=document.getElementById('tsChave'); if(!el) return;
-  var txt=el.textContent, rot=btn.textContent;
-  var fim=function(){ btn.textContent=trFrase('Copiado ✔'); setTimeout(function(){ btn.innerHTML=ico('compartilhar',16)+trFrase('Copiar'); },1600); };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(fim).catch(function(){ copiaVelha(txt,fim); });
-  } else copiaVelha(txt,fim);
-};
 function buildTopNav(root, tipo){
   var tn=document.getElementById('topnav'); if(!tn) return;
   var base=(tipo==='empresa')?NAV_LOJISTA:NAV_MANEJADOR;
@@ -3658,7 +3701,7 @@ function buildTopNav(root, tipo){
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
-  if(CREDITOS) pintarTopStrip(); else carregarCreditos();
+  if(CREDITOS){ pintarTopStrip(); pintarChaveInicio(); } else carregarCreditos();
   setTimeout(posicionarMapShell,0);
 }
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
@@ -5949,7 +5992,7 @@ function subInicio(){
 VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crumb').innerHTML='';
   var nome=(STATE.manejador&&STATE.manejador.nome)?STATE.manejador.nome.split(' ')[0]:'';
   app(heroFoto('inicio',trFrase('Bem-vindo,')+' '+nome,subInicio(),'JavaStreak')+
-    '<div id="inicioConvites"></div><div id="inicioAlerta"></div>'+
+    '<div id="inicioChave"></div><div id="inicioConvites"></div><div id="inicioAlerta"></div>'+
     '<div class="card menu-card click" onclick="go(\'agenda\')"><img src="'+ICONS.agenda+'" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:transparent;padding:2px"><div class="txt" style="margin-left:12px"><h3>Agenda</h3><p>Saúde de cães e cavalos + manutenção de veículos</p></div><div class="chev">›</div></div>'+
     '<div id="blogBox" style="margin-top:4px"><div class="loading"><div class="spin"></div></div></div>'+
     '');
@@ -5958,9 +6001,13 @@ VIEWS.inicio=function(){ setTitulo(STATE.appNome); document.getElementById('crum
     var atr=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)<h;}).length;
     var prox=itens.filter(function(i){return i.proximaData&&String(i.proximaData).substring(0,10)>=h&&(new Date(String(i.proximaData).substring(0,10))-new Date(h))/864e5<=7;}).length;
     var el=document.getElementById('inicioAlerta'); if(!el)return;
+    /* innerHTML depois do render não passa pelo iconizar nem pelo tradutor:
+       por isso o emoji continuava aparecendo aqui. Chamamos os dois na mão. */
     if(atr||prox) el.innerHTML='<div class="card" style="border-left:5px solid '+(atr?'var(--danger)':'var(--alerta)')+'"><h3 style="margin:0 0 4px">📅 Lembrete da agenda</h3><div class="meta">'+(atr?'<b style="color:var(--danger)">'+atr+' atrasada(s)</b>':'')+(atr&&prox?' · ':'')+(prox?prox+' nos próximos 7 dias':'')+'.</div><button class="btn sm sec" style="margin-top:8px" onclick="go(\'agenda\')">Abrir agenda</button></div>';
+    traduzirDOM(el); iconizar(el);
   }).catch(function(){});
   carregarBlog();
+  pintarChaveInicio();
 };
 
 /* ===================== BLOG / LINHA DO TEMPO ===================== */
@@ -5969,8 +6016,9 @@ function carregarBlog(){
   serverOpc('apiListarArtigos').then(function(l){
     el=document.getElementById('blogBox'); if(!el) return;
     l=l||[];
+    var _fim=function(){ traduzirDOM(el); iconizar(el); };
     if(!l.length){ el.innerHTML='<div class="card"><h3 style="margin:0 0 4px">📰 Artigos</h3>'+
-      '<div class="meta">Nenhum artigo publicado ainda. Em breve teremos leituras por aqui.</div></div>'; return; }
+      '<div class="meta">Nenhum artigo publicado ainda. Em breve teremos leituras por aqui.</div></div>'; _fim(); return; }
     el.innerHTML='<div class="card"><h3 style="margin:0 0 2px">📰 Artigos</h3>'+
       '<div class="meta" style="margin-bottom:6px">Do mais recente para o mais antigo.</div>'+
       '<div class="blog-lista">'+l.map(function(a){
@@ -5994,6 +6042,7 @@ VIEWS.artigo=function(){
       '<div class="art-corpo">'+paragrafos(a.conteudo)+'</div>'+
       '<div class="art-reacao" id="artReacao">'+reacaoHtml(a)+'</div>'+
       '<button class="btn sec" style="margin-top:14px" onclick="voltar()">← Voltar aos artigos</button></div>');
+    _fim();
   }).catch(function(e){ app('<div class="card"><div class="meta">'+esc((e&&e.message)||'Não foi possível abrir o artigo.')+'</div>'+
     '<button class="btn sec" style="margin-top:10px" onclick="voltar()">← Voltar</button></div>'); });
 };
