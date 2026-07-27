@@ -589,17 +589,6 @@
   @media(min-width:901px){ body.logged.camp-on{padding-right:250px} }
   @media(max-width:900px) and (min-width:721px){ body.logged.camp-on{padding-right:210px} }
   @media(max-width:720px){ body.logged.camp-on{padding-right:0} }
-  .sb-chave{margin:0 10px 8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);
-    border:1px solid rgba(255,255,255,.12);display:none}
-  .sb-chave.on{display:block}
-  .sb-chave .rot{font-size:10.5px;letter-spacing:.4px;opacity:.75;text-transform:uppercase}
-  .sb-chave .linha{display:flex;align-items:center;gap:6px;margin-top:3px}
-  .sb-chave code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:700;
-    letter-spacing:1px;color:#ffb27a;user-select:all}
-  .sb-chave button{flex:none;border:0;border-radius:7px;padding:5px 8px;cursor:pointer;
-    background:rgba(232,85,43,.85);color:#fff;font-size:11px;font-weight:600}
-  .sb-chave button:active{transform:scale(.95)}
-  .sb-chave .dica{font-size:10.5px;opacity:.7;margin-top:4px;line-height:1.35}
   .sb-ver{text-align:center;color:rgba(255,255,255,.35);font-size:10px;letter-spacing:.5px;padding:0 0 10px}
 .sb-plano{display:none;margin:0 12px 10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);text-align:center}
   .pl-tag{font-size:13px;font-weight:800;color:var(--laranja-claro);text-transform:uppercase;letter-spacing:.5px}
@@ -916,7 +905,6 @@
   <aside id="sidebar">
     <div class="sb-brand"><img src="" id="sbLogo" alt="JavaStreak"></div>
     <div class="sb-user" id="sbUser"></div>
-    <div class="sb-chave" id="sbChave"></div>
     <button class="sb-planos" id="sbPlanosBtn" onclick="go('planos')"><img id="sbPlanoIco" alt=""><span id="sbPlanoTxt">Ver planos</span></button>
     <nav id="sbNav"></nav>
     <button class="sb-sair" onclick="logout()"><span id="lblSair">Sair</span></button>
@@ -989,7 +977,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2134';
+var APP_VER = 'vJS.260726.2146';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1828,6 +1816,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'PERFIL VISÍVEL':'PROFILE VISIBLE',
+    'PERFIL OCULTO':'PROFILE HIDDEN',
+    'SALA DE TROFÉU VISÍVEL':'TROPHY ROOM VISIBLE',
+    'SALA DE TROFÉU OCULTA':'TROPHY ROOM HIDDEN',
+    'visitas':'visits',
+    'Você aparece no mapa da rede. Toque para ocultar.':'You appear on the network map. Tap to hide.',
+    'Sua sala está pública. Toque para ocultar.':'Your room is public. Tap to hide.',
     'Seu plano':'Your plan',
     'sem prazo':'no expiry',
     'dia':'day',
@@ -1838,8 +1833,6 @@ var FRASES = {
     'Indicações':'Referrals',
     'Sua chave':'Your key',
     'Chegada':'Finish',
-    'Visível na rede':'Visible on the network',
-    'Oculto na rede':'Hidden on the network',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Set the kennel location — use GPS or type the coordinates',
     'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Set the trap location — use GPS or type the coordinates',
     'cão':'dog',
@@ -1868,10 +1861,8 @@ var FRASES = {
     'Cevas, rotas, cães, abates e troféus':'Baits, routes, dogs, harvests and trophies',
     'Loja no mapa, promoções e vitrine':'Shop on the map, deals and storefront',
     'Tenho 18 anos ou mais — continuar':'I am 18 or older — continue',
-    'Sua chave de indicação':'Your referral key',
     'Copiar':'Copy',
     'Copiado ✔':'Copied ✔',
-    'Cada amigo que criar a conta com ela e confirmar o e-mail te dá':'Every friend who signs up with it and confirms their email gives you',
     'Sim, tenho uma chave':'Yes, I have a key',
     'Chave de indicação *':'Referral key *',
     '✅ Chave válida':'✅ Valid key',
@@ -2957,6 +2948,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'PERFIL VISÍVEL':'PERFIL VISIBLE',
+    'PERFIL OCULTO':'PERFIL OCULTO',
+    'SALA DE TROFÉU VISÍVEL':'SALA DE TROFEOS VISIBLE',
+    'SALA DE TROFÉU OCULTA':'SALA DE TROFEOS OCULTA',
+    'visitas':'visitas',
+    'Você aparece no mapa da rede. Toque para ocultar.':'Apareces en el mapa de la red. Toca para ocultar.',
+    'Sua sala está pública. Toque para ocultar.':'Tu sala es pública. Toca para ocultar.',
     'Seu plano':'Tu plan',
     'sem prazo':'sin plazo',
     'dia':'día',
@@ -2967,8 +2965,6 @@ var FRASES = {
     'Indicações':'Recomendaciones',
     'Sua chave':'Tu clave',
     'Chegada':'Llegada',
-    'Visível na rede':'Visible en la red',
-    'Oculto na rede':'Oculto en la red',
     'Marque a localização do canil — use o GPS ou digite as coordenadas':'Marca la ubicación de la perrera — usa el GPS o escribe las coordenadas',
     'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Marca la ubicación de la trampa — usa el GPS o escribe las coordenadas',
     'cão':'perro',
@@ -2997,10 +2993,8 @@ var FRASES = {
     'Cevas, rotas, cães, abates e troféus':'Cebos, rutas, perros, abates y trofeos',
     'Loja no mapa, promoções e vitrine':'Tienda en el mapa, promociones y escaparate',
     'Tenho 18 anos ou mais — continuar':'Tengo 18 años o más — continuar',
-    'Sua chave de indicação':'Tu clave de recomendación',
     'Copiar':'Copiar',
     'Copiado ✔':'Copiado ✔',
-    'Cada amigo que criar a conta com ela e confirmar o e-mail te dá':'Cada amigo que se registre con ella y confirme su correo te da',
     'Sim, tenho uma chave':'Sí, tengo una clave',
     'Chave de indicação *':'Clave de recomendación *',
     '✅ Chave válida':'✅ Clave válida',
@@ -3522,7 +3516,7 @@ function buildSidebar(){
   var u=document.getElementById('sbUser');
   if(u){ var mj=STATE.manejador||AUTH.manejador||null;
     var nome=(tipo==='empresa') ? ((STATE.empresa&&STATE.empresa.nome)||'Empresa') : ((mj&&mj.nome)||'');
-    var cfg=(tipo==='empresa')?'':'<button class="sbcfg" onclick="go(\'perfilManejador\')" title="Configurar perfil">⚙️</button>';
+    var cfg='';   // a engrenagem subiu para a faixa
     u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span><span class="sb-plano-inline" id="sbPlano"></span>'; }
   pintarPlano();          // depois de recriar o bloco, senão o selo é apagado
   pintarStatusUsuario();
@@ -3560,36 +3554,27 @@ function pintarStatusUsuario(){
     return;
   }
 
-  var m=STATE.manejador||{};
-  var naRede=(m.visivelNetwork==='Sim');
-  var sala=(m.salaVisivel==='Sim');
-  alvo.style.gridTemplateColumns='1fr 1fr';
-  alvo.innerHTML=
-    '<button class="sb-btn'+(naRede?' on':'')+'" onclick="alternarPerfilRede()" '+
-      'title="'+(naRede?'Você aparece no mapa da rede. Toque para ocultar.':'Você está fora do mapa. Toque para aparecer.')+'">'+
-      '<span class="topo"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(m.visitas,10)||0)+'</span>'+
-      '<span class="estado">'+(naRede?'visível':'oculto')+'</span></button>'+
-    '<button class="sb-btn'+(sala?' on':'')+'" onclick="alternarSalaVisivel()" '+
-      'title="'+(sala?'Sua sala está pública. Toque para ocultar.':'Sua sala está oculta. Toque para publicar.')+'">'+
-      '<span class="topo">🏆 '+SALAS_COMPART_QTD+'</span>'+
-      '<span class="estado">'+(sala?'visível':'oculta')+'</span></button>';
+  /* Perfil na rede, sala de troféu, chave e engrenagem passaram para a faixa
+     acima do menu suspenso — lá é o único lugar onde isso se configura.
+     Aqui o bloco fica vazio para não haver dois controles discordando. */
+  alvo.innerHTML=''; alvo.style.display='none';
   _tf();
 }
 window.alternarSalaVisivel=function(){
   var m=STATE.manejador||{}; var novo=(m.salaVisivel!=='Sim');
-  m.salaVisivel = novo?'Sim':'Não'; pintarStatusUsuario();          // resposta imediata
+  m.salaVisivel = novo?'Sim':'Não'; pintarStatusUsuario(); pintarTopStrip();   // resposta imediata
   server('apiSetSalaVisivel', novo)
     .then(function(){ toast(novo?'Sala de troféu visível ✔':'Sala de troféu oculta');
       if(STATE.stack[STATE.stack.length-1]==='trofeus') render(); })
-    .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
+    .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip(); toast((e&&e.message)||'Erro'); });
 };
 window.alternarPerfilRede=function(){
   var m=STATE.manejador||{}; var novo=(m.visivelNetwork!=='Sim');
   if(novo && !m.latNetwork){ toast('Defina o ponto do seu perfil no mapa antes de aparecer na rede'); go('perfilManejador'); return; }
-  m.visivelNetwork = novo?'Sim':'Não'; pintarStatusUsuario();
+  m.visivelNetwork = novo?'Sim':'Não'; pintarStatusUsuario(); pintarTopStrip();
   server('apiSetVisivelNetwork', novo)
     .then(function(r){ if(r && r.visivel===false && novo){ m.visivelNetwork='Não'; pintarStatusUsuario(); toast(r.motivo||'Não foi possível aparecer na rede'); return; }
-      toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede'); NETDATA=null; })
+      toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede'); NETDATA=null; pintarTopStrip(); })
     .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
 };
 var SALAS_COMPART_QTD=0;
@@ -3620,11 +3605,31 @@ function pintarTopStrip(){
        '<code id="tsChave" class="no-i18n">'+esc(c.chave)+'</code>'+
        '<span class="ts-btn" onclick="copiarChaveTopo(this)">'+ico('compartilhar',16)+trFrase('Copiar')+'</span></div>';
   }
-  var vis=!!(STATE.manejador && STATE.manejador.visivelNetwork==='Sim');
-  h+='<span class="ts-btn'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')">'+
-     ico(vis?'ver':'bloqueio',16)+trFrase(vis?'Visível na rede':'Oculto na rede')+'</span>';
-  h+='<span class="ts-btn" onclick="go(\'trofeus\')">'+ico('estrela',16)+trFrase('Sala de troféu')+'</span>';
+  /* Estes dois botões são o ÚNICO lugar onde a visibilidade se configura —
+     por isso alternam aqui mesmo, em vez de levar para outra tela. */
+  var m=STATE.manejador||AUTH.manejador||{};
+  var vis=(m.visivelNetwork==='Sim'), sala=(m.salaVisivel==='Sim');
+  h+='<span class="ts-btn'+(vis?' on':'')+'" onclick="alternarPerfilRede()" title="'+
+     trFrase(vis?'Você aparece no mapa da rede. Toque para ocultar.':'Você está fora do mapa. Toque para aparecer.')+
+     ' · '+(parseInt(m.visitas,10)||0)+' '+trFrase('visitas')+'">'+
+     ico(vis?'ver':'bloqueio',16)+trFrase(vis?'PERFIL VISÍVEL':'PERFIL OCULTO')+'</span>';
+  h+='<span class="ts-btn'+(sala?' on':'')+'" onclick="alternarSalaVisivel()" title="'+
+     trFrase(sala?'Sua sala está pública. Toque para ocultar.':'Sua sala está oculta. Toque para publicar.')+'">'+
+     ico('estrela',16)+trFrase(sala?'SALA DE TROFÉU VISÍVEL':'SALA DE TROFÉU OCULTA')+'</span>';
+  h+='<span class="ts-btn ts-cfg" onclick="go(\'perfilManejador\')" title="'+trFrase('Configurar perfil')+'">'+
+     ico('ajustes',16)+'</span>';
   el.innerHTML=h; traduzirDOM(el);
+}
+/* Reserva para navegador antigo e para página servida sem HTTPS, onde o
+   clipboard moderno não existe. Foi removida junto com a caixa antiga da
+   chave e continuava sendo chamada — o teste pegou. */
+function copiaVelha(txt,fim){
+  try{
+    var a=document.createElement('textarea');
+    a.value=txt; a.style.position='fixed'; a.style.opacity='0';
+    document.body.appendChild(a); a.select(); document.execCommand('copy');
+    document.body.removeChild(a); fim();
+  }catch(e){ toast('Copie a chave manualmente: '+txt); }
 }
 window.copiarChaveTopo=function(btn){
   var el=document.getElementById('tsChave'); if(!el) return;
@@ -3647,50 +3652,8 @@ function buildTopNav(root, tipo){
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
-  carregarChave();
   if(CREDITOS) pintarTopStrip(); else carregarCreditos();
   setTimeout(posicionarMapShell,0);
-}
-/* Chave de indicação no menu, logo acima de "Ver planos". Buscada uma vez por
-   sessão e guardada, para não bater no servidor a cada abertura do menu. */
-var MINHA_CHAVE=null;
-function pintarChave(){
-  var el=document.getElementById('sbChave'); if(!el) return;
-  if(STATE.tipo==='empresa' || !AUTH.token){ el.className='sb-chave'; el.innerHTML=''; return; }
-  if(!MINHA_CHAVE) return;
-  var d=MINHA_CHAVE;
-  /* Promoção desligada: a chave some. Não faz sentido oferecer uma chave que
-     não paga nada. Volta sozinha quando o admin religar. */
-  if(!d.ativa){ el.className='sb-chave'; el.innerHTML=''; return; }
-  el.className='sb-chave on';
-  el.innerHTML='<div class="rot">'+trFrase('Sua chave de indicação')+'</div>'+
-    '<div class="linha"><code id="sbChaveTxt" class="no-i18n">'+esc(d.chave)+'</code>'+
-    '<button onclick="copiarChave(this)">'+trFrase('Copiar')+'</button></div>'+
-    (d.ativa?('<div class="dica">'+trFrase('Cada amigo que criar a conta com ela e confirmar o e-mail te dá')+' '+d.dias+' '+trFrase('dias de Mateiro.')+'</div>'):'');
-}
-function carregarChave(){
-  if(!AUTH.token || STATE.tipo==='empresa') return;
-  if(MINHA_CHAVE){ pintarChave(); return; }
-  server('apiMinhaChave').then(function(d){ MINHA_CHAVE=d; pintarChave(); }).catch(function(){});
-}
-window.copiarChave=function(btn){
-  var el=document.getElementById('sbChaveTxt'); if(!el) return;
-  var txt=el.textContent, rot=btn.textContent;
-  var fim=function(){ btn.textContent=trFrase('Copiado ✔');
-    setTimeout(function(){ btn.textContent=rot; },1600); };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(fim).catch(function(){ copiaVelha(txt,fim); });
-  } else copiaVelha(txt,fim);
-};
-/* Reserva para navegador antigo e para página servida sem HTTPS, onde o
-   clipboard moderno não existe. */
-function copiaVelha(txt,fim){
-  try{
-    var a=document.createElement('textarea');
-    a.value=txt; a.style.position='fixed'; a.style.opacity='0';
-    document.body.appendChild(a); a.select(); document.execCommand('copy');
-    document.body.removeChild(a); fim();
-  }catch(e){ toast('Copie a chave manualmente: '+txt); }
 }
 window.go=function(v){ EDIT=null; STATE.stack=[v]; closeMenu(); render(); };
 window.openMenu=function(){ document.body.classList.add('menu-open'); };
@@ -3961,7 +3924,6 @@ var PERFIS=['Manejador','Logista','Despachante','Agricultor','Clube de Tiro'];
    (entrar / criar conta). É a primeira coisa que quem não está logado vê. */
 /* Porta de maioridade: primeira coisa que aparece para quem abre o link.
    A resposta fica no aparelho — quem já confirmou não vê de novo. */
-window.limparChaveLocal=function(){ MINHA_CHAVE=null; };
 window.confirmarMaioridade=function(){
   STATE.stack=['bemvindo']; nav(IDADE_DESTINO||'registrar');
 };
@@ -4850,7 +4812,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); MINHA_CHAVE=null; CREDITOS=null;
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); CREDITOS=null;
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
 /* ============================================================
@@ -5226,7 +5188,7 @@ window.togglePromo=function(liga,btn){
     toast(liga?'Promoção ligada ✔':'Promoção desligada ✔');
     /* Recarrega o card e o próprio estado do app: a chave no menu depende
        deste mesmo parâmetro. */
-    MINHA_CHAVE=null; carregarChave(); carregarIndicacoes();
+    CREDITOS=null; carregarCreditos(); carregarIndicacoes();
   }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível salvar'); });
 };
 function carregarIndicacoes(){
