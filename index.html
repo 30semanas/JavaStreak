@@ -1000,7 +1000,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2314';
+var APP_VER = 'vJS.260726.2327';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1043,6 +1043,83 @@ function t18n(chave){ return t(chave); }
 function trFrase(txt){ if(LANG==='pt'||txt==null) return txt; var m=FRASES[LANG]; var k=String(txt).trim();
   return (m && m[k]!=null) ? m[k] : txt; }   // alias: usar quando a view já tem uma variável local 't'
 var BANDEIRA = { pt:'🇧🇷', en:'🇺🇸', es:'🇪🇸' };
+/* ---- Conta: e-mail e senha. Mesmo card para manejador e lojista. ---- */
+var TROCA_EMAIL_PEDIDO='';
+function cardConta(){
+  return '<div class="card"><h3 style="margin:0 0 4px">'+trFrase('Conta')+'</h3>'+
+    '<label>E-mail de acesso</label>'+
+    '<input id="cn_email" type="email" value="'+esc(STATE.login||'')+'">'+
+    '<div class="meta" style="margin:-4px 0 8px">'+trFrase('Trocar o e-mail exige confirmar um código enviado ao endereço novo.')+'</div>'+
+    '<div id="cn_emailBox"></div>'+
+    '<button class="btn sec" onclick="pedirTrocaEmail(this)">'+trFrase('Alterar e-mail')+'</button>'+
+    '<hr style="border:0;border-top:1px solid var(--linha);margin:16px 0">'+
+    '<h3 style="margin:0 0 4px">'+trFrase('Alterar senha')+'</h3>'+
+    '<div class="meta" style="margin-bottom:8px">'+trFrase(SENHA_REGRA)+'</div>'+
+    '<label>Senha atual *</label><input id="cn_atual" type="password" autocomplete="current-password">'+
+    '<label>Nova senha *</label><input id="cn_nova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value)">'+
+    '<div id="cn_forca" class="meta" style="margin:-4px 0 8px"></div>'+
+    '<label>Confirmar nova senha *</label><input id="cn_nova2" type="password" autocomplete="new-password">'+
+    '<button class="btn sec" onclick="trocarSenha(this)">'+trFrase('Salvar nova senha')+'</button></div>';
+}
+/* Mesma regra do servidor, para o aviso aparecer enquanto digita. */
+var SENHA_REGRA='A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
+function senhaForte(s){
+  s=String(s||'');
+  return s.length>=8 && /[A-ZÀ-Þ]/.test(s) && /[a-zà-þ]/.test(s) && /[0-9]/.test(s) && /[^A-Za-zÀ-þ0-9]/.test(s);
+}
+window.forcaSenha=function(v){
+  var el=document.getElementById('cn_forca'); if(!el) return;
+  if(!v){ el.textContent=''; return; }
+  var faltas=[];
+  if(String(v).length<8) faltas.push(trFrase('8 caracteres'));
+  if(!/[A-ZÀ-Þ]/.test(v)) faltas.push(trFrase('maiúscula'));
+  if(!/[a-zà-þ]/.test(v)) faltas.push(trFrase('minúscula'));
+  if(!/[0-9]/.test(v)) faltas.push(trFrase('número'));
+  if(!/[^A-Za-zÀ-þ0-9]/.test(v)) faltas.push(trFrase('caractere especial'));
+  el.innerHTML = faltas.length
+    ? '<span style="color:var(--danger)">'+trFrase('Falta')+': '+faltas.join(', ')+'</span>'
+    : '<span style="color:var(--verde)">'+trFrase('Senha forte ✔')+'</span>';
+};
+window.trocarSenha=function(btn){
+  var a=val('cn_atual'), n=val('cn_nova'), n2=val('cn_nova2');
+  if(!a){ toast('Informe a senha atual'); return; }
+  if(!senhaForte(n)){ toast(SENHA_REGRA); return; }
+  if(n!==n2){ toast('A confirmação não confere'); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiTrocarSenha',a,n).then(function(){
+    btn.disabled=false; btn.textContent=rot;
+    ['cn_atual','cn_nova','cn_nova2'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+    var f=document.getElementById('cn_forca'); if(f) f.textContent='';
+    toast('Senha alterada ✔');
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível alterar'); });
+};
+window.pedirTrocaEmail=function(btn){
+  var novo=val('cn_email');
+  if(!novo||novo.indexOf('@')<0){ toast('Informe um e-mail válido'); return; }
+  if(normEmail(novo)===normEmail(STATE.login||'')){ toast('Esse já é o seu e-mail'); return; }
+  var senha=prompt(trFrase('Para trocar o e-mail, digite sua senha atual:'));
+  if(senha===null) return;
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Enviando…');
+  server('apiSolicitarTrocaEmail',novo,senha).then(function(r){
+    btn.disabled=false; btn.textContent=rot; TROCA_EMAIL_PEDIDO=r.destino||novo;
+    var box=document.getElementById('cn_emailBox'); if(!box) return;
+    box.innerHTML='<div class="card" style="margin:8px 0;border-left:4px solid var(--laranja)">'+
+      '<div class="meta">'+trFrase('Enviamos um código para')+' <b class="no-i18n">'+esc(TROCA_EMAIL_PEDIDO)+'</b>. '+
+      trFrase('Seu login só muda depois de confirmar.')+'</div>'+
+      '<input id="cn_cod" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:19px">'+
+      '<button class="btn" onclick="confirmarTrocaEmail(this)">'+trFrase('Confirmar novo e-mail')+'</button></div>';
+    traduzirDOM(box);
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível enviar'); });
+};
+window.confirmarTrocaEmail=function(btn){
+  var c=val('cn_cod');
+  if(!c||c.replace(/\D/g,'').length!==6){ toast('Digite o código de 6 dígitos'); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Confirmando…');
+  server('apiConfirmarTrocaEmail',c).then(function(r){
+    STATE.login=r.login||STATE.login;
+    toast('E-mail alterado ✔'); render();
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Código inválido'); });
+};
 function cardIdioma(){
   return '<div class="card"><h3 style="margin:0 0 4px">'+trFrase('Idioma')+'</h3>'+
     '<div class="meta" style="margin-bottom:8px">'+trFrase('O idioma fica salvo na sua conta e acompanha você em qualquer aparelho.')+'</div>'+
@@ -1762,7 +1839,6 @@ var FRASES = {
     'Sem posição':'No position',
     'Senha *':'Password *',
     'Senha alterada! Faça login.':'Password changed! Please sign in.',
-    'Senha com no mínimo 4 caracteres':'Password of at least 4 characters',
     'Senhas não conferem':'Passwords don\'t match',
     'Sessão expirada, entre novamente':'Session expired, please sign in again',
     'Sexo (define seu avatar padrão)':'Sex (sets your default avatar)',
@@ -1830,6 +1906,31 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Conta':'Account',
+    'E-mail de acesso':'Sign-in email',
+    'Trocar o e-mail exige confirmar um código enviado ao endereço novo.':'Changing the email requires confirming a code sent to the new address.',
+    'Alterar e-mail':'Change email',
+    'Alterar senha':'Change password',
+    'A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.':'The password needs at least 8 characters, with an uppercase letter, a lowercase letter, a number and a special character.',
+    'Senha atual *':'Current password *',
+    'Confirmar nova senha *':'Confirm new password *',
+    'Salvar nova senha':'Save new password',
+    'Informe a senha atual':'Enter your current password',
+    'A confirmação não confere':'The confirmation does not match',
+    'Senha alterada ✔':'Password changed ✔',
+    'Não foi possível alterar':'Could not change it',
+    'Para trocar o e-mail, digite sua senha atual:':'To change the email, type your current password:',
+    'Seu login só muda depois de confirmar.':'Your sign-in only changes after you confirm.',
+    'Confirmar novo e-mail':'Confirm new email',
+    'E-mail alterado ✔':'Email changed ✔',
+    'Esse já é o seu e-mail':'That is already your email',
+    'Não foi possível enviar':'Could not send',
+    'Falta':'Missing',
+    '8 caracteres':'8 characters',
+    'maiúscula':'uppercase',
+    'minúscula':'lowercase',
+    'caractere especial':'special character',
+    'Senha forte ✔':'Strong password ✔',
     'Nenhuma propriedade com limite desenhado.':'No property has a boundary drawn.',
     'A documentação de uma propriedade só existe depois que o limite dela é desenhado.':'A property\'s paperwork only exists after its boundary is drawn.',
     'Ir para Manejo → Propriedades':'Go to Management → Properties',
@@ -1846,8 +1947,6 @@ var FRASES = {
     'sem autorização':'no permit',
     'válida até':'valid until',
     'Seu nome *':'Your name *',
-    'E-mail da conta':'Account email',
-    'Para trocar o e-mail da conta, abra um chamado no Suporte.':'To change the account email, open a ticket in Support.',
     'Informe seu nome':'Enter your name',
     'Nome completo':'Full name',
     'Preço':'Price',
@@ -2917,7 +3016,6 @@ var FRASES = {
     'Sem posição':'Sin posición',
     'Senha *':'Contraseña *',
     'Senha alterada! Faça login.':'¡Contraseña cambiada! Inicia sesión.',
-    'Senha com no mínimo 4 caracteres':'Contraseña de al menos 4 caracteres',
     'Senhas não conferem':'Las contraseñas no coinciden',
     'Sessão expirada, entre novamente':'Sesión expirada, ingresa de nuevo',
     'Sexo (define seu avatar padrão)':'Sexo (define tu avatar predeterminado)',
@@ -2985,6 +3083,31 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Conta':'Cuenta',
+    'E-mail de acesso':'Correo de acceso',
+    'Trocar o e-mail exige confirmar um código enviado ao endereço novo.':'Cambiar el correo exige confirmar un código enviado a la dirección nueva.',
+    'Alterar e-mail':'Cambiar correo',
+    'Alterar senha':'Cambiar contraseña',
+    'A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.':'La contraseña necesita al menos 8 caracteres, con mayúscula, minúscula, número y carácter especial.',
+    'Senha atual *':'Contraseña actual *',
+    'Confirmar nova senha *':'Confirmar nueva contraseña *',
+    'Salvar nova senha':'Guardar nueva contraseña',
+    'Informe a senha atual':'Indica tu contraseña actual',
+    'A confirmação não confere':'La confirmación no coincide',
+    'Senha alterada ✔':'Contraseña cambiada ✔',
+    'Não foi possível alterar':'No se pudo cambiar',
+    'Para trocar o e-mail, digite sua senha atual:':'Para cambiar el correo, escribe tu contraseña actual:',
+    'Seu login só muda depois de confirmar.':'Tu acceso solo cambia después de confirmar.',
+    'Confirmar novo e-mail':'Confirmar nuevo correo',
+    'E-mail alterado ✔':'Correo cambiado ✔',
+    'Esse já é o seu e-mail':'Ese ya es tu correo',
+    'Não foi possível enviar':'No se pudo enviar',
+    'Falta':'Falta',
+    '8 caracteres':'8 caracteres',
+    'maiúscula':'mayúscula',
+    'minúscula':'minúscula',
+    'caractere especial':'carácter especial',
+    'Senha forte ✔':'Contraseña fuerte ✔',
     'Nenhuma propriedade com limite desenhado.':'Ninguna propiedad tiene límite dibujado.',
     'A documentação de uma propriedade só existe depois que o limite dela é desenhado.':'La documentación de una propiedad solo existe después de dibujar su límite.',
     'Ir para Manejo → Propriedades':'Ir a Manejo → Propiedades',
@@ -3001,8 +3124,6 @@ var FRASES = {
     'sem autorização':'sin autorización',
     'válida até':'válida hasta',
     'Seu nome *':'Tu nombre *',
-    'E-mail da conta':'Correo de la cuenta',
-    'Para trocar o e-mail da conta, abra um chamado no Suporte.':'Para cambiar el correo de la cuenta, abre un ticket en Soporte.',
     'Informe seu nome':'Indica tu nombre',
     'Nome completo':'Nombre completo',
     'Preço':'Precio',
@@ -3405,7 +3526,7 @@ var I18N = {
   // --- cadastro (comum) ---
   'cad_dados_acesso':{pt:'Dados de acesso', en:'Login details', es:'Datos de acceso'},
   'cad_email_ajuda': {pt:'Seu e-mail será seu login e será usado para recuperar a senha.', en:'Your email will be your login and will be used to recover your password.', es:'Tu correo será tu acceso y se usará para recuperar la contraseña.'},
-  'cad_senha_min':   {pt:'mín. 4', en:'min. 4', es:'mín. 4'},
+  'cad_senha_min':   {pt:'mín. 8, c/ maiúscula, número e símbolo', en:'min. 8, with uppercase, number and symbol', es:'mín. 8, con mayúscula, número y símbolo'},
   'cad_dados_manej': {pt:'Dados do manejador', en:'Handler details', es:'Datos del manejador'},
   'cad_dados_emp':   {pt:'Dados da empresa', en:'Company details', es:'Datos de la empresa'},
   'cad_criar_manej': {pt:'Criar conta e entrar', en:'Create account and sign in', es:'Crear cuenta e ingresar'},
@@ -4727,7 +4848,7 @@ VIEWS.novaSenha=function(){ setTitulo('Nova senha'); setCrumb('Recuperar senha',
     '<button class="btn sec" style="margin-top:8px" onclick="go(\'esqueci\')">Reenviar código</button></div>'); };
 window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=val('rs_s2');
   if(!c){toast('Informe o código');return;}
-  if(!s1||s1.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(!senhaForte(s1)){toast(SENHA_REGRA);return;}
   if(s1!==s2){toast('Senhas não conferem');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   server('apiConfirmarReset',STATE.emailReset,c,s1)
@@ -4908,7 +5029,7 @@ function validaComum(){
   return true; }
 window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),senha2=val('f_senha2'),nome=val('f_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
-  if(!senha||senha.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(!senhaForte(senha)){toast(SENHA_REGRA);return;}
   if(senha!==senha2){toast('Senhas não conferem');return;}
   if(!nome){toast('Informe o nome');return;}
   if(!val('f_lat')||!val('f_lng')){toast('Informe sua localização — use o GPS ou o mapa');return;}
@@ -4945,7 +5066,7 @@ VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('cr
   app(abasTipoConta('empresa')+resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
-    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
+    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 8, c/ maiúscula, número e símbolo"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
     blocoIndicacao()+
     '<label>CNPJ</label><input id="fe_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)">'+
     '</div>'+
@@ -4973,7 +5094,7 @@ VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('cr
   bindFoto('fe_foto','fe_prev'); carregarDesafio(); };
 window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
-  if(!senha||senha.length<4){toast('Senha com no mínimo 4 caracteres');return;}
+  if(!senhaForte(senha)){toast(SENHA_REGRA);return;}
   if(senha!==senha2){toast('Senhas não conferem');return;}
   if(!nome){toast('Informe o nome da empresa');return;}
   if(!val('fe_lat')||!val('fe_lng')){toast('Informe a localização da sede');return;}
@@ -5008,7 +5129,7 @@ VIEWS.empresa=function(){ setTitulo('Minha empresa'); setCrumb('Empresa'); loadi
     var semPlano = !!(MEUPLANO && MEUPLANO.plano==='empresa' && MEUPLANO.apareceNaRede===false);
     var planoBanner = semPlano ? '<div class="card" style="border-left:5px solid var(--alerta)"><h3 style="margin:0 0 4px;font-size:15px">🔒 Plano Empresa inativo</h3><div class="meta">Sua conta continua ativa e você segue vendo a rede de manejadores e as outras lojas. Para <b>aparecer no mapa</b>, <b>lançar promoções</b> e <b>patrocinar destaque</b>, contrate o plano Empresa.</div><button class="btn" style="margin-top:8px" onclick="go(\'planos\')">Ver planos</button></div>' : '';
     var bloqBanner = bloq ? '<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Sua empresa está bloqueada</b> por denúncias e está em análise pelo administrador. Enquanto isso, não aparece na rede nem lança promoções.</div></div>' : '';
-    app(bloqBanner+planoBanner+cardIdioma()+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
+    app(bloqBanner+planoBanner+cardIdioma()+cardConta()+'<div class="card"><div style="text-align:center;margin-bottom:8px"><img src="'+esc(avatarUrl({tipo:'empresa',fotoUrl:e.fotoUrl}))+'" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ee8a2e"></div>'+
       '<div class="row"><h2 class="grow" style="margin:0">🏪 '+esc(e.nome||'Empresa')+' '+seloPlanoEmpresa(semPlano)+'</h2><button class="ib" onclick="nav(\'empresaForm\')" title="Editar">✏️</button></div>'+visitasSelo(e.visitas)+
       '<div class="meta" style="margin-top:6px">'+(e.segmento?'<span class="pill">'+esc(e.segmento)+'</span><br>':'')+(e.descricao?esc(e.descricao)+'<br>':'')+
       (e.cidade?'📍 '+esc(e.cidade)+'<br>':'')+(e.endereco?esc(e.endereco)+'<br>':'')+
@@ -5843,10 +5964,9 @@ window.enviarDenuncia=function(btn){ if(!DEN_TARGET)return; btn.disabled=true; b
 function netCard(av,nome,sub,cidade,wa,tel,email){ var w=waLink(wa); return '<div class="card"><div class="row" style="align-items:center"><img src="'+esc(av)+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;margin-right:10px;border:1px solid var(--linha)"><div class="grow"><h3 style="font-size:15px">'+esc(nome||'')+'</h3><div class="meta">'+(sub?esc(sub):'')+(cidade?(sub?' · ':'')+esc(cidade):'')+(tel?'<br>📞 '+esc(tel):'')+(email?'<br>✉️ '+esc(email):'')+'</div></div>'+(w?'<a class="btn sm sec" style="width:auto;margin:0;text-decoration:none" target="_blank" href="'+w+'">💬</a>':'')+'</div></div>'; }
 VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu perfil'); setCrumb('Perfil');
   var temCoord=!!((me.latNetwork||me.lat)&&(me.lngNetwork||me.lng));
-  app(cardIdioma()+(me.bloqueado==='Sim'?'<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Seu perfil está bloqueado</b> por denúncias e está em análise pelo administrador. Enquanto isso, você não aparece na rede, no mapa nem no ranking.</div></div>':'')+'<div class="card rustic-hero"><div class="row"><img src="'+esc(avatarUrl(me))+'" style="width:66px;height:66px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"><div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div>'+visitasSelo(me.visitas)+'</div></div></div>'+
+  app(cardIdioma()+cardConta()+(me.bloqueado==='Sim'?'<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Seu perfil está bloqueado</b> por denúncias e está em análise pelo administrador. Enquanto isso, você não aparece na rede, no mapa nem no ranking.</div></div>':'')+'<div class="card rustic-hero"><div class="row"><img src="'+esc(avatarUrl(me))+'" style="width:66px;height:66px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"><div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div>'+visitasSelo(me.visitas)+'</div></div></div>'+
     '<div class="card"><label>Seu nome *</label><input id="np_nome" value="'+esc(me.nome||'')+'" placeholder="Nome completo">'+
-    '<label>E-mail da conta</label><input value="'+esc(STATE.login||me.email||'')+'" disabled class="ro">'+
-    '<div class="meta" style="margin:-4px 0 10px">Para trocar o e-mail da conta, abra um chamado no Suporte.</div>'+
+
     '<label>Foto do perfil '+(me.fotoUrl?'(escolha para trocar)':'(sem foto, usamos um avatar padrão)')+'</label>'+(me.fotoUrl?'<img class="foto-prev" style="display:block;border-radius:50%;width:90px;height:90px;object-fit:cover" src="'+esc(imgSrc(me.fotoUrl))+'">':'')+'<input id="np_foto" type="file" accept="image/*"><img id="np_prev" class="foto-prev">'+
     '<label>Sexo (define seu avatar padrão)</label><select id="np_sexo"><option value="Masculino"'+(String(me.sexo||'').toLowerCase().indexOf('f')!==0?' selected':'')+'>Masculino</option><option value="Feminino"'+(String(me.sexo||'').toLowerCase().indexOf('f')===0?' selected':'')+'>Feminino</option></select>'+
     '<label>WhatsApp (contato)</label><input id="np_wa" value="'+esc(me.whatsapp||'')+'" placeholder="DDD+número">'+
