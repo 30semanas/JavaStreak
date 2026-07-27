@@ -1000,7 +1000,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2339';
+var APP_VER = 'vJS.260726.2348';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1055,7 +1055,11 @@ function cardConta(){
     '<hr style="border:0;border-top:1px solid var(--linha);margin:16px 0">'+
     '<h3 style="margin:0 0 4px">'+trFrase('Alterar senha')+'</h3>'+
     '<div class="meta" style="margin-bottom:8px">'+trFrase(SENHA_REGRA)+'</div>'+
-    '<label>Senha atual *</label><input id="cn_atual" type="password" autocomplete="current-password">'+
+    /* readonly até o foco: é o que impede o navegador de despejar a senha
+       salva aqui. Quem troca a senha tem que digitar a atual. */
+    '<label>Senha atual *</label><input id="cn_atual" type="password" autocomplete="off" readonly '+
+      'onfocus="this.removeAttribute(\'readonly\')">'+
+    '<button class="btn sm sec" style="width:auto;margin:-2px 0 10px" onclick="esqueciDaqui(this)">'+trFrase('Esqueci a senha')+'</button>'+
     '<label>Nova senha *</label><input id="cn_nova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value)">'+
     '<div id="cn_forca" class="meta" style="margin:-4px 0 8px"></div>'+
     '<label>Confirmar nova senha *</label><input id="cn_nova2" type="password" autocomplete="new-password">'+
@@ -1079,6 +1083,33 @@ window.forcaSenha=function(v){
   el.innerHTML = faltas.length
     ? '<span style="color:var(--danger)">'+trFrase('Falta')+': '+faltas.join(', ')+'</span>'
     : '<span style="color:var(--verde)">'+trFrase('Senha forte ✔')+'</span>';
+};
+/* Quem não lembra a senha atual troca pelo código do e-mail, sem sair da tela. */
+window.esqueciDaqui=function(btn){
+  var email=STATE.login||'';
+  if(!email){ toast('Conta sem e-mail'); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Enviando…');
+  server('apiSolicitarReset',email).then(function(){
+    btn.disabled=false; btn.textContent=rot;
+    var box=document.getElementById('cn_emailBox'); if(!box) return;
+    box.innerHTML='<div class="card" style="margin:8px 0;border-left:4px solid var(--laranja)">'+
+      '<div class="meta">'+trFrase('Enviamos um código para')+' <b class="no-i18n">'+esc(email)+'</b>. '+
+      trFrase('Use-o para definir uma senha nova sem precisar da atual.')+'</div>'+
+      '<label>Código *</label><input id="cn_rcod" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:19px">'+
+      '<label>Nova senha *</label><input id="cn_rnova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value)">'+
+      '<div id="cn_forca" class="meta" style="margin:-4px 0 8px"></div>'+
+      '<button class="btn" onclick="trocarSenhaPorCodigo(this)">'+trFrase('Definir nova senha')+'</button></div>';
+    traduzirDOM(box);
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível enviar'); });
+};
+window.trocarSenhaPorCodigo=function(btn){
+  var c=val('cn_rcod'), n=val('cn_rnova');
+  if(!c||c.replace(/\D/g,'').length!==6){ toast('Digite o código de 6 dígitos'); return; }
+  if(!senhaForte(n)){ toast(SENHA_REGRA); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiConfirmarReset',STATE.login||'',c,n).then(function(){
+    toast('Senha alterada ✔'); render();
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Código inválido'); });
 };
 window.trocarSenha=function(btn){
   var a=val('cn_atual'), n=val('cn_nova'), n2=val('cn_nova2');
@@ -1906,6 +1937,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Esqueci a senha':'Forgot the password',
+    'Use-o para definir uma senha nova sem precisar da atual.':'Use it to set a new password without the current one.',
+    'Definir nova senha':'Set new password',
+    'Conta sem e-mail':'Account has no email',
     'Desenhe o limite da propriedade antes de salvar':'Draw the property boundary before saving',
     'A pé':'On foot',
     'Outros':'Other',
@@ -3088,6 +3123,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Esqueci a senha':'Olvidé la contraseña',
+    'Use-o para definir uma senha nova sem precisar da atual.':'Úsalo para definir una contraseña nueva sin la actual.',
+    'Definir nova senha':'Definir nueva contraseña',
+    'Conta sem e-mail':'Cuenta sin correo',
     'Desenhe o limite da propriedade antes de salvar':'Dibuja el límite de la propiedad antes de guardar',
     'A pé':'A pie',
     'Outros':'Otros',
@@ -6045,7 +6084,11 @@ window.salvarNetwork=function(btn){
      desliga é o botão da faixa do topo. */
   var d={ nome:val('np_nome').trim(), whatsapp:val('np_wa'), telefone:val('np_tel'), cidade:val('np_cidade'),
     bio:val('np_bio'), lat:val('np_lat'), lng:val('np_lng'), sexo:val('np_sexo'), foto:fotoData('np_foto') };
-  server('apiSalvarNetwork',d).then(function(r){ var me=STATE.manejador||{};
+  server('apiSalvarNetwork',d).then(function(r){
+    /* Se a ficha acabou de ser criada no servidor, adota ela inteira — senão
+       o app seguiria com um objeto vazio e nada apareceria na tela. */
+    if(r&&r.manejador){ STATE.manejador=r.manejador; AUTH.manejador=r.manejador; }
+    var me=STATE.manejador||{};
     me.visivelNetwork=(r&&r.visivel)?'Sim':'Não'; me.whatsapp=d.whatsapp; me.telefone=d.telefone; me.cidade=d.cidade; me.bioNetwork=d.bio; me.latNetwork=d.lat; me.lngNetwork=d.lng; me.sexo=d.sexo;
     if(r&&r.nome) me.nome=r.nome;          /* o nome volta do servidor já normalizado */
     if(r&&r.fotoUrl) me.fotoUrl=r.fotoUrl;
