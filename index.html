@@ -1005,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.0004';
+var APP_VER = 'vJS.270726.0017';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1059,25 +1059,30 @@ function cardConta(){
     '<button class="btn sec" onclick="pedirTrocaEmail(this)">'+trFrase('Alterar e-mail')+'</button>'+
     '<hr style="border:0;border-top:1px solid var(--linha);margin:16px 0">'+
     '<h3 style="margin:0 0 4px">'+trFrase('Alterar senha')+'</h3>'+
-    '<div class="meta" style="margin-bottom:8px">'+trFrase(SENHA_REGRA)+'</div>'+
     /* readonly até o foco: é o que impede o navegador de despejar a senha
        salva aqui. Quem troca a senha tem que digitar a atual. */
     '<label>Senha atual *</label><input id="cn_atual" type="password" autocomplete="off" readonly '+
       'onfocus="this.removeAttribute(\'readonly\')">'+
     '<button class="btn sm sec" style="width:auto;margin:-2px 0 10px" onclick="esqueciDaqui(this)">'+trFrase('Esqueci a senha')+'</button>'+
-    '<label>Nova senha *</label><input id="cn_nova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value)">'+
-    '<div id="cn_forca" class="meta" style="margin:-4px 0 8px"></div>'+
+    '<label>Nova senha *</label><input id="cn_nova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value,\'cn_forca\')">'+
+    avisoSenha('cn_forca')+
     '<label>Confirmar nova senha *</label><input id="cn_nova2" type="password" autocomplete="new-password">'+
     '<button class="btn sec" onclick="trocarSenha(this)">'+trFrase('Salvar nova senha')+'</button></div>';
 }
 /* Mesma regra do servidor, para o aviso aparecer enquanto digita. */
 var SENHA_REGRA='A senha precisa ter no mínimo 8 caracteres, com letra maiúscula, letra minúscula, número e caractere especial.';
+/* Aviso da regra + medidor ao vivo. Mesmo bloco no cadastro e na engrenagem,
+   para a exigência não aparecer só na hora do erro. */
+function avisoSenha(alvo){
+  return '<div class="meta" style="margin:-4px 0 6px">'+trFrase(SENHA_REGRA)+'</div>'+
+    '<div id="'+alvo+'" class="meta" style="margin:-2px 0 8px"></div>';
+}
 function senhaForte(s){
   s=String(s||'');
   return s.length>=8 && /[A-ZÀ-Þ]/.test(s) && /[a-zà-þ]/.test(s) && /[0-9]/.test(s) && /[^A-Za-zÀ-þ0-9]/.test(s);
 }
-window.forcaSenha=function(v){
-  var el=document.getElementById('cn_forca'); if(!el) return;
+window.forcaSenha=function(v,alvo){
+  var el=document.getElementById(alvo||'cn_forca'); if(!el) return;
   if(!v){ el.textContent=''; return; }
   var faltas=[];
   if(String(v).length<8) faltas.push(trFrase('8 caracteres'));
@@ -1101,8 +1106,8 @@ window.esqueciDaqui=function(btn){
       '<div class="meta">'+trFrase('Enviamos um código para')+' <b class="no-i18n">'+esc(email)+'</b>. '+
       trFrase('Use-o para definir uma senha nova sem precisar da atual.')+'</div>'+
       '<label>Código *</label><input id="cn_rcod" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:6px;font-size:19px">'+
-      '<label>Nova senha *</label><input id="cn_rnova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value)">'+
-      '<div id="cn_forca" class="meta" style="margin:-4px 0 8px"></div>'+
+      '<label>Nova senha *</label><input id="cn_rnova" type="password" autocomplete="new-password" oninput="forcaSenha(this.value,\'cn_rforca\')">'+
+      avisoSenha('cn_rforca')+
       '<button class="btn" onclick="trocarSenhaPorCodigo(this)">'+trFrase('Definir nova senha')+'</button></div>';
     traduzirDOM(box);
   }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível enviar'); });
@@ -5023,8 +5028,9 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="meta" style="margin:-6px 0 8px">'+t('cad_email_ajuda')+'</div>'+
-    '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password"></div>'+
+    '<div class="two"><div><label>Senha *</label><input id="f_senha" type="password" autocomplete="new-password" oninput="forcaSenha(this.value,\'f_forca\')"></div>'+
     '<div><label>Confirmar *</label><input id="f_senha2" type="password" autocomplete="new-password"></div></div>'+
+    avisoSenha('f_forca')+
     blocoIndicacao()+'</div>'+
     '<div class="card"><h3>Dados do manejador</h3>'+
     '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
@@ -5197,7 +5203,8 @@ VIEWS.registrarEmpresa=function(){ if(semVaga('empresa')){ app(paredeVagas('empr
   app(abasTipoConta('empresa')+resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
-    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 8, c/ maiúscula, número e símbolo"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
+    '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" oninput="forcaSenha(this.value,\'fe_forca\')"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
+    avisoSenha('fe_forca')+
     blocoIndicacao()+
     '<label>CNPJ</label><input id="fe_cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" oninput="mCNPJ(this)">'+
     '</div>'+
