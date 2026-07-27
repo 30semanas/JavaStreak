@@ -913,6 +913,7 @@
 <symbol id="js-e12" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-9.5A4.5 4.5 0 0 1 12 7.6a4.5 4.5 0 0 1 7.5 2.9C19.5 15.4 12 20 12 20z"/></symbol>
 <symbol id="js-e13" viewBox="0 0 24 24"><path d="m12 3.5 2.7 5.5 6 .9-4.3 4.2 1 6L12 17.3 6.6 20.1l1-6L3.3 9.9l6-.9z"/></symbol>
 <symbol id="js-e14" viewBox="0 0 24 24"><path d="M6 4.6A1.6 1.6 0 0 1 7.6 3h8.8A1.6 1.6 0 0 1 18 4.6V21l-6-3.8L6 21z"/></symbol>
+<symbol id="js-h4" viewBox="0 0 24 24"><path d="M2.6 3.6h2.5a1 1 0 0 1 1 .8l.4 2.1"/><path d="M6.5 6.5h14.2l-1.6 7.3a1.7 1.7 0 0 1-1.7 1.3H9.1a1.7 1.7 0 0 1-1.7-1.35L6.5 6.5z"/><circle cx="9.6" cy="19.6" r="1.5"/><circle cx="17.4" cy="19.6" r="1.5"/></symbol>
 <symbol id="js-h3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.3a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.6 2.6l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.6-2.6l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9h-.2a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.6-2.6l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4v-.2a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.6 2.6l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></symbol>
 <symbol id="js-h2" viewBox="0 0 24 24"><path d="M7.6 20.8v-3.2a4.7 4.7 0 0 0-1.5-3.4 7.1 7.1 0 1 1 11.8 0 4.7 4.7 0 0 0-1.5 3.4v3.2"/><path d="M5.9 20.8h3.4M14.7 20.8h3.4"/><circle cx="8.6" cy="9.2" r=".7"/><circle cx="15.4" cy="9.2" r=".7"/><circle cx="9.4" cy="13" r=".7"/><circle cx="14.6" cy="13" r=".7"/></symbol>
 <symbol id="js-e16" viewBox="0 0 24 24"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></symbol>
@@ -995,7 +996,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2252';
+var APP_VER = 'vJS.260726.2255';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -3518,12 +3519,12 @@ var NAV_MANEJADOR=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'trofeus',   label:'Sala de troféu',    icon:'trofeus'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
-  {v:'promocoes', label:'Promoções',         icon:'notificacao'}
+  {v:'promocoes', label:'Promoções',         icon:'avisos'}
 ];
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
-  {v:'vitrine',   label:'Minha vitrine',     icon:'planos'},
-  {v:'promocoes', label:'Promoções',         icon:'notificacao'},
+  {v:'vitrine',   label:'Minha vitrine',     icon:'carrinho'},
+  {v:'promocoes', label:'Promoções',         icon:'avisos'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
@@ -3701,8 +3702,8 @@ function pintarTopStripEmpresa(el){
      trFrase((c.cortesiaDias===1)?'dia':'dias')+'</b></span></div>';
   h+='<div class="ts-card" title="'+trFrase('Visitas à sua loja')+'">'+ico('ver',16)+
      '<span><span class="rot">'+trFrase('Visitas')+'</span><br><b>'+(parseInt(e.visitas,10)||0)+'</b></span></div>';
-  h+='<span class="ts-btn" onclick="go(\'vitrine\')">'+ico('planos',16)+trFrase('Minha vitrine')+'</span>';
-  h+='<span class="ts-btn" onclick="go(\'promocoes\')">'+ico('notificacao',16)+trFrase('Promoções')+'</span>';
+  h+='<span class="ts-btn" onclick="go(\'vitrine\')">'+ico('carrinho',16)+trFrase('Minha vitrine')+'</span>';
+  h+='<span class="ts-btn" onclick="go(\'promocoes\')">'+ico('avisos',16)+trFrase('Promoções')+'</span>';
   h+='<span class="ts-btn ts-cfg" onclick="go(\'empresa\')" title="'+trFrase('Dados da empresa')+'">'+
      ico('engrenagem',17)+'</span>';
   el.innerHTML=h; traduzirDOM(el);
@@ -4690,9 +4691,9 @@ function abasTipoConta(atual){
 function resumoPlataforma(tipo){
   var itens = (tipo==='empresa')
     ? [['mapa','Apareça no mapa','Sua loja no mapa da rede, encontrada pelos manejadores da sua região.'],
-       ['notificacao','Promoções relâmpago','Publique ofertas com validade curta que chegam aos manejadores por perto.'],
+       ['avisos','Promoções relâmpago','Publique ofertas com validade curta que chegam aos manejadores por perto.'],
        ['patrocinio','Patrocine destaques','Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.'],
-       ['planos','Sua vitrine','Descreva seus produtos e serviços; quem visita sua loja vê tudo reunido.'],
+       ['carrinho','Sua vitrine','Descreva seus produtos e serviços; quem visita sua loja vê tudo reunido.'],
        ['grafico','Veja quem te procura','Acompanhe quantas visitas seu perfil recebe.']]
     : [['ceva','Espera com ceva','Cadastre cevas, o alimento usado e acompanhe o nível do tratadouro.'],
        ['rotas','Rotas de caça','Grave por GPS suas rotas de aproximação e espreita, com marcações no caminho.'],
@@ -6191,7 +6192,7 @@ var ICO={ painel:'a1', avisos:'a2', artigos:'a3', patrocinio:'a4', suporte:'a5',
   ver:'d15', ia:'d16', buscar:'e1', filtrar:'e2', adicionar:'e3', editar:'e4', excluir:'e5',
   confirmar:'e6', fechar:'e7', avancar:'e8', atualizar:'e9', baixar:'e10', enviar:'e11',
   favorito:'e12', estrela:'e13', salvar:'e14', menu:'e15', voltar:'e16',
-  haras:'h1', ferradura:'h2', engrenagem:'h3' };
+  haras:'h1', ferradura:'h2', engrenagem:'h3', carrinho:'h4' };
 function ico(nome,px){
   var id=ICO[nome]; if(!id) return '';
   var st=px?(' style="width:'+px+'px;height:'+px+'px"'):'';
