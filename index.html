@@ -54,6 +54,10 @@
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde-claro);
         box-shadow:0 0 0 3px rgba(63,107,63,.15)}
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
+  .mk-svgwrap{background:none;border:0}
+  .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    background:#fff;border:2px solid #2f7d3a;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  .mk-svg .ic-svg{stroke:#2f7d3a;margin:0}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
        width:100%;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:600;
@@ -969,7 +973,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2106';
+var APP_VER = 'vJS.260726.2122';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -4156,8 +4160,15 @@ function desenharLimitesEm(layer, props, pts){
   (props||[]).forEach(function(p){
     var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; }).filter(function(xy){ return ptOk(xy[0],xy[1]); });
     if(poly.length<3) return;
+    var pop='<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4><div class="meta">'+trFrase('Limite da propriedade')+'</div></div>';
     L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'6,4'})
-      .addTo(layer).bindPopup('<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4><div class="meta">'+trFrase('Limite da propriedade')+'</div></div>');
+      .addTo(layer).bindPopup(pop);
+    /* Um ícone no meio do desenho: sem ele, achar a propriedade no mapa
+       depende de enxergar o tracejado. Centro pela média dos vértices —
+       basta para posicionar um marcador. */
+    var cLa=0,cLn=0; poly.forEach(function(xy){ cLa+=xy[0]; cLn+=xy[1]; });
+    cLa/=poly.length; cLn/=poly.length;
+    if(ptOk(cLa,cLn)) L.marker([cLa,cLn],{icon:svgIconMapa('propriedade',30)}).addTo(layer).bindPopup(pop);
     if(pts) poly.forEach(function(xy){ pts.push(xy); });
   }); }
 
@@ -6250,6 +6261,10 @@ function fmtDist(m){ m=m||0; return m<1000 ? Math.round(m)+' m' : (m/1000).toFix
 function fmtDur(ms){ var s=Math.floor(ms/1000), mm=Math.floor(s/60), ss=s%60, hh=Math.floor(mm/60); mm=mm%60;
   return (hh?hh+'h ':'')+mm+'min '+(ss<10?'0':'')+ss+'s'; }
 function simplificar(pts,max){ max=max||800; if(!pts||pts.length<=max) return pts||[]; var step=pts.length/max, out=[]; for(var i=0;i<pts.length;i+=step) out.push(pts[Math.floor(i)]); out.push(pts[pts.length-1]); return out; }
+/* Marcador com ícone da biblioteca de linha, em vez de emoji. */
+function svgIconMapa(nome,size){ size=size||28;
+  return L.divIcon({ html:'<div class="mk-svg">'+ico(nome,size-8)+'</div>', className:'mk-svgwrap',
+    iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2] }); }
 function emojiIcon(emoji,size,destaque){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk'+(destaque?' emoji-me':''), iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
 function avatarUrl(o){ o=o||{}; if(o.fotoUrl) return imgSrc(o.fotoUrl); if(o.tipo==='empresa') return AV_STORE; return (String(o.sexo||'').toLowerCase().indexOf('f')===0)?AV_WOMAN:AV_MAN; }
 function avatarIcon(o,size,me){ size=size||46; return L.divIcon({html:'<div class="mk-av'+(me?' me':'')+'" style="background-image:url('+avatarUrl(o)+')"></div>', className:'mk-avwrap', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
@@ -7515,9 +7530,13 @@ function renderAgenda(){ var itens=AGENDA||[];
    MAPA (tela cheia, lado direito) com filtro e resumo
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
-var MAPFILTER={ espera:true, armadilha:true, busca:true, rede:true, canil:true, propriedade:true, abate:true };
+/* O mapa abre limpo: só a Rede. Os demais o usuário liga quando quiser ver.
+   Ligar tudo por padrão poluía a tela em quem tem muita ceva e armadilha. */
+var MAPFILTER_PADRAO={ espera:false, armadilha:false, busca:false, canil:false, propriedade:false, rede:true };
+var MAPFILTER={ espera:false, armadilha:false, busca:false, canil:false, propriedade:false, rede:true };
+function resetarFiltrosMapa(){ for(var k in MAPFILTER_PADRAO) MAPFILTER[k]=MAPFILTER_PADRAO[k]; }
 /* Empresa nunca desenha camadas de manejo, mesmo que venha dado do servidor. */
-function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.canil=false; MAPFILTER.propriedade=false; MAPFILTER.abate=false; MAPFILTER.rede=true; } }
+function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.canil=false; MAPFILTER.propriedade=false; MAPFILTER.rede=true; } }
 var NETDATA=null;
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 function addBase(map, def){
@@ -7540,7 +7559,7 @@ VIEWS.mapaGeral=function(){ setTitulo('Mapa'); document.getElementById('crumb').
   // Sem isso o mapa desenhava os pinos da sessão anterior e eles sumiam ao
   // chegar a resposta nova — a "piscada". Também evitava mostrar a rede de
   // outra conta para quem não tem direito de vê-la.
-  NETDATA=null;
+  NETDATA=null; resetarFiltrosMapa();
   server('apiMapaDados').catch(function(){ return {cevas:[],abates:[],armadilhas:[],transportes:[],caes:[],rotas:[],marcacoes:[],ultimoAlimento:{}}; }).then(function(d){
     server('apiNetworkMapa').then(function(n){ NETDATA=n; desenharMapa(); }).catch(function(){ NETDATA=null; desenharMapa(); });
     d._cevaN={}; d.cevas.forEach(function(c){d._cevaN[c.id]=c.nome;});
@@ -7578,7 +7597,6 @@ function chipsFiltro(){
         ['armadilha','Armadilha','#b23b3b','armadilha'],
         ['canil','Canil','#7a5c2e','canil'],
         ['propriedade','Propriedade','#2e6b3a','propriedade'],
-        ['abate','Abates','#8a3a2c','estrela'],
         ['busca','Rotas de manejo','#3b6ea5','rotas'],
         ['rede','Rede','#e8552b','global'] ];
   return defs.map(function(x){
@@ -7677,16 +7695,6 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
   }
-  /* Antes só o abate feito em armadilha aparecia, e ainda dependia do filtro
-     de armadilha. Agora todo abate com coordenada entra, no filtro próprio. */
-  d.abates.forEach(function(a){ if(!MAPFILTER.abate)return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
-    var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
-    if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
-    else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
-    else if(a.tipoManejo==='Armadilha') ctx='<b>Armadilha:</b> '+esc(d._armN[a.armadilhaId]||'—');
-    else if(a.tipoManejo==='Cães'){ var nomes=String(a.caesIds||'').split(',').filter(String).map(function(id){return d._caoN[id]||id;}); ctx='<b>Cães:</b> '+esc(nomes.join(', ')||'—'); }
-    var pop='<div class="pop"><h4><span style="color:'+cor+'">●</span> Abate — '+esc(rotuloManejo(a.tipoManejo))+'</h4><div class="meta"><b>Data:</b> '+fmtDataHora(a.dataHora)+'<br><b>Qtd:</b> '+esc(a.quantidade||'1')+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>'+ctx+(a.obs?'<br><b>Obs:</b> '+esc(a.obs):'')+'</div>'+(a.fotoUrl?'<img src="'+esc(imgSrc(a.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px">':'')+(a.tipoManejo==='Espera'&&a.cevaId?'<button class="btn sm" style="margin-top:8px" onclick="abrirCevaTimeline(\''+a.cevaId+'\')">📈 Linha do tempo da ceva</button>':'')+'</div>';
-    add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:cor,fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
   if(MAPFILTER.rede && NETDATA){
     (NETDATA.empresas||[]).forEach(function(e){ var la=coord(e.lat),ln=coord(e.lng); if(!ptOk(la,ln))return;
       add(L.marker([la,ln],{icon:avatarIcon({tipo:'empresa',fotoUrl:e.fotoUrl})}).bindPopup(function(){ return netPopEmpresa(e); }),la,ln); });
