@@ -1005,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.0028';
+var APP_VER = 'vJS.270726.0035';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -4292,8 +4292,10 @@ function barChart(pairs,opts){ opts=opts||{}; var w=opts.w||250,h=opts.h||95,pad
       '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(h-pad+10)+'" font-size="8" text-anchor="middle" fill="#5c6b58">'+esc(p.label)+'</text>'+
       '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" font-size="8" text-anchor="middle" fill="#22301f">'+p.value+'</text>'; }).join('');
   return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="max-width:'+w+'px">'+bars+'</svg>'; }
+/* Por ANIMAIS, como o resto das estatísticas. */
 function porMes(abates){ var m={};
-  abates.forEach(function(a){ var s=String(a.dataHora||a.dataCadastro||''); var k=s.substring(0,7); if(k) m[k]=(m[k]||0)+1; });
+  abates.forEach(function(a){ var s=String(a.dataHora||a.dataCadastro||''); var k=s.substring(0,7);
+    if(k) m[k]=(m[k]||0)+(parseInt(a.quantidade,10)||1); });
   return Object.keys(m).sort().slice(-6).map(function(k){ var p=k.split('-'); return {label:p[1]+'/'+p[0].substring(2), value:m[k]}; }); }
 
 var TIPO_COR = { 'Espera':'#2f7d3a', 'Cães':'#3b6ea5', 'Espreita':'#8a6d3b', 'Armadilha':'#b23b3b', 'Livre':'#6b5b8a' };
@@ -7522,22 +7524,24 @@ function simCirc(a,b,total){ if(a<0||b<0) return null;
 function indiceCeva(abates, agora, ctx){
   agora=agora||new Date(); ctx=ctx||{};
   var ab=(abates||[]).filter(function(a){ return a.dataHora; });
-  var n=ab.length;
-  if(!n) return { idx:null, n:0, eixos:[] };
+  /* n é ANIMAIS, não registros: três javalis na mesma noite de lua cheia
+     valem três na correlação, não um. */
+  var n=ab.reduce(function(s,a){ return s+(parseInt(a.quantidade,10)||1); },0);
+  if(!ab.length) return { idx:null, n:0, eixos:[] };
   var faseHoje=luaFaseEm(agora), iHoje=LUA_FASES.indexOf(faseHoje);
   var hHoje=Math.floor(agora.getHours()/3);
   var climaHoje=ctx.climaHoje||'';          // balde de COND_TEMPO para hoje na ceva
   var alimHoje=ctx.alimentoHoje||'';        // alimento que está na ceva agora
   var soma={lua:0,clima:0,alimento:0,periodo:0}, conta={lua:0,clima:0,alimento:0,periodo:0};
   ab.forEach(function(a){
-    var s;
+    var s, qt=parseInt(a.quantidade,10)||1;   // cada animal pesa uma vez
     s=simCirc(LUA_FASES.indexOf(luaDoAbate(a)), iHoje, 8);
-    if(s!==null){ soma.lua+=s; conta.lua++; }
+    if(s!==null){ soma.lua+=s*qt; conta.lua+=qt; }
     s=simCirc(faixaHora(a.dataHora), hHoje, 8);
-    if(s!==null){ soma.periodo+=s; conta.periodo++; }
-    if(climaHoje && a.condicaoTempo){ soma.clima+=(a.condicaoTempo===climaHoje?1:0); conta.clima++; }
+    if(s!==null){ soma.periodo+=s*qt; conta.periodo+=qt; }
+    if(climaHoje && a.condicaoTempo){ soma.clima+=(a.condicaoTempo===climaHoje?qt:0); conta.clima+=qt; }
     var alimAb=(ctx.alimentoDe?ctx.alimentoDe(a):'');
-    if(alimHoje && alimAb){ soma.alimento+=(alimAb===alimHoje?1:0); conta.alimento++; }
+    if(alimHoje && alimAb){ soma.alimento+=(alimAb===alimHoje?qt:0); conta.alimento+=qt; }
   });
   /* fração compatível por eixo, normalizada contra o espalhamento neutro */
   var neutro={lua:2/8*2, periodo:2/8*2, clima:1/COND_TEMPO.length*2, alimento:0.5};
@@ -8187,9 +8191,9 @@ window.irPara=function(tipo,id){ if(!NETDATA||!CURRENTMAP) return;
 window.togglePainel=function(){ var p=document.getElementById('mapPanel'); if(p) p.classList.toggle('open'); };
 
 function buildMapPanel(){ var p=document.getElementById('mapPanel'); if(!p||!MAPDATA) return; var d=MAPDATA, ab=d.abates;
-  var porTipo={}; ab.forEach(function(a){ porTipo[a.tipoManejo]=(porTipo[a.tipoManejo]||0)+1; });
+  var porTipo={}; ab.forEach(function(a){ porTipo[a.tipoManejo]=(porTipo[a.tipoManejo]||0)+(parseInt(a.quantidade,10)||1); });
   var bars=TIPOS_MANEJO.map(function(t){ return {label:t.substring(0,4), value:porTipo[t]||0, color:TIPO_COR[t]}; });
-  var animais=ab.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||0);},0);
+  var animais=ab.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||1);},0);
   var comGps=ab.filter(function(a){return coord(a.lat)!=null&&coord(a.lng)!=null;}).length;
   var leg=TIPOS_MANEJO.map(function(t){return '<span><i style="background:'+TIPO_COR[t]+'"></i>'+rotuloManejo(t)+'</span>';}).join('');
   p.innerHTML='<div class="row"><h3 class="grow" style="margin:0">📊 Resumo dos abates</h3><button class="ib" onclick="togglePainel()">✕</button></div>'+
@@ -8267,14 +8271,16 @@ window.cevaTab=function(t){ CEVATL.tab=t; renderCevaPanel(); };
 window.cevaDim=function(d){ CEVATL.dim=d; renderCevaPanel(); };
 function periodoDe(h){ if(h<6)return'Madrugada'; if(h<12)return'Manhã'; if(h<18)return'Tarde'; return'Noite'; }
 function horaDe(iso){ var s=String(iso||''); var i=s.indexOf('T'); return i>0? parseInt(s.substring(i+1,i+3),10) : null; }
+/* Agrupa por ANIMAIS, não por registro: um abate com quantidade 3 pesa 3.
+   Era 1 por vez que se apertava Salvar. */
 function agruparCeva(abs,d,dim){
   var m={};
-  abs.forEach(function(a){ var k;
+  abs.forEach(function(a){ var k, qt=parseInt(a.quantidade,10)||1;
     if(dim==='Atrativo') k=d.alimentoTipo[a.alimentoId]||'—';
     else if(dim==='Sexo') k=a.sexo||'—';
     else if(dim==='Período'){ var h=horaDe(a.dataHora); k=h==null?'—':periodoDe(h); }
     else { var h2=horaDe(a.dataHora); k=h2==null?'—':(h2+'h'); }
-    m[k]=(m[k]||0)+1;
+    m[k]=(m[k]||0)+qt;
   });
   var keys=Object.keys(m);
   if(dim==='Horário') keys.sort(function(a,b){return (parseInt(a,10)||0)-(parseInt(b,10)||0);});
@@ -8294,7 +8300,7 @@ function timelineCevaHtml(abs,d){
   }).join('')+'</div>';
 }
 function resumoCevaHtml(abs,d){
-  var animais=abs.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||0);},0);
+  var animais=abs.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||1);},0);
   var dims=['Atrativo','Sexo','Período','Horário'];
   var btns=dims.map(function(x){ return '<button class="chip'+(CEVATL.dim===x?' on':'')+'" onclick="cevaDim(\''+x+'\')">'+x+'</button>'; }).join(' ');
   var pairs=agruparCeva(abs,d,CEVATL.dim);
