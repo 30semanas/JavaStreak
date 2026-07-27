@@ -969,7 +969,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2059';
+var APP_VER = 'vJS.260726.2106';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1413,12 +1413,10 @@ var FRASES = {
     '✏️ Editar documentação':'✏️ Edit documents',
     '✏️ Traçado':'✏️ Track',
     '🌙 Modo caminhada (tela escura)':'🌙 Walking mode (dark screen)',
-    '🌿 Conta de manejador':'🌿 Handler account',
     '🌿 Manejador':'🌿 Handler',
     '🏆 Patrocinar destaque':'🏆 Sponsor highlight',
     '🏆 Proposta de patrocínio':'🏆 Sponsorship proposal',
     '🏆 Ver sala de troféu':'🏆 View trophy room',
-    '🏪 Conta de empresa':'🏪 Company account',
     '🏪 Empresa':'🏪 Company',
     '🏪 Ver loja':'🏪 View store',
     '🏪 Ver loja e produtos':'🏪 View store and products',
@@ -1794,7 +1792,6 @@ var FRASES = {
     '🏆 Campanha de premiação':'🏆 Award campaign',
     '🏆 Patrocínio':'🏆 Sponsorship',
     '🐎 saúde':'🐎 health',
-    '👁️ Visível na rede':'👁️ Visible on the network',
     '👁️ Você tem acesso apenas para':'👁️ You only have access to',
     '💰 Preços dos planos':'💰 Plan prices',
     '💳 Compra':'💳 Purchase',
@@ -1802,7 +1799,6 @@ var FRASES = {
     '📊 Nível':'📊 Level',
     '📊 Painel':'📊 Dashboard',
     '📊 Painel da plataforma':'📊 Platform dashboard',
-    '📊 Resumo':'📊 Summary',
     '📍 Marcar ponto':'📍 Mark point',
     '📜 Termos de uso e privacidade':'📜 Terms of use and privacy',
     '📡 Localizando…':'📡 Locating…',
@@ -1812,6 +1808,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Visível na rede':'Visible on the network',
+    'Oculto na rede':'Hidden on the network',
+    'Marque a localização do canil — use o GPS ou digite as coordenadas':'Set the kennel location — use GPS or type the coordinates',
+    'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Set the trap location — use GPS or type the coordinates',
     'cão':'dog',
     'cães':'dogs',
     'KM atual':'Current mileage',
@@ -1906,7 +1906,6 @@ var FRASES = {
     'Erro no diagnóstico':'Diagnostics error',
     '🔒 Compartilhar a sala está disponível no plano':'🔒 Sharing the room is available on the plan',
     '🔒 Disponível no plano Empresa.':'🔒 Available on the Company plan.',
-    '🔒 Oculto na rede':'🔒 Hidden on the network',
     '🔒 Você está':'🔒 You are',
     '🔧 manut.':'🔧 maint.',
     '🤝 Esta sala está oculta ao público. Você a vê porque foi convidado.':'🤝 This room is hidden from the public. You see it because you were invited.',
@@ -2533,12 +2532,10 @@ var FRASES = {
     '✏️ Editar documentação':'✏️ Editar documentación',
     '✏️ Traçado':'✏️ Trazado',
     '🌙 Modo caminhada (tela escura)':'🌙 Modo caminata (pantalla oscura)',
-    '🌿 Conta de manejador':'🌿 Cuenta de manejador',
     '🌿 Manejador':'🌿 Manejador',
     '🏆 Patrocinar destaque':'🏆 Patrocinar destacado',
     '🏆 Proposta de patrocínio':'🏆 Propuesta de patrocinio',
     '🏆 Ver sala de troféu':'🏆 Ver sala de trofeos',
-    '🏪 Conta de empresa':'🏪 Cuenta de empresa',
     '🏪 Empresa':'🏪 Empresa',
     '🏪 Ver loja':'🏪 Ver tienda',
     '🏪 Ver loja e produtos':'🏪 Ver tienda y productos',
@@ -2914,7 +2911,6 @@ var FRASES = {
     '🏆 Campanha de premiação':'🏆 Campaña de premiación',
     '🏆 Patrocínio':'🏆 Patrocinio',
     '🐎 saúde':'🐎 salud',
-    '👁️ Visível na rede':'👁️ Visible en la red',
     '👁️ Você tem acesso apenas para':'👁️ Solo tienes acceso para',
     '💰 Preços dos planos':'💰 Precios de los planes',
     '💳 Compra':'💳 Compra',
@@ -2922,7 +2918,6 @@ var FRASES = {
     '📊 Nível':'📊 Nivel',
     '📊 Painel':'📊 Panel',
     '📊 Painel da plataforma':'📊 Panel de la plataforma',
-    '📊 Resumo':'📊 Resumen',
     '📍 Marcar ponto':'📍 Marcar punto',
     '📜 Termos de uso e privacidade':'📜 Términos de uso y privacidad',
     '📡 Localizando…':'📡 Localizando…',
@@ -2932,6 +2927,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Visível na rede':'Visible en la red',
+    'Oculto na rede':'Oculto en la red',
+    'Marque a localização do canil — use o GPS ou digite as coordenadas':'Marca la ubicación de la perrera — usa el GPS o escribe las coordenadas',
+    'Marque a localização da armadilha — use o GPS ou digite as coordenadas':'Marca la ubicación de la trampa — usa el GPS o escribe las coordenadas',
     'cão':'perro',
     'cães':'perros',
     'KM atual':'KM actual',
@@ -3026,7 +3025,6 @@ var FRASES = {
     'Erro no diagnóstico':'Error en el diagnóstico',
     '🔒 Compartilhar a sala está disponível no plano':'🔒 Compartir la sala está disponible en el plan',
     '🔒 Disponível no plano Empresa.':'🔒 Disponible en el plan Empresa.',
-    '🔒 Oculto na rede':'🔒 Oculto en la red',
     '🔒 Você está':'🔒 Estás',
     '🔧 manut.':'🔧 mant.',
     '🤝 Esta sala está oculta ao público. Você a vê porque foi convidado.':'🤝 Esta sala está oculta al público. La ves porque fuiste invitado.',
@@ -3778,6 +3776,14 @@ function fmtData(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0)
 function fmtDataHora(iso){ if(!iso)return''; var s=String(iso); if(s.indexOf('T')>0){var d=s.split('T');var dd=d[0].split('-');var hh=(d[1]||'').substring(0,5);return dd[2]+'/'+dd[1]+'/'+dd[0]+' '+hh;} return fmtData(iso); }
 function idade(n){ if(!n)return''; var d=new Date(n); if(isNaN(d))return''; var a=Math.floor((Date.now()-d.getTime())/(365.25*864e5)); return a>=0?a+' ano'+(a!==1?'s':''):''; }
 function nowLocal(){ var d=new Date(); var p=function(x){return(x<10?'0':'')+x;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+/* Coordenada válida: número, dentro da faixa, e não o (0,0) do Atlântico —
+   que é o que sai quando o campo fica vazio e vira zero. */
+function coordOk(la,ln){
+  var a=parseFloat(String(la).replace(',','.')), b=parseFloat(String(ln).replace(',','.'));
+  if(isNaN(a)||isNaN(b)) return false;
+  if(a<-90||a>90||b<-180||b>180) return false;
+  return !(Math.abs(a)<0.0001 && Math.abs(b)<0.0001);
+}
 function gpsButton(a,b){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\')">🗺️ Indicar no mapa</button></div>'; }
 var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null;
 window.abrirMapaPicker=function(a,b){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
@@ -4499,6 +4505,15 @@ window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=v
   .catch(function(x){ btn.disabled=false; btn.textContent='Redefinir senha'; toast((x&&x.message)||'Erro'); }); };
 /* Resumo do que a plataforma faz, mostrado no topo do cadastro para a pessoa
    entender o que está criando. Um texto para cada tipo de conta. */
+/* Mesmos dois botões da tela de maioridade, agora no alto do formulário —
+   para trocar de tipo sem voltar. */
+function abasTipoConta(atual){
+  return '<div class="tipo-conta" style="margin-top:10px">'+
+    '<button data-tipo="manejador" class="'+(atual==='manejador'?'on':'')+'" onclick="trocarCadastro(\'manejador\')">'+
+      ico('usuario',26)+'Manejador</button>'+
+    '<button data-tipo="empresa" class="'+(atual==='empresa'?'on':'')+'" onclick="trocarCadastro(\'empresa\')">'+
+      ico('pagamentos',26)+'Empresa</button></div>';
+}
 function resumoPlataforma(tipo){
   var itens = (tipo==='empresa')
     ? [['mapa','Apareça no mapa','Sua loja no mapa da rede, encontrada pelos manejadores da sua região.'],
@@ -4524,7 +4539,7 @@ function resumoPlataforma(tipo){
 }
 
 VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarConta'));
-  app(resumoPlataforma('manejador')+
+  app(abasTipoConta('manejador')+resumoPlataforma('manejador')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="meta" style="margin:-6px 0 8px">'+t('cad_email_ajuda')+'</div>'+
@@ -4546,7 +4561,7 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     '<div class="card">'+blocoDesafio()+
     '<button class="btn" onclick="salvarConta(this)">Criar conta e entrar</button>'+
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
-    '<button class="btn sec" onclick="trocarCadastro(\'empresa\')">🏪 Conta de empresa</button></div></div>');
+    '</div></div>');
   carregarDesafio(); };
 /* ---- Indicação: pergunta primeiro, campo da chave depois ---- */
 var IND_OK=null;   // null = não checado, true/false = resposta do servidor
@@ -4694,7 +4709,7 @@ function maior18(nasc){
   return a>=18 && a<=120;
 }
 VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('criarConta'),t('empresa'));
-  app(resumoPlataforma('empresa')+
+  app(abasTipoConta('empresa')+resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
     '<div class="two"><div><label>Senha *</label><input id="fe_senha" type="password" autocomplete="new-password" placeholder="mín. 4"></div><div><label>Confirmar *</label><input id="fe_senha2" type="password" autocomplete="new-password"></div></div>'+
@@ -4721,7 +4736,7 @@ VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('cr
     '<div class="card">'+blocoDesafio()+
     '<button class="btn" onclick="salvarEmpresaConta(this)">Criar conta de empresa</button>'+
     '<div class="two" style="margin-top:8px"><button class="btn sec" onclick="sairCadastro()">✕ Cancelar</button>'+
-    '<button class="btn sec" onclick="trocarCadastro(\'manejador\')">🌿 Conta de manejador</button></div></div>');
+    '</div></div>');
   bindFoto('fe_foto','fe_prev'); carregarDesafio(); };
 window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe_senha'),senha2=val('fe_senha2'),nome=val('fe_nome');
   if(!login||login.indexOf('@')<0){toast('Informe um e-mail válido');return;}
@@ -6709,10 +6724,11 @@ VIEWS.caes=function(){ setTitulo('Meu canil'); setCrumb('Meu canil'); loadingBox
 
 VIEWS.canilForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar canil':'Novo canil'); setCrumb('Cães',ed?'Editar':'Novo canil');
   app('<div class="card"><label>Nome do canil *</label><input id="k_nome" value="'+esc(pv('nome'))+'">'+
-    '<div class="two"><div><label>Latitude</label><input id="k_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="k_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
+    '<div class="two"><div><label>Latitude *</label><input id="k_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude *</label><input id="k_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('k_lat','k_lng')+'<label>Observações</label><textarea id="k_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarCanil(this)">'+(ed?'Salvar alterações':'Salvar canil')+'</button></div>'); };
-window.salvarCanil=function(btn){ if(!val('k_nome')){toast('Informe o nome');return;} btn.disabled=true; btn.textContent='Salvando…';
+window.salvarCanil=function(btn){ if(!val('k_nome')){toast('Informe o nome');return;}
+  if(!coordOk(val('k_lat'),val('k_lng'))){toast('Marque a localização do canil — use o GPS ou digite as coordenadas');return;} btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('k_nome'),lat:val('k_lat'),lng:val('k_lng'),obs:val('k_obs')};
   var p=EDIT? server('apiEditar','canil',EDIT.id,d) : server('apiCriarCanil',d);
   p.then(function(){ EDIT=null; toast('Canil salvo ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar canil'; }); };
@@ -6794,11 +6810,13 @@ window.ciclarStatus=function(id,atual){ var prox=(atual==='Ativa')?'Inativa':'At
 VIEWS.armForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar armadilha':'Nova armadilha'); setCrumb('Armadilha',ed?'Editar':'Nova');
   app('<div class="card"><label>Tipo *</label><select id="r_tipo">'+TIPOS_ARM.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Status</label><select id="r_status"><option>Ativa</option><option>Inativa</option></select>'+
-    '<div class="two"><div><label>Latitude</label><input id="r_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="r_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
+    '<div class="two"><div><label>Latitude *</label><input id="r_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude *</label><input id="r_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('r_lat','r_lng')+'<label>Observações</label><textarea id="r_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarArm(this)">'+(ed?'Salvar alterações':'Salvar armadilha')+'</button></div>');
   if(ed){ setVal('r_tipo',EDIT.tipo); setVal('r_status',EDIT.status); } };
-window.salvarArm=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
+window.salvarArm=function(btn){
+  if(!coordOk(val('r_lat'),val('r_lng'))){toast('Marque a localização da armadilha — use o GPS ou digite as coordenadas');return;}
+  btn.disabled=true; btn.textContent='Salvando…';
   var d={tipo:val('r_tipo'),status:val('r_status'),lat:val('r_lat'),lng:val('r_lng'),obs:val('r_obs')};
   var p=EDIT? server('apiEditar','armadilha',EDIT.id,d) : server('apiCriarArmadilha',d);
   p.then(function(){ EDIT=null; toast('Armadilha salva ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar armadilha'; }); };
@@ -7497,9 +7515,9 @@ function renderAgenda(){ var itens=AGENDA||[];
    MAPA (tela cheia, lado direito) com filtro e resumo
    ============================================================ */
 var CURRENTMAP=null, MAPDATA=null, MAPLAYER=null;
-var MAPFILTER={ espera:true, armadilha:true, busca:true, rede:true };
+var MAPFILTER={ espera:true, armadilha:true, busca:true, rede:true, canil:true, propriedade:true, abate:true };
 /* Empresa nunca desenha camadas de manejo, mesmo que venha dado do servidor. */
-function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.rede=true; } }
+function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.canil=false; MAPFILTER.propriedade=false; MAPFILTER.abate=false; MAPFILTER.rede=true; } }
 var NETDATA=null;
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
 function addBase(map, def){
@@ -7552,18 +7570,29 @@ function posicionarMapShell(){ var s=document.getElementById('mapshell'), t=docu
 window.addEventListener('resize', function(){ if(document.body.classList.contains('map-mode')){ posicionarMapShell(); if(CURRENTMAP){ try{CURRENTMAP.invalidateSize();}catch(e){} } } });
 
 function chipsFiltro(){
-  // Empresa não tem ceva, armadilha nem rota — só a rede.
+  /* Um chip por tipo de item que tem coordenada. Ícone vem da biblioteca de
+     linha — nada de emoji aqui. [chave, rótulo, cor do ponto, ícone] */
   var defs = (STATE.tipo==='empresa')
-    ? [ ['rede','🌐 Rede','#e8552b'] ]
-    : [ ['espera','🌽 Espera','#b8863b'], ['armadilha','🪤 Armadilha','#b23b3b'], ['busca','🧭 Rotas de manejo','#3b6ea5'], ['rede','🌐 Rede','#e8552b'] ];
-  return defs.map(function(x){ return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')"><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'; }).join('');
+    ? [ ['rede','Rede','#e8552b','global'] ]
+    : [ ['espera','Espera','#b8863b','ceva'],
+        ['armadilha','Armadilha','#b23b3b','armadilha'],
+        ['canil','Canil','#7a5c2e','canil'],
+        ['propriedade','Propriedade','#2e6b3a','propriedade'],
+        ['abate','Abates','#8a3a2c','estrela'],
+        ['busca','Rotas de manejo','#3b6ea5','rotas'],
+        ['rede','Rede','#e8552b','global'] ];
+  return defs.map(function(x){
+    return '<span class="chip'+(MAPFILTER[x[0]]?' on':'')+'" onclick="toggleFiltro(\''+x[0]+'\')">'+
+      '<i style="background:'+x[2]+'"></i>'+ico(x[3],16)+'<span>'+trFrase(x[1])+'</span></span>';
+  }).join('');
 }
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
   var perfil='';
   if(STATE.tipo!=='empresa' && STATE.manejador){ var vis=(STATE.manejador.visivelNetwork==='Sim');
-    perfil='<span class="chip'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')" title="Configurar meu perfil na rede">'+(vis?'👁️ Visível na rede':'🔒 Oculto na rede')+'</span>'; }
-  var resumo = (STATE.tipo==='empresa') ? '' : '<span class="chip" onclick="togglePainel()" style="font-weight:700">📊 Resumo</span>';
-  b.innerHTML=resumo+chipsFiltro()+perfil+
+    perfil='<span class="chip'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')" title="Configurar meu perfil na rede">'+
+      ico(vis?'ver':'bloqueio',16)+'<span>'+trFrase(vis?'Visível na rede':'Oculto na rede')+'</span></span>'; }
+  /* O chip "Resumo" foi removido a pedido: a barra fica só com os filtros. */
+  b.innerHTML=chipsFiltro()+perfil+
     '<span class="chip busca-chip"><input id="mapBusca" placeholder="🔎 Buscar amigo ou loja" oninput="buscarNoMapa(this.value)" autocomplete="off"><div id="mapBuscaRes"></div></span>'; }
 window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; buildMapBar(); desenharMapa(); };
 window.buscarNoMapa=function(q){ var box=document.getElementById('mapBuscaRes'); if(!box) return;
@@ -7612,8 +7641,16 @@ function carregarClimaCevas(){
 function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAYER.clearLayers(); var pts=[];
   function add(m,la,ln){ m.addTo(MAPLAYER); pts.push([la,ln]); }
   /* Limites: os meus (da rede) e os que amigos compartilharam comigo. */
-  desenharLimitesEm(MAPLAYER, (NETDATA&&NETDATA.propriedades)||[], pts);
-  desenharLimitesEm(MAPLAYER, d.propriedadesCompart||[], pts);
+  if(MAPFILTER.propriedade){
+    desenharLimitesEm(MAPLAYER, (NETDATA&&NETDATA.propriedades)||[], pts);
+    desenharLimitesEm(MAPLAYER, d.propriedadesCompart||[], pts);
+  }
+  /* Canis: o backend já mandava, mas nada era desenhado. */
+  if(MAPFILTER.canil) (d.canis||[]).forEach(function(k){ var la=coord(k.lat),ln=coord(k.lng); if(!ptOk(la,ln))return;
+    var qtd=(d.caes||[]).filter(function(c){ return String(c.canilId)===String(k.id); }).length;
+    var pop='<div class="pop"><h4>🏠 '+esc(k.nome||'Canil')+'</h4><div class="meta">'+qtd+' '+trFrase(qtd===1?'cão':'cães')+
+      (k.obs?'<br>'+esc(k.obs):'')+'</div></div>';
+    add(L.circleMarker([la,ln],{radius:8,color:'#333',fillColor:'#7a5c2e',fillOpacity:.9,weight:1.5}).bindPopup(pop),la,ln); });
   /* Ceva de amigo: só entra aqui depois que eu aceitei o compartilhamento. */
   if(MAPFILTER.espera) (d.cevasCompart||[]).forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
     var pop='<div class="pop"><h4>🌽 '+esc(c.nome||'Ceva')+' <span class="pill gray">'+trFrase('compartilhada')+'</span></h4>'+
@@ -7640,7 +7677,9 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
   }
-  d.abates.forEach(function(a){ var fk={'Armadilha':'armadilha'}[a.tipoManejo]; if(!fk||!MAPFILTER[fk])return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
+  /* Antes só o abate feito em armadilha aparecia, e ainda dependia do filtro
+     de armadilha. Agora todo abate com coordenada entra, no filtro próprio. */
+  d.abates.forEach(function(a){ if(!MAPFILTER.abate)return; var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln))return;
     var cor=TIPO_COR[a.tipoManejo]||'#666', ctx='';
     if(a.tipoManejo==='Espera') ctx='<b>Ceva:</b> '+esc(d._cevaN[a.cevaId]||'—');
     else if(a.tipoManejo==='Espreita') ctx='<b>Transporte:</b> '+esc(d._transN[a.transporteId]||'—');
