@@ -231,6 +231,12 @@
   .sb-item img{width:42px;height:42px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 1px rgba(255,255,255,.18)) drop-shadow(0 -1px 1px rgba(0,0,0,.55))}
   .sb-item span{text-shadow:0 1px 1px rgba(40,20,5,.65),0 0 1px rgba(0,0,0,.35)}
   .sb-item .emoji{width:42px;text-align:center;font-size:22px;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+  .sb-ico{width:42px;display:flex;align-items:center;justify-content:center;flex:none}
+  .sb-ico .ic-svg{width:26px;height:26px;margin:0;stroke-width:1.5}
+  .sb-item.active .sb-ico .ic-svg,.sb-item.destaque .sb-ico .ic-svg{stroke:#ffd0a8}
+  .tn-ico{display:flex;align-items:center;justify-content:center}
+  .tn-ico .ic-svg{width:28px;height:28px;margin:0;stroke-width:1.5}
+  .tn-item.active .tn-ico .ic-svg{stroke:#ffd0a8}
   .sb-sair{margin:8px 12px 14px;padding:11px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#e9e2cf;border-radius:10px;cursor:pointer;font-size:14px;text-transform:uppercase;letter-spacing:.3px}
   .sb-switch{display:flex;gap:6px;margin:8px 8px 10px;background:rgba(0,0,0,.18);border-radius:12px;padding:4px}
   .sb-switch button{flex:1;border:none;background:transparent;color:#cdd6bf;font-size:12px;font-weight:700;padding:8px 4px;border-radius:9px;cursor:pointer;text-transform:uppercase;letter-spacing:.3px}
@@ -994,7 +1000,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2259';
+var APP_VER = 'vJS.260726.2305';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -3528,6 +3534,14 @@ var NAV_LOJISTA=[
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
 ];
 var TOP_KEYS={trofeus:1, ranking:1, promocoes:1, mapaGeral:1};
+/* Menu lateral e barra superior passaram a usar a biblioteca de linha. Este
+   mapa liga a chave antiga (PNG em ICONS) ao nome do ícone novo. Chave sem
+   correspondência cai no genérico, então nada fica sem desenho. */
+var NAV_SVG={ abate:'painel', inicio:'inicio', agenda:'calendario', espera:'ceva',
+  espreita:'transporte', caes:'canil', armadilha:'armadilha', documentacao:'documentos',
+  suporte:'suporte', mapa:'mapa', trofeus:'estrela', ranking:'grafico',
+  avisos:'avisos', carrinho:'carrinho', admin:'ajustes', network:'global' };
+function iconeNav(n,px){ return ico(NAV_SVG[n.icon||n.emoji]||'painel', px||22); }
 // qual limite controla cada item do menu
 var MODULO_LIMITE={ espera:'cevas', caes:'canis', armadilha:'armadilhas',
   documentacao:'documentos' };
@@ -3546,7 +3560,7 @@ function buildSidebar(){
   lista=lista.filter(function(n){ return !TOP_KEYS[n.v]; });
   if(STATE.admin) lista=lista.concat([{v:'admin',label:'Administração',icon:'admin'}]);
   nav.innerHTML=lista.map(function(n){
-    var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
+    var ic = '<span class="sb-ico">'+iconeNav(n,26)+'</span>';
     var bloq = moduloBloqueado(n.v);
     var extra = (n.v==='manejoHub' && MEUS_CONVITES.length) ? '<span class="sb-num">'+MEUS_CONVITES.length+'</span>' : '';
     return '<div class="sb-item'+(root===n.v?' active':'')+(bloq?' travado':'')+(n.destaque?' destaque':'')+'" onclick="go(\''+n.v+'\')">'+ic+
@@ -3699,8 +3713,8 @@ function pintarTopStripEmpresa(el){
      trFrase((c.cortesiaDias===1)?'dia':'dias')+'</b></span></div>';
   h+='<div class="ts-card" title="'+trFrase('Visitas à sua loja')+'">'+ico('ver',16)+
      '<span><span class="rot">'+trFrase('Visitas')+'</span><br><b>'+(parseInt(e.visitas,10)||0)+'</b></span></div>';
-  h+='<span class="ts-btn" onclick="go(\'vitrine\')">'+ico('carrinho',16)+trFrase('Minha vitrine')+'</span>';
-  h+='<span class="ts-btn" onclick="go(\'promocoes\')">'+ico('avisos',16)+trFrase('Promoções')+'</span>';
+  /* Vitrine e Promoções saíram daqui: agora o menu lateral e a barra superior
+     mostram os mesmos ícones, e repetir os botões só duplicava o caminho. */
   h+='<span class="ts-btn ts-cfg" onclick="go(\'empresa\')" title="'+trFrase('Dados da empresa')+'">'+
      ico('engrenagem',17)+'</span>';
   el.innerHTML=h; traduzirDOM(el);
@@ -3730,10 +3744,10 @@ function buildTopNav(root, tipo){
   var ordem=['trofeus','ranking','promocoes'];
   var itens=ordem.map(function(k){ return base.filter(function(n){return n.v===k;})[0]; }).filter(function(x){return x;});
   var html=itens.map(function(n){
-    var ic = n.icon ? '<img src="'+ICONS[n.icon]+'" alt="">' : '<span class="emoji">'+n.emoji+'</span>';
+    var ic = '<span class="tn-ico">'+iconeNav(n,28)+'</span>';
     return '<div class="tn-item'+(root===n.v?' active':'')+'" onclick="go(\''+n.v+'\')">'+ic+'<span class="lbl">'+trFrase(n.label)+'</span></div>';
   }).join('');
-  html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><img src="'+ICONS.network+'" alt=""><span class="lbl">'+trFrase('Rede')+'</span></div>';
+  html += '<div class="tn-item'+(root==='mapaGeral'?' active':'')+'" onclick="go(\'mapaGeral\')"><span class="tn-ico">'+ico('global',28)+'</span><span class="lbl">'+trFrase('Rede')+'</span></div>';
   html += '<button class="tn-sino" onclick="abrirPromos()" title="Avisos">🔔<span class="hbadge" id="promoBadge"></span></button>';
   tn.innerHTML=html;
   atualizarBadge();
