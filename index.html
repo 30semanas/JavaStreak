@@ -509,6 +509,11 @@
   .ts-btn{cursor:pointer}
   .ts-btn:hover{background:rgba(232,85,43,.2);border-color:rgba(232,85,43,.5)}
   .ts-btn.on{background:linear-gradient(180deg,rgba(232,85,43,.3),rgba(232,85,43,.1));border-color:rgba(232,85,43,.6)}
+  /* Visibilidade ligada fica verde: laranja é ação, verde é "está no ar". */
+  .ts-btn.vis-on{background:linear-gradient(180deg,rgba(58,122,58,.45),rgba(58,122,58,.18));
+    border-color:rgba(110,190,110,.7);color:#e8f7e2}
+  .ts-btn.vis-on .ic-svg{stroke:#9ede9e}
+  .ts-btn.vis-on:hover{background:linear-gradient(180deg,rgba(58,122,58,.6),rgba(58,122,58,.28))}
   .ts-card b{font-size:14px;color:#ffb27a}
   .ts-card .rot{opacity:.72;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
   .ts-card .ic-svg,.ts-btn .ic-svg{width:16px;height:16px;margin:0;stroke:#ffb27a}
@@ -1000,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2348';
+var APP_VER = 'vJS.260726.2356';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -3852,11 +3857,11 @@ function pintarTopStrip(){
      por isso alternam aqui mesmo, em vez de levar para outra tela. */
   var m=STATE.manejador||AUTH.manejador||{};
   var vis=(m.visivelNetwork==='Sim'), sala=(m.salaVisivel==='Sim');
-  h+='<span class="ts-btn'+(vis?' on':'')+'" onclick="alternarPerfilRede()" title="'+
+  h+='<span class="ts-btn'+(vis?' vis-on':'')+'" onclick="alternarPerfilRede()" title="'+
      trFrase(vis?'Você aparece no mapa da rede. Toque para ocultar.':'Você está fora do mapa. Toque para aparecer.')+
      ' · '+(parseInt(m.visitas,10)||0)+' '+trFrase('visitas')+'">'+
      ico(vis?'ver':'bloqueio',16)+trFrase(vis?'PERFIL VISÍVEL':'PERFIL OCULTO')+'</span>';
-  h+='<span class="ts-btn'+(sala?' on':'')+'" onclick="alternarSalaVisivel()" title="'+
+  h+='<span class="ts-btn'+(sala?' vis-on':'')+'" onclick="alternarSalaVisivel()" title="'+
      trFrase(sala?'Sua sala está pública. Toque para ocultar.':'Sua sala está oculta. Toque para publicar.')+'">'+
      ico(sala?'ver':'bloqueio',16)+trFrase(sala?'SALA DE TROFÉU VISÍVEL':'SALA DE TROFÉU OCULTA')+'</span>';
   h+='<span class="ts-btn ts-cfg" onclick="go(\'perfilManejador\')" title="'+trFrase('Configurar perfil')+'">'+
