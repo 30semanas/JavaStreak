@@ -1005,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.0017';
+var APP_VER = 'vJS.270726.0028';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -4184,21 +4184,27 @@ function carregarGuiaManejo(){
 }
 /* Desenha os limites do manejo num mapa qualquer e devolve os pontos, para
    quem chamou enquadrar. */
-function limitesDoManejoEm(map,layer){
-  var g=GUIA_MANEJO; var pts=[];
+/* Desenha os limites do manejo. `interativo` decide se a camada RESPONDE ao
+   clique: no mapa de leitura, sim (abre o balão); nos mapas onde o clique
+   MARCA um ponto — indicar no mapa do abate e desenho de rota manual — não.
+   Polígono com popup é camada interativa no Leaflet e engole o clique: dentro
+   da área o map.on('click') nunca disparava, e só dava para marcar fora. */
+function limitesDoManejoEm(map,layer,interativo){
+  var g=GUIA_MANEJO; var pts=[]; var inter=!!interativo;
   if(!g||!g.limites||!g.limites.length) return pts;
   g.limites.forEach(function(p){
     var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; }).filter(function(xy){ return ptOk(xy[0],xy[1]); });
     if(poly.length<3) return;
-    L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'6,4'})
-      .addTo(layer||map).bindPopup('<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4></div>');
+    var pg=L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'6,4',interactive:inter})
+      .addTo(layer||map);
+    if(inter) pg.bindPopup('<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4></div>');
     var cLa=0,cLn=0; poly.forEach(function(xy){ cLa+=xy[0]; cLn+=xy[1]; pts.push(xy); });
     cLa/=poly.length; cLn/=poly.length;
-    if(ptOk(cLa,cLn)) L.marker([cLa,cLn],{icon:svgIconMapa('propriedade',28,'#2f7d3a')}).addTo(layer||map);
+    if(ptOk(cLa,cLn)) L.marker([cLa,cLn],{icon:svgIconMapa('propriedade',28,'#2f7d3a'),interactive:inter}).addTo(layer||map);
   });
   (g.cevas||[]).forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
-    L.marker([la,ln],{icon:svgIconMapa('ceva',26,'#b8863b')}).addTo(layer||map)
-      .bindPopup('<div class="pop"><h4>'+esc(c.nome||'Ceva')+'</h4></div>');
+    var mk=L.marker([la,ln],{icon:svgIconMapa('ceva',26,'#b8863b'),interactive:inter}).addTo(layer||map);
+    if(inter) mk.bindPopup('<div class="pop"><h4>'+esc(c.nome||'Ceva')+'</h4></div>');
     pts.push([la,ln]); });
   return pts;
 }
@@ -4651,9 +4657,12 @@ VIEWS.propLimite=function(){ if(!LIM_DRAW){ voltar(); return; }
 function coordNumF(v){ var n=parseFloat(String(v==null?'':v).replace(',','.')); return isNaN(n)?null:n; }
 function redesenharLimite(){ if(!LIM_DRAW||!LIM_DRAW.layer) return; LIM_DRAW.layer.clearLayers();
   var pts=LIM_DRAW.pontos.map(function(p){return [p.lat,p.lng];});
-  if(pts.length>2) L.polygon(pts,{color:'#2f7d3a',weight:3,fillColor:'#2f7d3a',fillOpacity:.18}).addTo(LIM_DRAW.layer);
-  else if(pts.length===2) L.polyline(pts,{color:'#2f7d3a',weight:3,dashArray:'6,6'}).addTo(LIM_DRAW.layer);
-  pts.forEach(function(xy,i){ L.circleMarker(xy,{radius:i===0?7:5,color:'#fff',fillColor:i===0?'#b23b3b':'#2f7d3a',fillOpacity:1,weight:2}).addTo(LIM_DRAW.layer); });
+  /* interactive:false em tudo: aqui o clique no mapa é que adiciona vértice.
+     Com o polígono interativo, a partir do 3º ponto clicar DENTRO da área já
+     desenhada não fazia nada — a camada engolia o clique. */
+  if(pts.length>2) L.polygon(pts,{color:'#2f7d3a',weight:3,fillColor:'#2f7d3a',fillOpacity:.18,interactive:false}).addTo(LIM_DRAW.layer);
+  else if(pts.length===2) L.polyline(pts,{color:'#2f7d3a',weight:3,dashArray:'6,6',interactive:false}).addTo(LIM_DRAW.layer);
+  pts.forEach(function(xy,i){ L.circleMarker(xy,{radius:i===0?7:5,color:'#fff',fillColor:i===0?'#b23b3b':'#2f7d3a',fillOpacity:1,weight:2,interactive:false}).addTo(LIM_DRAW.layer); });
   var e; if(e=document.getElementById('limPts')) e.textContent=pts.length;
   if(e=document.getElementById('limArea')) e.textContent = pts.length>2 ? fmtArea(areaPoligono(LIM_DRAW.pontos)) : '—'; }
 window.limiteDesfazer=function(){ if(LIM_DRAW&&LIM_DRAW.pontos.length){ LIM_DRAW.pontos.pop(); redesenharLimite(); } };
