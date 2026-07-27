@@ -1005,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2356';
+var APP_VER = 'vJS.270726.0004';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1942,6 +1942,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Cadastro temporariamente fechado':'Sign-ups temporarily closed',
+    'Estamos trabalhando para aumentar nossa comunidade e muito em breve iremos liberar para novos membros.':'We are working to grow our community and will open up for new members very soon.',
+    'Máximo de contas de manejador':'Maximum hunter accounts',
+    'Máximo de contas de empresa':'Maximum business accounts',
     'Esqueci a senha':'Forgot the password',
     'Use-o para definir uma senha nova sem precisar da atual.':'Use it to set a new password without the current one.',
     'Definir nova senha':'Set new password',
@@ -3128,6 +3132,10 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Cadastro temporariamente fechado':'Registro cerrado temporalmente',
+    'Estamos trabalhando para aumentar nossa comunidade e muito em breve iremos liberar para novos membros.':'Estamos trabajando para ampliar nuestra comunidad y muy pronto abriremos para nuevos miembros.',
+    'Máximo de contas de manejador':'Máximo de cuentas de manejador',
+    'Máximo de contas de empresa':'Máximo de cuentas de empresa',
     'Esqueci a senha':'Olvidé la contraseña',
     'Use-o para definir uma senha nova sem precisar da atual.':'Úsalo para definir una contraseña nueva sin la actual.',
     'Definir nova senha':'Definir nueva contraseña',
@@ -4957,6 +4965,27 @@ window.salvarNovaSenha=function(btn){ var c=val('rs_cod'), s1=val('rs_s1'), s2=v
    entender o que está criando. Um texto para cada tipo de conta. */
 /* Mesmos dois botões da tela de maioridade, agora no alto do formulário —
    para trocar de tipo sem voltar. */
+/* Teto de contas atingido: em vez de deixar a pessoa preencher tudo para
+   levar um erro no fim, a tela de cadastro já abre com o aviso. */
+function paredeVagas(tipo){
+  return '<div style="text-align:center;margin:14px 0 4px"><img src="'+LOGO+'" alt="JavaStreak" style="width:100%;max-width:270px"></div>'+
+    abasTipoConta(tipo)+
+    '<div class="card" style="border-top:4px solid var(--alerta)">'+
+    '<div class="empty"><div class="big">🤝</div></div>'+
+    '<h3 style="margin:0 0 6px;text-align:center">'+trFrase('Cadastro temporariamente fechado')+'</h3>'+
+    '<p style="font-size:14.5px;line-height:1.6;text-align:center;margin:0 0 12px">'+
+    trFrase('Estamos trabalhando para aumentar nossa comunidade e muito em breve iremos liberar para novos membros.')+'</p>'+
+    '<button class="btn sec" onclick="go(\'bemvindo\')">'+trFrase('Voltar')+'</button></div>';
+}
+function semVaga(tipo){
+  var v=STATE.vagas; if(!v) return false;
+  return (tipo==='empresa') ? v.empresa===false : v.manejador===false;
+}
+/* Servidor recusou depois de o app achar que havia vaga: marca e mostra. */
+function vagouEsgotou(tipo){
+  var v=STATE.vagas||{manejador:true,empresa:true};
+  v[tipo]=false; STATE.vagas=v; render();
+}
 function abasTipoConta(atual){
   return '<div class="tipo-conta" style="margin-top:10px">'+
     '<button data-tipo="manejador" class="'+(atual==='manejador'?'on':'')+'" onclick="trocarCadastro(\'manejador\')">'+
@@ -4989,6 +5018,7 @@ function resumoPlataforma(tipo){
 }
 
 VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarConta'));
+  if(semVaga('manejador')){ app(paredeVagas('manejador')); return; }
   app(abasTipoConta('manejador')+resumoPlataforma('manejador')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="f_login" type="email" autocomplete="username" placeholder="seu@email.com">'+
@@ -5147,6 +5177,7 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha();
+    if(e&&e.message==='VAGAS_ESGOTADAS'){ vagouEsgotou('manejador'); return; }
     /* O erro do servidor era engolido aqui: quem tentava com e-mail já
        cadastrado não via aviso nenhum. */
     toast(e&&e.message==='INDICADOR_INVALIDO' ? 'Chave inválida — confira com quem indicou'
@@ -5161,7 +5192,8 @@ function maior18(nasc){
   if(m<0||(m===0&&h.getDate()<d.getDate())) a--;
   return a>=18 && a<=120;
 }
-VIEWS.registrarEmpresa=function(){ setTitulo(t('cad_criar_emp')); setCrumb(t('criarConta'),t('empresa'));
+VIEWS.registrarEmpresa=function(){ if(semVaga('empresa')){ app(paredeVagas('empresa')); return; }
+  setTitulo(t('cad_criar_emp')); setCrumb(t('criarConta'),t('empresa'));
   app(abasTipoConta('empresa')+resumoPlataforma('empresa')+
     '<div class="card"><h3>'+t('cad_dados_acesso')+'</h3>'+
     '<label>E-mail *</label><input id="fe_login" type="email" inputmode="email" autocomplete="username" placeholder="seu@email.com">'+
@@ -5210,6 +5242,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha();
+    if(e&&e.message==='VAGAS_ESGOTADAS'){ vagouEsgotou('empresa'); return; }
     toast(e&&e.message==='INDICADOR_INVALIDO' ? 'Chave inválida — confira com quem indicou'
       : ((e&&e.message)||'Não foi possível criar a conta')); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); CREDITOS=null; GUIA_MANEJO=null; GUIA_MANEJO_ID='';
@@ -8274,6 +8307,7 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
        faz coisas sem explicação — foi assim que o cadastro pulou a confirmação
        de e-mail. Melhor gritar do que deixar o usuário adivinhando. */
     if(p && p.promoInd) STATE.promoInd=p.promoInd;
+    if(p && p.vagas) STATE.vagas=p.vagas;
     if(p && p.apiVer && p.apiVer !== APP_VER){
       console.warn('Versão descasada — HTML', APP_VER, '| função', p.apiVer);
       setTimeout(function(){ toast('Atenção: app '+APP_VER+' e servidor '+p.apiVer+' estão em versões diferentes. Atualize a página.'); }, 800);
