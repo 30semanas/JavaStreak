@@ -53,6 +53,10 @@
   textarea{min-height:70px;resize:vertical}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde-claro);
         box-shadow:0 0 0 3px rgba(63,107,63,.15)}
+  .moeda-wrap{position:relative;display:block}
+  .moeda-rs{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;
+    color:var(--txt2);font-size:14px;pointer-events:none}
+  input.moeda{padding-left:40px!important;text-align:right;font-variant-numeric:tabular-nums}
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
   .mk-svgwrap{background:none;border:0}
   .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
@@ -988,7 +992,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2208';
+var APP_VER = 'vJS.260726.2239';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1368,7 +1372,6 @@ var FRASES = {
     'Cidade':'City',
     'Endereço':'Address',
     'Descrição':'Description',
-    'Preço (R$)':'Price (R$)',
     'Foto':'Photo',
     'Capa atual:':'Current cover:',
     'Foto atual:':'Current photo:',
@@ -1698,9 +1701,6 @@ var FRASES = {
     'Ponto salvo ✔':'Point saved ✔',
     'Por mês':'Per month',
     'Por tipo de manejo':'By management type',
-    'Preço atual (R$)':'Current price (R$)',
-    'Preço atual (R$) *':'Current price (R$) *',
-    'Preço no destaque (R$)':'Highlight price (R$)',
     'Preencha a localização (lat/long) para ficar visível':'Fill in the location (lat/long) to be visible',
     'Preencha login e senha':'Fill in login and password',
     'Preencher dados da empresa':'Fill in company details',
@@ -1827,6 +1827,12 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Preço':'Price',
+    'Preço atual':'Current price',
+    'Preço no destaque':'Featured price',
+    'Contrate o plano Empresa para avaliar troféus.':'Get the Business plan to rate trophies.',
+    'Não foi possível criar a conta':'Could not create the account',
+    'Não foi possível entrar':'Could not sign in',
     'Passe sua chave para o amigo.':'Give your key to your friend.',
     'Ele escolhe "Sim, tenho uma chave" ao criar a conta e digita ela.':'They pick "Yes, I have a key" when signing up and type it in.',
     'Quando ele confirmar o e-mail, você ganha':'When they confirm their email, you get',
@@ -2166,7 +2172,6 @@ var FRASES = {
     'Visível':'Visible',
     'Você ainda não abriu chamados.':'You haven\'t opened any tickets yet.',
     'Você está fora do mapa. Toque para aparecer.':'You\'re off the map. Tap to appear.',
-    'Você pode ver o ranking; a avaliação é feita pelos manejadores.':'You can see the ranking; rating is done by handlers.',
     'Voltar todos os planos aos valores padrão?':'Reset all plans to default values?',
     'Chegada —':'Arrival —',
     'Início —':'Start —',
@@ -2508,7 +2513,6 @@ var FRASES = {
     'Cidade':'Ciudad',
     'Endereço':'Dirección',
     'Descrição':'Descripción',
-    'Preço (R$)':'Precio (R$)',
     'Foto':'Foto',
     'Capa atual:':'Portada actual:',
     'Foto atual:':'Foto actual:',
@@ -2838,9 +2842,6 @@ var FRASES = {
     'Ponto salvo ✔':'Punto guardado ✔',
     'Por mês':'Por mes',
     'Por tipo de manejo':'Por tipo de manejo',
-    'Preço atual (R$)':'Precio actual (R$)',
-    'Preço atual (R$) *':'Precio actual (R$) *',
-    'Preço no destaque (R$)':'Precio en el destacado (R$)',
     'Preencha a localização (lat/long) para ficar visível':'Completa la ubicación (lat/long) para ser visible',
     'Preencha login e senha':'Completa acceso y contraseña',
     'Preencher dados da empresa':'Completar datos de la empresa',
@@ -2967,6 +2968,12 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Preço':'Precio',
+    'Preço atual':'Precio actual',
+    'Preço no destaque':'Precio destacado',
+    'Contrate o plano Empresa para avaliar troféus.':'Contrata el plan Empresa para calificar trofeos.',
+    'Não foi possível criar a conta':'No se pudo crear la cuenta',
+    'Não foi possível entrar':'No se pudo entrar',
     'Passe sua chave para o amigo.':'Pasa tu clave a tu amigo.',
     'Ele escolhe "Sim, tenho uma chave" ao criar a conta e digita ela.':'Elige "Sí, tengo una clave" al crear la cuenta y la escribe.',
     'Quando ele confirmar o e-mail, você ganha':'Cuando confirme su correo, ganas',
@@ -3306,7 +3313,6 @@ var FRASES = {
     'Visível':'Visible',
     'Você ainda não abriu chamados.':'Aún no has abierto tickets.',
     'Você está fora do mapa. Toque para aparecer.':'Estás fuera del mapa. Toca para aparecer.',
-    'Você pode ver o ranking; a avaliação é feita pelos manejadores.':'Puedes ver el ranking; la calificación la hacen los manejadores.',
     'Voltar todos os planos aos valores padrão?':'¿Restablecer todos los planes a los valores predeterminados?',
     'Chegada —':'Llegada —',
     'Início —':'Inicio —',
@@ -3503,12 +3509,12 @@ var NAV_MANEJADOR=[
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'trofeus',   label:'Sala de troféu',    icon:'trofeus'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'},
-  {v:'promocoes', label:'Promoções',         emoji:'⚡'}
+  {v:'promocoes', label:'Promoções',         icon:'notificacao'}
 ];
 var NAV_LOJISTA=[
   {v:'empresa',   label:'Minha empresa',     icon:'inicio'},
-  {v:'vitrine',   label:'Minha vitrine',     emoji:'🛍️'},
-  {v:'promocoes', label:'Promoções',         emoji:'⚡'},
+  {v:'vitrine',   label:'Minha vitrine',     icon:'planos'},
+  {v:'promocoes', label:'Promoções',         icon:'notificacao'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
   {v:'ranking',   label:'Ranking',           icon:'ranking'}
@@ -3611,13 +3617,14 @@ var SALAS_COMPART_QTD=0;
    Uma chamada só (apiMeusCreditos) alimenta tudo. */
 var CREDITOS=null;
 function carregarCreditos(){
-  if(!AUTH.token || STATE.tipo==='empresa'){ pintarTopStrip(); pintarChaveInicio(); return; }
+  if(!AUTH.token){ pintarTopStrip(); pintarChaveInicio(); return; }
   server('apiMeusCreditos').then(function(c){ CREDITOS=c; pintarTopStrip(); pintarChaveInicio(); }).catch(function(){});
 }
 function pintarTopStrip(){
   var el=document.getElementById('topstrip'); if(!el) return;
-  if(!AUTH.token || STATE.tipo==='empresa'){ el.innerHTML=''; el.style.display='none'; return; }
+  if(!AUTH.token){ el.innerHTML=''; el.style.display='none'; return; }
   el.style.display='';
+  if(STATE.tipo==='empresa'){ pintarTopStripEmpresa(el); return; }
   var c=CREDITOS||{}, h='';
   var dias=(c.diasPlano===null||c.diasPlano===undefined)?null:c.diasPlano;
   h+='<div class="ts-card" title="'+trFrase('Seu plano')+'">'+ico('planos',16)+
@@ -3668,6 +3675,25 @@ function pintarChaveInicio(){
       ' · <b>'+(c.indicacaoDias||0)+'</b> '+trFrase('dias ganhos')+'</div>' : '')+
     '</div>';
   traduzirDOM(el); iconizar(el);
+}
+/* Mesma faixa para a loja, com o que faz sentido para ela: plano, cortesia,
+   visitas recebidas, e a engrenagem para os dados da empresa. */
+function pintarTopStripEmpresa(el){
+  var c=CREDITOS||{}, e=STATE.empresa||{}, h='';
+  var dias=(c.diasPlano===null||c.diasPlano===undefined)?null:c.diasPlano;
+  h+='<div class="ts-card" title="'+trFrase('Seu plano')+'">'+ico('planos',16)+
+     '<span><span class="rot">'+esc(c.planoNome||'—')+'</span><br><b>'+
+     (dias===null?trFrase('sem prazo'):(dias+' '+trFrase(dias===1?'dia':'dias')))+'</b></span></div>';
+  h+='<div class="ts-card" title="'+trFrase('Dias de cortesia')+'">'+ico('favorito',16)+
+     '<span><span class="rot">'+trFrase('Cortesia')+'</span><br><b>'+(c.cortesiaDias||0)+' '+
+     trFrase((c.cortesiaDias===1)?'dia':'dias')+'</b></span></div>';
+  h+='<div class="ts-card" title="'+trFrase('Visitas à sua loja')+'">'+ico('ver',16)+
+     '<span><span class="rot">'+trFrase('Visitas')+'</span><br><b>'+(parseInt(e.visitas,10)||0)+'</b></span></div>';
+  h+='<span class="ts-btn" onclick="go(\'vitrine\')">'+ico('planos',16)+trFrase('Minha vitrine')+'</span>';
+  h+='<span class="ts-btn" onclick="go(\'promocoes\')">'+ico('notificacao',16)+trFrase('Promoções')+'</span>';
+  h+='<span class="ts-btn ts-cfg" onclick="go(\'empresa\')" title="'+trFrase('Dados da empresa')+'">'+
+     ico('engrenagem',17)+'</span>';
+  el.innerHTML=h; traduzirDOM(el);
 }
 window.copiarChave=function(btn){
   var el=document.getElementById('sbChaveTxt'); if(!el) return;
@@ -3725,7 +3751,7 @@ var EMOJI_ICO={ '＋':'adicionar','✏️':'editar','🗑️':'excluir','🔗':'
   '💰':'pagamentos','📄':'arquivo','📁':'pasta','🏆':'estrela','⭐':'estrela','❤️':'favorito',
   '🕒':'relogio','🌐':'global','☁️':'nuvem','🔔':'notificacao','💬':'mensagem','📧':'email',
   '📱':'telefone','▶️':'play','🔓':'bloqueio','🎥':'camera','🖼️':'camera',
-  '🚩':'mapa','🏪':'pagamentos','💳':'pagamentos','📬':'email','🔄':'atualizar','🧾':'arquivo','📣':'avisos','📰':'artigos','✕':'fechar','📢':'avisos','🌿':'areas',
+  '🏪':'pagamentos','💳':'pagamentos','📬':'email','🔄':'atualizar','🧾':'arquivo','📣':'avisos','📰':'artigos','✕':'fechar','📢':'avisos','🌿':'areas',
   '🎚️':'ajustes','🎧':'suporte','✓':'confirmar','🎁':'favorito','🏁':'mapa','●':'notificacao','🌙':'global','📌':'favorito','📝':'editar','←':'voltar','⬅️':'voltar','◀':'voltar','⚙️':'ajustes',
   '🔎':'buscar','📜':'arquivo','📡':'global','🔑':'bloqueio','🚚':'garagem','📞':'telefone','👍':'confirmar','✉️':'email','❌':'fechar','📸':'camera','↩️':'atualizar',
   '✍️':'editar','★':'estrela','🏠':'inicio','☰':'menu','🕐':'relogio','👎':'fechar','🏅':'estrela','📆':'calendario','⏰':'relogio','🔥':'notificacao','💡':'ia',
@@ -3881,6 +3907,36 @@ function coordOk(la,ln){
   if(isNaN(a)||isNaN(b)) return false;
   if(a<-90||a>90||b<-180||b>180) return false;
   return !(Math.abs(a)<0.0001 && Math.abs(b)<0.0001);
+}
+/* ---- Campo de dinheiro ----
+   Digita só número e o campo formata sozinho em reais: 15075 vira 150,75.
+   val() continua devolvendo o texto formatado, então quem envia usa
+   moedaNum() para virar número. */
+function campoMoeda(id,label,valor,obrig){
+  return '<label>'+label+(obrig?' *':'')+'</label>'+
+    '<div class="moeda-wrap"><span class="moeda-rs">R$</span>'+
+    '<input id="'+id+'" class="moeda" inputmode="numeric" placeholder="0,00" '+
+    'value="'+esc(moedaFmt(valor))+'" oninput="moedaMask(this)"></div>';
+}
+function moedaFmt(v){
+  if(v===''||v===null||v===undefined) return '';
+  var n=(typeof v==='number')?v:parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+  if(isNaN(n)) return '';
+  return n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+window.moedaMask=function(el){
+  var d=String(el.value).replace(/\D/g,'');
+  if(!d){ el.value=''; return; }
+  d=d.replace(/^0+/,'') || '0';
+  while(d.length<3) d='0'+d;
+  var i=d.slice(0,-2), c=d.slice(-2);
+  el.value=i.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+c;
+  if(el.id==='pr_pa'){ try{ calcPromo(); }catch(e){} }
+};
+/* Texto do campo -> número. '1.250,90' vira 1250.9 */
+function moedaNum(id){
+  var s=String(val(id)||'').replace(/\./g,'').replace(',','.');
+  var n=parseFloat(s); return isNaN(n)?null:n;
 }
 function gpsButton(a,b){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\')">🗺️ Indicar no mapa</button></div>'; }
 var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null;
@@ -4570,8 +4626,9 @@ window.fazerLogin=function(btn){ var login=val('l_login'), senha=val('l_senha');
     if(e&&e.message==='EMAIL_NAO_CONFIRMADO'){
       irConfirmar(normEmail(login));
       server('apiReenviarCodigo',login).catch(function(){});
-      toast('Confirme seu e-mail para entrar');
-    } }); };
+      toast('Confirme seu e-mail para entrar'); return;
+    }
+    toast((e&&e.message)||'Não foi possível entrar'); }); };
 function normEmail(x){ return String(x||'').trim().toLowerCase(); }
 
 window.sairCadastro=function(){ STATE.stack=['bemvindo']; render(); };
@@ -4801,7 +4858,10 @@ window.salvarConta=function(btn){ var login=val('f_login'),senha=val('f_senha'),
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta e entrar'; resetarCaptcha();
-    if(e&&e.message==='INDICADOR_INVALIDO') toast('Chave inválida — confira com quem indicou'); }); };
+    /* O erro do servidor era engolido aqui: quem tentava com e-mail já
+       cadastrado não via aviso nenhum. */
+    toast(e&&e.message==='INDICADOR_INVALIDO' ? 'Chave inválida — confira com quem indicou'
+      : ((e&&e.message)||'Não foi possível criar a conta')); }); };
 
 /* 18 anos completos, contados no fuso local. */
 function maior18(nasc){
@@ -4860,7 +4920,9 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
     captcha:CAPTCHA_TOKEN, cnpj:val('fe_cnpj')})
   .then(function(r){ if(r&&r.precisaConfirmar){ irConfirmar(r.login); toast('Conta criada — confirme seu e-mail'); return; }
     aplicarAuth(r); toast('Conta criada ✔ Bem-vindo!'); })
-  .catch(function(){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha(); }); };
+  .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha();
+    toast(e&&e.message==='INDICADOR_INVALIDO' ? 'Chave inválida — confira com quem indicou'
+      : ((e&&e.message)||'Não foi possível criar a conta')); }); };
 window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); CREDITOS=null;
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
@@ -4943,7 +5005,7 @@ VIEWS.produtoForm=function(){ var p=EDIT||{}; var ed=!!EDIT;
   setTitulo(ed?'Editar produto':'Novo produto'); setCrumb('Vitrine','Produto');
   app('<div class="card">'+
     '<label>Nome do produto ou serviço *</label><input id="pr_nome" value="'+esc(p.nome||'')+'" placeholder="Ex: Ração Javali Pro 20kg">'+
-    '<label>Preço (R$)</label><input id="pr_preco" inputmode="decimal" value="'+esc(p.preco||'')+'" placeholder="opcional">'+
+    campoMoeda('pr_preco','Preço',p.preco||'')+
     '<label>Descrição</label><textarea id="pr_desc" placeholder="Detalhes, medidas, condições…">'+esc(p.descricao||'')+'</textarea>'+
     '<label>Foto</label><input id="pr_foto" type="file" accept="image/*"><img id="pr_prev" class="foto-prev">'+
     (p.fotoUrl?'<div class="meta">Foto atual: <img src="'+esc(imgSrc(p.fotoUrl))+'" style="width:54px;border-radius:6px;vertical-align:middle"></div>':'')+
@@ -4952,7 +5014,7 @@ VIEWS.produtoForm=function(){ var p=EDIT||{}; var ed=!!EDIT;
   bindFoto('pr_foto','pr_prev'); };
 window.salvarProduto=function(btn){ if(!val('pr_nome')){ toast('Informe o nome'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
-  var d={ nome:val('pr_nome'), preco:val('pr_preco'), descricao:val('pr_desc'), foto:fotoData('pr_foto') };
+  var d={ nome:val('pr_nome'), preco:moedaNum('pr_preco'), descricao:val('pr_desc'), foto:fotoData('pr_foto') };
   if(EDIT) d.id=EDIT.id;
   server('apiSalvarProduto',d).then(function(){ toast('Vitrine atualizada ✔'); EDIT=null; STATE.stack=['vitrine']; render(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Salvar'; toast((e&&e.message)||'Erro'); }); };
@@ -5004,8 +5066,8 @@ VIEWS.patrocinioForm=function(){ setTitulo('Proposta de patrocínio'); setCrumb(
     '<label>Título que aparece no destaque *</label><input id="pt_tit" placeholder="Ex: Ração Javali Pro com 20% off">'+
     '<div id="pt_boxDestaque">'+
       '<label>Produto ou serviço destacado *</label><input id="pt_produto" placeholder="Ex: Ração Javali Pro 20kg">'+
-      '<div class="two"><div><label>Preço atual (R$)</label><input id="pt_pAtual" inputmode="decimal" placeholder="opcional"></div>'+
-      '<div><label>Preço no destaque (R$)</label><input id="pt_pPromo" inputmode="decimal" placeholder="opcional"></div></div>'+
+      '<div class="two"><div>'+campoMoeda('pt_pAtual','Preço atual','')+'</div>'+
+      '<div>'+campoMoeda('pt_pPromo','Preço no destaque','')+'</div></div>'+
       '<label>Foto do produto ou serviço</label><input id="pt_foto" type="file" accept="image/*"><img id="pt_prev" class="foto-prev">'+
     '</div>'+
     '<div id="pt_boxRanking" style="display:none">'+
@@ -5030,8 +5092,8 @@ window.enviarPatrocinio=function(btn){ var t=val('pt_tipo');
   server('apiCriarPatrocinio',{tipo:t,titulo:val('pt_tit'),
     premio:(t==='ranking'?val('pt_pre'):''),
     produto:(t==='destaque'?val('pt_produto'):''),
-    precoAtual:(t==='destaque'?val('pt_pAtual'):''),
-    precoPromo:(t==='destaque'?val('pt_pPromo'):''),
+    precoAtual:(t==='destaque'?moedaNum('pt_pAtual'):''),
+    precoPromo:(t==='destaque'?moedaNum('pt_pPromo'):''),
     foto:(t==='destaque'?fotoData('pt_foto'):''),
     descricao:val('pt_desc'),valorProposto:val('pt_valor'),contato:val('pt_contato')})
   .then(function(){ toast('Proposta enviada ✔ Ela está na fila do administrador.'); STATE.stack=['empresa']; render(); })
@@ -5124,7 +5186,7 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<label>Quem recebe</label><select id="ct_destino" onchange="mudouDestino()"><option value="login">Um usu\u00e1rio espec\u00edfico</option><option value="manejadores">Todos os manejadores</option><option value="empresas">Todas as empresas</option><option value="todos">Todos os usu\u00e1rios</option><option value="novos:7">Cadastrados nos \u00faltimos 7 dias</option><option value="novos:30">Cadastrados nos \u00faltimos 30 dias</option></select>'+
       '<div id="ct_loginBox"><label>Login do usu\u00e1rio *</label><input id="ct_login" placeholder="login cadastrado"></div>'+
       '<div id="ct_conta" class="meta" style="margin:4px 0"></div>'+
-      '<div class="two"><div><label>Plano</label><select id="ct_plano"><option value="n2">Veterano</option><option value="n1">Mateiro</option><option value="empresa">Empresa</option></select></div>'+
+      '<div class="two"><div><label>Plano</label><select id="ct_plano"></select></div>'+
       '<div><label>Dias</label><input id="ct_dias" inputmode="numeric" value="30"></div></div>'+
       '<label>Observa\u00e7\u00e3o</label><input id="ct_obs" placeholder="ex: teste, parceiro, influenciador">'+
       '<button class="btn" onclick="darCortesia(this)">Liberar acesso</button><div id="ctList" style="margin-top:12px"></div></div>'+
@@ -5409,7 +5471,17 @@ window.liberarPag=function(id,login){
   if(!confirm('Liberar o plano de '+login+' manualmente?\n\nUse quando o cliente comprovou o pagamento mas o sistema não identificou.')) return;
   server('apiConfirmarManual',id).then(function(){ toast('Plano liberado ✔'); carregarPagsAdm(); })
   .catch(function(e){ toast((e&&e.message)||'Erro'); }); };
-function carregarLimites(){ server('apiListarLimites').then(function(d){ LIMDADOS=d; pintarLimites(); })
+/* Preenche o select da cortesia com TODOS os planos que o servidor conhece.
+   Antes eram três opções escritas à mão e o Empresa Pro nunca aparecia. */
+function pintarPlanosCortesia(planos){
+  var el=document.getElementById('ct_plano'); if(!el||!planos) return;
+  var atual=el.value;
+  el.innerHTML=planos.map(function(p){
+    return '<option value="'+esc(p.chave||p.plano)+'">'+esc(p.nome||p.chave)+'</option>';
+  }).join('');
+  if(atual) el.value=atual;
+}
+function carregarLimites(){ server('apiListarLimites').then(function(d){ LIMDADOS=d; pintarLimites(); pintarPlanosCortesia(d.todosPlanos); })
   .catch(function(){ var el=document.getElementById('limBox'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar.</div>'; }); }
 function pintarLimites(){ var el=document.getElementById('limBox'); if(!el||!LIMDADOS) return;
   var cab='<tr><th>Recurso</th>'+LIMDADOS.planos.map(function(p){return '<th>'+esc(p.nome)+'</th>';}).join('')+'</tr>';
@@ -5738,7 +5810,7 @@ function salvarLidas(){ try{ localStorage.setItem('promoLidas', JSON.stringify(P
 function isLida(id){ return PROMO_LIDAS.indexOf(id)>=0; }
 window.marcarLida=function(id){ if(!isLida(id)){ PROMO_LIDAS.push(id); salvarLidas(); } render(); };
 window.desmarcarLida=function(id){ var i=PROMO_LIDAS.indexOf(id); if(i>=0){ PROMO_LIDAS.splice(i,1); salvarLidas(); } render(); };
-var INTERESSES=[];
+var INTERESSES=[]; var PROMO_RAIO_MAX=200;
 var ALVOS=['Todos','Manejadores','Empresas (todas)','Agricultor','Despachante','Clube de tiro','Loja de artigos de caça'];
 /* Antes somava horas indefinidamente: uma campanha de 22 dias virava "536h".
    Agora usa a maior unidade que faz sentido. */
@@ -5826,6 +5898,9 @@ VIEWS.promocoes=function(){ setTitulo('Promoções'); setCrumb('Promoções'); l
   var ehEmp=(STATE.tipo==='empresa');
   Promise.all([ server('apiPromocoes'), ehEmp?server('apiPodeLancarPromo'):Promise.resolve(null), ehEmp?Promise.resolve(null):server('apiMeusInteressesPromo').catch(function(){return {interesses:[]};}), ehEmp?server('apiMinhasPromocoes').catch(function(){return [];}):Promise.resolve([]) ])
   .then(function(res){ PROMOS=res[0]||{recebe:true,promos:[]}; var pode=res[1]; if(res[2]) INTERESSES=res[2].interesses||[]; var minhas=res[3]||[];
+    /* O slider ficava preso em 200 km porque o máximo estava escrito no HTML.
+       Agora vem do parâmetro PROMO_RAIO_MAX do painel. */
+    if(pode && pode.raioMax) PROMO_RAIO_MAX=parseInt(pode.raioMax,10)||200;
     var ativos=(PROMOS.promos||[]).slice().sort(function(a,b){ return String(b.criadoEm).localeCompare(String(a.criadoEm)); });
     var hero=heroFoto('promocoes','Promoções relâmpago','Ofertas com validade de <b>4 horas</b>. Cada loja pode lançar <b>1 por dia</b>.','Relâmpago');
     var acao='';
@@ -5860,15 +5935,22 @@ window.toggleInteresse=function(){ var sel=[]; document.querySelectorAll('input[
 VIEWS.promoForm=function(){ setTitulo('Lançar promoção'); setCrumb('Promoções','Nova');
   app('<div class="card"><label>Foto do produto/serviço</label><input id="pr_foto" type="file" accept="image/*"><img id="pr_prev" class="foto-prev">'+
     '<label>Descrição do produto/serviço *</label><textarea id="pr_desc" placeholder="Ex: Ração para cães 20kg"></textarea>'+
-    '<div class="two"><div><label>Preço atual (R$) *</label><input id="pr_pa" inputmode="decimal" placeholder="Ex: 150" oninput="calcPromo()"></div><div><label>Desconto (%)</label><input id="pr_pct" inputmode="numeric" placeholder="Ex: 20" oninput="calcPromo()"></div></div>'+
+    '<div class="two"><div>'+campoMoeda('pr_pa','Preço atual','',true)+'</div><div><label>Desconto (%)</label><input id="pr_pct" inputmode="numeric" placeholder="Ex: 20" oninput="calcPromo()"></div></div>'+
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px"><input type="checkbox" id="pr_frete" style="width:auto"> 🚚 Entrega grátis</label>'+
     '<div class="card" style="background:#f3ead2;border:1px solid #e0d4b6;margin-top:8px"><div class="row"><div class="grow">Preço com desconto</div><b id="pr_final" class="preco-new" style="font-size:20px">—</b></div></div>'+
     '<label>Quem deve ver (público-alvo)</label><select id="pr_alvo">'+ALVOS.map(function(a){return '<option>'+a+'</option>';}).join('')+'</select>'+
-    '<label style="margin-top:8px">Raio de alcance: <b id="pr_raio_lbl">Sem limite</b></label><input id="pr_raio" type="range" min="0" max="200" step="5" value="0" oninput="raioLbl()" style="width:100%">'+
+    '<label style="margin-top:8px">Raio de alcance: <b id="pr_raio_lbl">Sem limite</b></label><input id="pr_raio" type="range" min="0" max="'+(PROMO_RAIO_MAX||200)+'" step="5" value="0" oninput="raioLbl()" style="width:100%">'+
     '<div class="meta" style="margin-top:6px">Usa a localização da sua sede. A promoção fica ativa por <b>4 horas</b> e você pode lançar <b>1 por dia</b>.</div>'+
     '<button class="btn" onclick="salvarPromo(this)">📣 Publicar promoção</button></div>');
   bindFoto('pr_foto','pr_prev'); calcPromo(); raioLbl(); };
-function precoDe(id){ return parseFloat((val(id)||'').replace(/[^0-9.,]/g,'').replace(',','.'))||0; }
+/* Aceita '150', '150,90' e o formato mascarado '1.250,90'. Quando há vírgula,
+   o ponto é separador de milhar e precisa sair antes do parseFloat — senão
+   '1.250,90' viraria 1,25. */
+function precoDe(id){
+  var s=String(val(id)||'').replace(/[^0-9.,]/g,'');
+  if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.');
+  return parseFloat(s)||0;
+}
 window.calcPromo=function(){ var pa=precoDe('pr_pa'), d=precoDe('pr_pct'); var f=pa*(1-d/100); var el=document.getElementById('pr_final'); if(el) el.textContent = pa? ('R$ '+(d?f:pa).toFixed(2).replace('.',',')) : '—'; };
 window.raioLbl=function(){ var v=parseInt(val('pr_raio')||'0',10); var el=document.getElementById('pr_raio_lbl'); if(el) el.textContent = v>0? (v+' km') : 'Sem limite (qualquer distância)'; };
 window.salvarPromo=function(btn){ if(!val('pr_desc')){toast('Descreva o produto/serviço');return;}
@@ -5938,8 +6020,9 @@ VIEWS.ranking=function(){ setTitulo('Ranking'); setCrumb('Ranking'); loadingBox(
     var g = (r.trofeus&&r.trofeus.length)? '<div class="galeria">'+r.trofeus.map(function(t,i){
       var estrelas = (pode && !t.ehMeu) ? estrelasVoto(t.id,t.minhaNota) : ('<div style="margin:6px 8px 8px">'+estrelasRO(t.media)+'</div>');
       return '<div class="trof"><div class="rk">'+(i+1)+'º</div>'+(t.ehMeu?'':'<button class="ib trofden" onclick="denunciar(\'trofeu\',\''+t.id+'\')" title="Denunciar">🚩</button>')+'<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+esc(t.autorNome||'')+(t.titulo?' · '+esc(t.titulo):'')+'<br>'+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span>'+(t.saiEm?'<br><span class="sai">⏳ sai em '+fmtRestante(t.saiEm)+'</span>':'')+'</div>'+estrelas+'</div>'; }).join('')+'</div>' : '<div class="empty"><div class="big">🏅</div>Nenhum troféu no ranking agora.</div>';
-    var aviso = ehEmp ? '<div class="meta">Você pode ver o ranking; a avaliação é feita pelos manejadores.</div>'
-      : (pode ? '<div class="meta">Toque nas estrelas para dar sua nota (1–5).</div>' : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Deixe sua sala visível (em Sala de troféu) para poder avaliar.</div></div>');
+    var aviso = pode ? '<div class="meta">Toque nas estrelas para dar sua nota (1–5).</div>'
+      : (ehEmp ? '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Contrate o plano Empresa para avaliar troféus.</div></div>'
+      : '<div class="card" style="border-left:5px solid var(--alerta)"><div class="meta">Deixe sua sala visível (em Sala de troféu) para poder avaliar.</div></div>');
     app(heroFoto('ranking','Ranking de troféus','Os melhores das últimas 24 horas — o mais bem avaliado no topo.','Ranking')+aviso+'<div class="card">'+g+'</div>');
   }).catch(erroTela); };
 
