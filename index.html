@@ -1000,7 +1000,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2305';
+var APP_VER = 'vJS.260726.2314';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1069,7 +1069,6 @@ var FRASES = {
     'desde':'since',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Boundary center',
-    'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'The drawing sets the property location (center of the area), shows on your map and is required for a free session.',
     'O local do abate é o da ceva escolhida.':'The take location is the chosen feeder.',
     'Você está aqui':'You are here',
     'e-mail de acesso dele':'his access e-mail',
@@ -1140,10 +1139,7 @@ var FRASES = {
     'Canil (opcional)':'Kennel (optional)',
     'Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.':'You have no feeder registered. Register one under Animal feeder before opening a feeder session.',
     'Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.':'You have no route registered. Record or draw a route before opening a route session.',
-    'Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.':'No property with a drawn boundary. Draw the boundary under Properties before opening a free session.',
-    'Manejo livre: exige uma propriedade com limite desenhado.':'Free session: requires a property with a drawn boundary.',
     'Amigos são convidados depois, dentro do manejo aberto.':'Friends are invited later, inside the open session.',
-    'Escolha a propriedade do manejo livre':'Pick the property for the free session',
     /* --- Entrega 5: limite da propriedade --- */
     'Limite da propriedade':'Property boundary',
     'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Tap the map to mark the property corners. From 3 points on, the area closes by itself.',
@@ -1834,6 +1830,21 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Nenhuma propriedade com limite desenhado.':'No property has a boundary drawn.',
+    'A documentação de uma propriedade só existe depois que o limite dela é desenhado.':'A property\'s paperwork only exists after its boundary is drawn.',
+    'Ir para Manejo → Propriedades':'Go to Management → Properties',
+    'Para criar propriedade ou desenhar o limite, use Manejo → Propriedades.':'To create a property or draw its boundary, use Management → Properties.',
+    'propriedade sem limite não aparece aqui.':'property without a boundary is not listed here.',
+    'propriedades sem limite não aparecem aqui.':'properties without a boundary are not listed here.',
+    'O limite é desenhado em Manejo → Propriedades. Aqui você cuida só da documentação.':'The boundary is drawn in Management → Properties. Here you handle only the paperwork.',
+    'O desenho define a localização da propriedade (centro da área) e aparece no seu mapa.':'The drawing sets the property location (centre of the area) and shows on your map.',
+    'Manejo livre: sem ceva nem rota fixa. A propriedade é opcional.':'Free hunt: no fixed bait or route. The property is optional.',
+    'Nenhuma propriedade com limite desenhado. Você pode abrir o manejo assim mesmo — para ver o limite no mapa, desenhe em Manejo → Propriedades.':'No property has a boundary drawn. You can still start the hunt — to see the boundary on the map, draw it in Management → Properties.',
+    'Propriedade (opcional)':'Property (optional)',
+    'Nenhuma':'None',
+    'Autorização nº':'Permit no.',
+    'sem autorização':'no permit',
+    'válida até':'valid until',
     'Seu nome *':'Your name *',
     'E-mail da conta':'Account email',
     'Para trocar o e-mail da conta, abra um chamado no Suporte.':'To change the account email, open a ticket in Support.',
@@ -2213,7 +2224,6 @@ var FRASES = {
     'desde':'desde',
     /* --- Ajustes: limite define o local, guiamento, abate na ceva --- */
     'Centro do limite':'Centro del límite',
-    'O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.':'El dibujo define la ubicación de la propiedad (centro del área), aparece en su mapa y es exigido en el manejo libre.',
     'O local do abate é o da ceva escolhida.':'El lugar del abate es el del comedero elegido.',
     'Você está aqui':'Usted está aquí',
     'e-mail de acesso dele':'su e-mail de acceso',
@@ -2284,10 +2294,7 @@ var FRASES = {
     'Canil (opcional)':'Criadero (opcional)',
     'Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.':'Usted no tiene comedero registrado. Registre uno en Espera (comedero) antes de abrir un manejo de comedero.',
     'Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.':'Usted no tiene ruta registrada. Grabe o dibuje una ruta antes de abrir un manejo de ruta.',
-    'Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.':'Ninguna propiedad con límite dibujado. Dibuje el límite en Propiedades antes de abrir un manejo libre.',
-    'Manejo livre: exige uma propriedade com limite desenhado.':'Manejo libre: exige una propiedad con límite dibujado.',
     'Amigos são convidados depois, dentro do manejo aberto.':'Los amigos se invitan después, dentro del manejo abierto.',
-    'Escolha a propriedade do manejo livre':'Elija la propiedad del manejo libre',
     /* --- Entrega 5: limite da propriedade --- */
     'Limite da propriedade':'Límite de la propiedad',
     'Toque no mapa para marcar os cantos da propriedade. A partir de 3 pontos a área se fecha sozinha.':'Toque el mapa para marcar las esquinas de la propiedad. A partir de 3 puntos el área se cierra sola.',
@@ -2978,6 +2985,21 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Nenhuma propriedade com limite desenhado.':'Ninguna propiedad tiene límite dibujado.',
+    'A documentação de uma propriedade só existe depois que o limite dela é desenhado.':'La documentación de una propiedad solo existe después de dibujar su límite.',
+    'Ir para Manejo → Propriedades':'Ir a Manejo → Propiedades',
+    'Para criar propriedade ou desenhar o limite, use Manejo → Propriedades.':'Para crear una propiedad o dibujar el límite, usa Manejo → Propiedades.',
+    'propriedade sem limite não aparece aqui.':'propiedad sin límite no aparece aquí.',
+    'propriedades sem limite não aparecem aqui.':'propiedades sin límite no aparecen aquí.',
+    'O limite é desenhado em Manejo → Propriedades. Aqui você cuida só da documentação.':'El límite se dibuja en Manejo → Propiedades. Aquí solo cuidas la documentación.',
+    'O desenho define a localização da propriedade (centro da área) e aparece no seu mapa.':'El dibujo define la ubicación de la propiedad (centro del área) y aparece en tu mapa.',
+    'Manejo livre: sem ceva nem rota fixa. A propriedade é opcional.':'Manejo libre: sin cebo ni ruta fija. La propiedad es opcional.',
+    'Nenhuma propriedade com limite desenhado. Você pode abrir o manejo assim mesmo — para ver o limite no mapa, desenhe em Manejo → Propriedades.':'Ninguna propiedad tiene límite dibujado. Puedes abrir el manejo igual — para ver el límite en el mapa, dibújalo en Manejo → Propiedades.',
+    'Propriedade (opcional)':'Propiedad (opcional)',
+    'Nenhuma':'Ninguna',
+    'Autorização nº':'Autorización n.º',
+    'sem autorização':'sin autorización',
+    'válida até':'válida hasta',
     'Seu nome *':'Tu nombre *',
     'E-mail da conta':'Correo de la cuenta',
     'Para trocar o e-mail da conta, abra um chamado no Suporte.':'Para cambiar el correo de la cuenta, abre un ticket en Soporte.',
@@ -3604,14 +3626,10 @@ function pintarStatusUsuario(){
     alvo=document.createElement('div'); alvo.className='sb-status'; alvo.id='sbStatus';
     u.parentNode.insertBefore(alvo, u.nextSibling); }
 
-  if(STATE.tipo==='empresa'){
-    var e=STATE.empresa||{};
-    alvo.style.gridTemplateColumns='1fr';
-    alvo.innerHTML='<div class="sb-btn on" title="Visitas à sua loja">'+
-      '<span class="topo"><img src="'+BINOCULO+'" class="bino" alt="">'+(parseInt(e.visitas,10)||0)+'</span>'+
-      '<span class="estado">visitas</span></div>';
-    return;
-  }
+  /* Visitas da loja moraram aqui e agora aparecem na faixa acima do menu
+     suspenso. Manter os dois só duplicava a informação. */
+  alvo.innerHTML=''; alvo.style.display='none';
+  if(STATE.tipo==='empresa'){ _tf(); return; }
 
   /* Perfil na rede, sala de troféu, chave e engrenagem passaram para a faixa
      acima do menu suspenso — lá é o único lugar onde isso se configura.
@@ -4236,7 +4254,7 @@ function pintarDocs(){
       '<img src="'+ICONS[DOC_ICONE[c]]+'" alt="">'+
       '<span class="lbl">'+DOC_ROTULO[c]+'</span>'+(n?'<span class="sn-num">'+n+'</span>':'')+'</div>';
   }).join('')+'</nav>';
-  var corpo = (DOCCAT==='propriedade') ? corpoPropriedades() : corpoDocumentos(DOCCAT);
+  var corpo = (DOCCAT==='propriedade') ? corpoPropriedadesDoc() : corpoDocumentos(DOCCAT);
   app(heroFoto('documentacao','Documentação','Guarde seus documentos e acompanhe os vencimentos. Tudo entra na agenda.','Documentos')+abas+corpo);
 }
 window.mudarDocCat=function(c){ DOCCAT=c; pintarDocs(); };
@@ -4276,6 +4294,29 @@ function corpoPropriedades(){
   }).join('') : '<div class="meta" style="padding:14px 0">Nenhuma propriedade cadastrada.</div>';
   return '<div class="card">'+linhas+
     '<button class="btn" style="margin-top:12px" onclick="novaProp()">＋ Adicionar propriedade</button></div>';
+}
+/* Em Documentação a propriedade é só papelada: aparecem apenas as que já têm
+   limite desenhado, e não se cria nem se desenha por aqui. O desenho é
+   exclusivo de Manejo → Propriedades. */
+function corpoPropriedadesDoc(){
+  var comLimite = PROPS.filter(function(p){ return p.temLimite; });
+  var semLimite = PROPS.length - comLimite.length;
+  if(!comLimite.length){
+    return '<div class="card"><div class="empty"><div class="big">🏞️</div>'+
+      trFrase('Nenhuma propriedade com limite desenhado.')+'</div>'+
+      '<div class="meta" style="text-align:center">'+trFrase('A documentação de uma propriedade só existe depois que o limite dela é desenhado.')+'</div>'+
+      '<button class="btn" style="margin-top:10px" onclick="go(\'propriedades\')">'+trFrase('Ir para Manejo → Propriedades')+'</button></div>';
+  }
+  var linhas = comLimite.map(function(p){
+    return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
+      '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
+      '<div class="meta">'+(p.autorizacaoNum?trFrase('Autorização nº')+' '+esc(p.autorizacaoNum):trFrase('sem autorização'))+(p.autorizacaoValidade?' · '+trFrase('válida até')+' '+fmtData(p.autorizacaoValidade):'')+'</div></div>'+
+      '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar documentação">✏️</button></div>';
+  }).join('');
+  return '<div class="card">'+linhas+
+    '<div class="meta" style="margin-top:12px">'+trFrase('Para criar propriedade ou desenhar o limite, use Manejo → Propriedades.')+
+    (semLimite?' <b>'+semLimite+'</b> '+trFrase(semLimite===1?'propriedade sem limite não aparece aqui.':'propriedades sem limite não aparecem aqui.'):'')+
+    '</div></div>';
 }
 /* ---- formulário de documento ---- */
 var DOCEDIT=null;
@@ -4325,8 +4366,12 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
     '<div class="meta" style="margin:10px 0 4px"><b>'+trFrase('Limite da propriedade')+'</b> — '+
       (PROPEDIT&&PROPEDIT.temLimite? trFrase('desenhado')+' ('+((PROPEDIT.limite||[]).length)+' '+trFrase('pontos')+')' : trFrase('ainda não desenhado'))+'</div>'+
-    '<button class="btn sec" onclick="desenharLimite()">🗺️ '+trFrase(PROPEDIT&&PROPEDIT.temLimite?'Redesenhar limite no mapa':'Desenhar limite no mapa')+'</button>'+
-    '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O desenho define a localização da propriedade (centro da área), aparece no seu mapa e é exigido no manejo livre.')+'</div>'+
+    /* Desenhar é exclusivo de Manejo → Propriedades. Vindo de Documentação,
+       aqui só se preenche a papelada. */
+    (PROP_ORIGEM==='propriedades'
+      ? '<button class="btn sec" onclick="desenharLimite()">🗺️ '+trFrase(PROPEDIT&&PROPEDIT.temLimite?'Redesenhar limite no mapa':'Desenhar limite no mapa')+'</button>'+
+        '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O desenho define a localização da propriedade (centro da área) e aparece no seu mapa.')+'</div>'
+      : '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O limite é desenhado em Manejo → Propriedades. Aqui você cuida só da documentação.')+'</div>')+
     '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
     '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
 function desenharLimitesEm(layer, props, pts){
@@ -7272,7 +7317,10 @@ VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
       moduloCard('areas','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()");
   app('<div id="mnConvites"></div>'+cards);
   pintarCardManejos(null);
-  fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>');
+  /* O botão flutuante saiu daqui: quem abre manejo é o card "Manejos" (ou o
+     botão MANEJO do menu, que fica pulsando). Evita dois caminhos para a
+     mesma coisa na mesma tela. */
+  fab('');
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; pintarCardManejos(m); }).catch(function(){ pintarCardManejos(null); });
   carregarConvites().then(function(){ var el=document.getElementById('mnConvites'); if(!el) return;
     el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
@@ -7381,10 +7429,12 @@ window.pintarAvisoTipo=function(){
     if(!MANEJO_OPTS.rotas.length) falta='Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.';
     else corpo='<label>Rotas *</label>'+listaChecks('mn_rotas',MANEJO_OPTS.rotas,(m.rotas||[]).map(function(c){return c.id;}).join(','),'');
   } else {
-    av.innerHTML='Manejo livre: exige uma propriedade com limite desenhado.';
-    if(!MANEJO_OPTS.props.length) falta='Nenhuma propriedade com limite desenhado. Desenhe o limite em Propriedades antes de abrir um manejo livre.';
-    else corpo='<label>Propriedade *</label><select id="mn_prop">'+
-      (MANEJO_OPTS.props.length>1?'<option value="">Selecione…</option>':'')+
+    /* A propriedade virou OPCIONAL no manejo livre: sem ela o manejo abre do
+       mesmo jeito, só não desenha limite no guiamento. */
+    av.innerHTML='Manejo livre: sem ceva nem rota fixa. A propriedade é opcional.';
+    if(!MANEJO_OPTS.props.length) corpo='<div class="meta">Nenhuma propriedade com limite desenhado. Você pode abrir o manejo assim mesmo — para ver o limite no mapa, desenhe em Manejo → Propriedades.</div>';
+    else corpo='<label>Propriedade (opcional)</label><select id="mn_prop">'+
+      '<option value="">Nenhuma</option>'+
       MANEJO_OPTS.props.map(function(p){ return '<option value="'+esc(p.id)+'"'+((m.propriedade&&m.propriedade.id===p.id)?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>';
   }
   box.innerHTML = falta
@@ -7398,7 +7448,7 @@ window.salvarManejo=function(btn){
     cevasIds:'', rotasIds:'', propriedadeId:'' };
   if(tipo==='ceva'){ d.cevasIds=idsMarcados('mn_cevas'); if(!d.cevasIds){ toast('Escolha ao menos uma ceva'); return; } }
   if(tipo==='rota'){ d.rotasIds=idsMarcados('mn_rotas'); if(!d.rotasIds){ toast('Escolha ao menos uma rota'); return; } }
-  if(tipo==='livre'){ d.propriedadeId=val('mn_prop'); if(!d.propriedadeId){ toast('Escolha a propriedade do manejo livre'); return; } }
+  if(tipo==='livre'){ d.propriedadeId=val('mn_prop')||''; }   /* opcional */
   btn.disabled=true; btn.textContent='Salvando…';
   var p = MANEJO_EDIT ? server('apiAtualizarManejo',MANEJO_EDIT.id,d) : server('apiCriarManejo',d);
   p.then(function(res){ var id=(MANEJO_EDIT&&MANEJO_EDIT.id)||(res&&res.id);
