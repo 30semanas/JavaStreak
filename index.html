@@ -53,7 +53,7 @@
   textarea{min-height:70px;resize:vertical}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde-claro);
         box-shadow:0 0 0 3px rgba(63,107,63,.15)}
-  .two{display:flex;gap:10px} .two>div{flex:1}
+  .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
        width:100%;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:600;
@@ -969,7 +969,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2048';
+var APP_VER = 'vJS.260726.2059';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1812,6 +1812,9 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'cão':'dog',
+    'cães':'dogs',
+    'KM atual':'Current mileage',
     'Barcos e embarcações: manutenção':'Boats and vessels: maintenance',
     'Ver saúde':'View health',
     'Ver manutenções':'View maintenance',
@@ -2929,6 +2932,9 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'cão':'perro',
+    'cães':'perros',
+    'KM atual':'KM actual',
     'Barcos e embarcações: manutenção':'Barcos y embarcaciones: mantenimiento',
     'Ver saúde':'Ver salud',
     'Ver manutenções':'Ver mantenimientos',
@@ -6145,21 +6151,28 @@ function carregarManutencoes(id){
 VIEWS.manutForm=function(){ var ed=!!EDIT; var t=STATE.transporte||{};
   setTitulo(ed?'Editar manutenção':'Registrar manutenção'); setCrumb(rotuloCat(categoriaTransp(t.tipo)),esc(t.tipo||''),'Manutenção');
   var unid=isEmbarcacao(t.tipo)?'h':'km';
-  app('<div class="card"><label>Tipo *</label><select id="mt_tipo">'+TIPOS_MANUT.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select>'+
+  /* Três campos e mais nada: tipo, medidor e próxima data. As observações
+     ocupam a largura toda embaixo, e os dois botões dividem a linha em partes
+     iguais. A versão anterior tinha um <div class="two"> aberto sem par —
+     sobra da minha troca do campo de data — e embaralhava o formulário. */
+  app('<div class="card">'+
+    '<label>Tipo *</label><select id="mt_tipo">'+TIPOS_MANUT.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select>'+
     '<input type="hidden" id="mt_data">'+
-    '<div class="two"><div>'+
-    '<div><label>'+(unid==='h'?'Horas de motor':'KM')+'</label><input id="mt_km" inputmode="numeric" value="'+esc(pv('km'))+'"></div></div>'+
-    '<div class="two"><div><label>Próxima data</label><input id="mt_prox" type="date"></div>'+
-    '<div><label>'+(unid==='h'?'Próximas horas':'Próximo KM')+'</label><input id="mt_proxkm" inputmode="numeric" value="'+esc(pv('proximoKm'))+'"></div></div>'+
-    '<label>Observações</label><textarea id="mt_obs">'+esc(pv('obs'))+'</textarea>'+
-    '<button class="btn" onclick="salvarManutencao(this)">'+(ed?'Salvar alterações':'Salvar')+'</button>'+
-    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+    '<div class="two">'+
+      '<div><label>'+(unid==='h'?'Horas de motor':'KM atual')+'</label><input id="mt_km" inputmode="numeric" value="'+esc(pv('km'))+'"></div>'+
+      '<div><label>Próxima data</label><input id="mt_prox" type="date"></div>'+
+    '</div>'+
+    '<label>Observações</label><textarea id="mt_obs" rows="4" style="width:100%">'+esc(pv('obs'))+'</textarea>'+
+    '<div class="two" style="margin-top:10px">'+
+      '<button class="btn" onclick="salvarManutencao(this)">'+(ed?'Salvar alterações':'Salvar')+'</button>'+
+      '<button class="btn sec" onclick="voltar()">Cancelar</button>'+
+    '</div></div>');
   document.getElementById('mt_data').value = ed&&EDIT.data?String(EDIT.data).substring(0,10):diaHoje();
   if(ed){ setVal('mt_tipo',EDIT.tipo); if(EDIT.proximaData) setVal('mt_prox',String(EDIT.proximaData).substring(0,10)); } };
 window.salvarManutencao=function(btn){ var t=STATE.transporte||{};
   btn.disabled=true; btn.textContent='Salvando…';
   var d={ transporteId:t.id, tipo:val('mt_tipo'), data:val('mt_data'), km:val('mt_km'),
-    proximaData:val('mt_prox'), proximoKm:val('mt_proxkm'), obs:val('mt_obs') };
+    proximaData:val('mt_prox'), obs:val('mt_obs') };
   var p=EDIT? server('apiEditar','manutencao',EDIT.id,d) : server('apiCriarManutencao',d);
   p.then(function(){ EDIT=null; toast('Manutenção salva ✔'); voltar(); })
    .catch(function(e){ btn.disabled=false; btn.textContent=EDIT?'Salvar alterações':'Salvar'; toast((e&&e.message)||'Erro'); }); };
@@ -6691,7 +6704,7 @@ window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; D
    ============================================================ */
 VIEWS.caes=function(){ setTitulo('Meu canil'); setCrumb('Meu canil'); loadingBox();
   server('apiListarCanis').then(function(l){ CACHE.canil=l;
-    var html=l.length? l.map(function(c){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirCanil(\''+c.id+'\')"><h3>🏠 '+esc(c.nome||'Canil')+'</h3><div class="meta">'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+acoes('canil',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum canil cadastrado.</div>';
+    var html=l.length? l.map(function(c){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirCanil(\''+c.id+'\')"><h3>🏠 '+esc(c.nome||'Canil')+' <span class="pill">'+(c.qtdCaes||0)+' '+trFrase((c.qtdCaes===1)?'cão':'cães')+'</span></h3><div class="meta">'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+acoes('canil',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum canil cadastrado.</div>';
     app(html); fab('<button class="btn" onclick="novo(\'canilForm\')">＋ Novo canil</button>'); }).catch(erroTela); };
 
 VIEWS.canilForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar canil':'Novo canil'); setCrumb('Cães',ed?'Editar':'Novo canil');
