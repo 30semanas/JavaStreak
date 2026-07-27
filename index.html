@@ -1000,7 +1000,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2327';
+var APP_VER = 'vJS.260726.2339';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1906,6 +1906,11 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Desenhe o limite da propriedade antes de salvar':'Draw the property boundary before saving',
+    'A pé':'On foot',
+    'Outros':'Other',
+    'Toque no mapa — a área verde é o limite da propriedade do manejo':'Tap the map — the green area is the boundary of the property in this hunt',
+    'A área verde é o limite da propriedade do manejo aberto.':'The green area is the boundary of the property in the open hunt.',
     'Conta':'Account',
     'E-mail de acesso':'Sign-in email',
     'Trocar o e-mail exige confirmar um código enviado ao endereço novo.':'Changing the email requires confirming a code sent to the new address.',
@@ -3083,6 +3088,11 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Desenhe o limite da propriedade antes de salvar':'Dibuja el límite de la propiedad antes de guardar',
+    'A pé':'A pie',
+    'Outros':'Otros',
+    'Toque no mapa — a área verde é o limite da propriedade do manejo':'Toca el mapa — el área verde es el límite de la propiedad del manejo',
+    'A área verde é o limite da propriedade do manejo aberto.':'El área verde es el límite de la propiedad del manejo abierto.',
     'Conta':'Cuenta',
     'E-mail de acesso':'Correo de acceso',
     'Trocar o e-mail exige confirmar um código enviado ao endereço novo.':'Cambiar el correo exige confirmar un código enviado a la dirección nueva.',
@@ -3596,7 +3606,7 @@ function server(fn){
   });
 }
 function limparDadosSessao(){
-  NETDATA=null; MAPDATA=null; MEUPLANO=null; CACHE={}; EDIT=null;
+  NETDATA=null; MAPDATA=null; MEUPLANO=null; CACHE={}; EDIT=null; GUIA_MANEJO=null; GUIA_MANEJO_ID='';
   PROMOS={recebe:true,promos:[]}; AVISOS=[]; CAMPANHA=null; VISITADOS={};
   try{ pintarCampanha(); }catch(e){}
 }
@@ -4103,6 +4113,38 @@ function moedaNum(id){
 }
 function gpsButton(a,b){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\')">🗺️ Indicar no mapa</button></div>'; }
 var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null;
+/* Limites e cevas do manejo aberto. Servem ao picker do abate e ao desenho de
+   rota manual: sem eles não dá para saber se o ponto caiu dentro da área. */
+var GUIA_MANEJO=null, GUIA_MANEJO_ID='';
+function carregarGuiaManejo(){
+  var id=(MANEJO_ATUAL&&MANEJO_ATUAL.id)||(MANEJO_ABERTO&&MANEJO_ABERTO.id)||'';
+  if(!id){ GUIA_MANEJO=null; GUIA_MANEJO_ID=''; return Promise.resolve(null); }
+  /* Guardado por id: trocar de manejo (ou encerrar e abrir outro) busca de
+     novo em vez de mostrar o limite do manejo anterior. */
+  if(GUIA_MANEJO && GUIA_MANEJO_ID===id) return Promise.resolve(GUIA_MANEJO);
+  return server('apiManejoGuia',id).then(function(g){ GUIA_MANEJO=g||null; GUIA_MANEJO_ID=id; return GUIA_MANEJO; })
+    .catch(function(){ GUIA_MANEJO=null; GUIA_MANEJO_ID=''; return null; });
+}
+/* Desenha os limites do manejo num mapa qualquer e devolve os pontos, para
+   quem chamou enquadrar. */
+function limitesDoManejoEm(map,layer){
+  var g=GUIA_MANEJO; var pts=[];
+  if(!g||!g.limites||!g.limites.length) return pts;
+  g.limites.forEach(function(p){
+    var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; }).filter(function(xy){ return ptOk(xy[0],xy[1]); });
+    if(poly.length<3) return;
+    L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12,dashArray:'6,4'})
+      .addTo(layer||map).bindPopup('<div class="pop"><h4>🏞️ '+esc(p.nome||'Propriedade')+'</h4></div>');
+    var cLa=0,cLn=0; poly.forEach(function(xy){ cLa+=xy[0]; cLn+=xy[1]; pts.push(xy); });
+    cLa/=poly.length; cLn/=poly.length;
+    if(ptOk(cLa,cLn)) L.marker([cLa,cLn],{icon:svgIconMapa('propriedade',28,'#2f7d3a')}).addTo(layer||map);
+  });
+  (g.cevas||[]).forEach(function(c){ var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln))return;
+    L.marker([la,ln],{icon:svgIconMapa('ceva',26,'#b8863b')}).addTo(layer||map)
+      .bindPopup('<div class="pop"><h4>'+esc(c.nome||'Ceva')+'</h4></div>');
+    pts.push([la,ln]); });
+  return pts;
+}
 window.abrirMapaPicker=function(a,b){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
   document.getElementById('mapPicker').classList.add('open');
   var cc=document.getElementById('pickCoord'); if(cc) cc.textContent='Toque no mapa para marcar o ponto';
@@ -4112,6 +4154,15 @@ window.abrirMapaPicker=function(a,b){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
     addBase(PICKMAP);
     var marker = ok ? L.marker([la,ln],{draggable:true}).addTo(PICKMAP) : null;
     if(ok){ PICK_LATLNG={lat:la,lng:ln}; marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); }
+    /* Limite da propriedade do manejo aberto, para dar para ver se o abate
+       caiu dentro da área. */
+    carregarGuiaManejo().then(function(){
+      if(!PICKMAP) return;
+      var ps=limitesDoManejoEm(PICKMAP);
+      var cc=document.getElementById('pickCoord');
+      if(ps.length && !ok){ try{ PICKMAP.fitBounds(ps,{padding:[30,30],maxZoom:15}); }catch(e){} }
+      if(ps.length && cc && !PICK_LATLNG) cc.textContent=trFrase('Toque no mapa — a área verde é o limite da propriedade do manejo');
+    });
     PICKMAP.on('click',function(e){ PICK_LATLNG={lat:e.latlng.lat,lng:e.latlng.lng}; if(marker){ marker.setLatLng(e.latlng); } else { marker=L.marker(e.latlng,{draggable:true}).addTo(PICKMAP); marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); } setPickCoord(); });
     setTimeout(function(){ PICKMAP.invalidateSize(); },120);
   },80); };
@@ -4570,6 +4621,10 @@ window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
   server('apiSalvarPropriedade',d).then(function(){ toast('Limite salvo ✔'); LIM_DRAW=null; PROPEDIT=null; voltarPropriedades(); })
     .catch(function(e){ btn.disabled=false; btn.textContent='💾 Salvar limite'; toast((e&&e.message)||'Erro'); }); };
 window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
+  /* Sem limite a propriedade não serve para nada: não aparece no mapa, não
+     entra no manejo livre e não pode ter documentação. Melhor barrar aqui. */
+  var temLim = !!(PROPEDIT&&PROPEDIT.temLimite) || !!(LIM_DRAW&&LIM_DRAW.propId===((PROPEDIT&&PROPEDIT.id)||'')&&LIM_DRAW.pontos&&LIM_DRAW.pontos.length>=3);
+  if(!temLim && PROP_ORIGEM==='propriedades'){ toast('Desenhe o limite da propriedade antes de salvar'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
     autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),obs:val('pr_obs')};
@@ -5113,7 +5168,7 @@ window.salvarEmpresaConta=function(btn){ var login=val('fe_login'),senha=val('fe
   .catch(function(e){ btn.disabled=false; btn.textContent='Criar conta de empresa'; resetarCaptcha();
     toast(e&&e.message==='INDICADOR_INVALIDO' ? 'Chave inválida — confira com quem indicou'
       : ((e&&e.message)||'Não foi possível criar a conta')); }); };
-window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); CREDITOS=null;
+window.logout=function(){ server('apiLogout').catch(function(){}); salvarToken(''); limparDadosSessao(); CREDITOS=null; GUIA_MANEJO=null; GUIA_MANEJO_ID='';
   AUTH.manejador=null; STATE.manejador=null; STATE.empresa=null; STATE.tipo='manejador'; STATE.stack=['bemvindo']; render(); };
 
 /* ============================================================
@@ -6695,8 +6750,12 @@ function carregarSelectsRota(ehPesca){
     s.innerHTML='<option value="">— selecione (opcional) —</option>'+(l||[]).map(function(p){ return '<option value="'+p.id+'">'+esc(p.nome)+'</option>'; }).join(''); }).catch(function(){});
   server('apiListarTransportes').then(function(l){ var s=document.getElementById('ro_transp'); if(!s)return;
     var f=(l||[]).filter(function(t){ var m=String(t.meio||'terrestre'); return ehPesca ? m==='maritimo' : m!=='maritimo'; });
-    s.innerHTML='<option value="">— selecione —</option>'+f.map(function(t){ return '<option value="'+esc(t.tipo+(t.identificacao?' - '+t.identificacao:''))+'">'+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</option>'; }).join('')+
-      (f.length?'':'<option value="" disabled>'+(ehPesca?'Cadastre uma embarcação primeiro':'Cadastre um transporte primeiro')+'</option>'); }).catch(function(){});
+    /* Além dos transportes cadastrados, sempre cabe ir a pé (ou algo que não
+       está na garagem). Sem isso, quem não tem veículo não conseguia gravar. */
+    var extras = ehPesca ? ['Outros'] : ['A pé','Outros'];
+    s.innerHTML='<option value="">— selecione —</option>'+
+      f.map(function(t){ return '<option value="'+esc(t.tipo+(t.identificacao?' - '+t.identificacao:''))+'">'+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</option>'; }).join('')+
+      extras.map(function(x){ return '<option value="'+esc(x)+'">'+trFrase(x)+'</option>'; }).join(''); }).catch(function(){});
 }
 window.comecarGravacao=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
   if(!navigator.geolocation){ toast('GPS não suportado neste aparelho'); return; }
@@ -7074,6 +7133,15 @@ VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; rend
   var map=L.map('drawMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView([-15.78,-47.93],4);
   addBase(map);
   ROUTEMAP=map; DRAW.layer=L.featureGroup().addTo(map); DRAW._markLayer=L.featureGroup().addTo(map);
+  /* Limite da propriedade do manejo: desenhar a rota dentro da área. */
+  DRAW._limLayer=L.featureGroup().addTo(map);
+  carregarGuiaManejo().then(function(){
+    if(ROUTEMAP!==map) return;
+    var ps=limitesDoManejoEm(map,DRAW._limLayer);
+    if(ps.length && !DRAW.pontos.length){ try{ map.fitBounds(ps,{padding:[40,40],maxZoom:15}); }catch(e){} }
+    var h=document.getElementById('drawHint');
+    if(ps.length && h) h.innerHTML=trFrase('A área verde é o limite da propriedade do manejo aberto.');
+  });
   map.on('click', function(e){ if(DRAW.modo==='ponto') abrirMark('draw',{lat:e.latlng.lat,lng:e.latlng.lng}); else desenhoAdd(e.latlng.lat, e.latlng.lng); });
   (DRAW.marcacoes||[]).forEach(function(m){ L.marker([m.lat,m.lng],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(DRAW._markLayer).bindPopup(marcaPopup(m)); });
   setTimeout(function(){ map.invalidateSize();
