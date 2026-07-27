@@ -790,6 +790,7 @@
   .lim-tab td{padding:6px;border-bottom:1px solid var(--linha);color:var(--txt)}
   .lim-tab td:first-child{font-weight:600}
   .lim-tab input{width:64px;margin:0;text-align:center;padding:6px;font-size:13px}
+  .lim-tab .lim-liga{width:80px;margin:0;padding:6px 4px;font-size:13px;text-align:center;font-weight:700}
 .tel-linha{display:flex;gap:8px}
   .tel-linha select{flex:none;width:120px;margin:0}
   .tel-linha input{flex:1;margin:0}
@@ -1032,7 +1033,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.1245';
+var APP_VER = 'vJS.270726.1323';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1980,6 +1981,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Número = quantidade (-1 é ilimitado, 0 bloqueia). Sim/Não = dá ou tira o acesso ao recurso.':'Number = quantity (-1 is unlimited, 0 blocks). Yes/No = grants or removes access to the feature.',
+    'Ter vitrine':'Has a storefront',
+    'Lançar promoção relâmpago':'Launch flash promotions',
+    'Aparecer no mapa da rede':'Appear on the network map',
+    'Avaliar troféus':'Rate trophies',
+    'Ver quantas visitas recebeu':'See how many visits received',
+    'Foto de perfil':'Profile photo',
     'Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.':'Your hunter profile has not been created yet. Fill in name and location to unlock this button.',
     'Disponível apenas para manejadores':'Available for hunters only',
     'Alcance do anúncio (km)':'Ad reach (km)',
@@ -3179,6 +3187,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Número = quantidade (-1 é ilimitado, 0 bloqueia). Sim/Não = dá ou tira o acesso ao recurso.':'Número = cantidad (-1 es ilimitado, 0 bloquea). Sí/No = da o quita el acceso al recurso.',
+    'Ter vitrine':'Tener escaparate',
+    'Lançar promoção relâmpago':'Lanzar promoción relámpago',
+    'Aparecer no mapa da rede':'Aparecer en el mapa de la red',
+    'Avaliar troféus':'Calificar trofeos',
+    'Ver quantas visitas recebeu':'Ver cuántas visitas recibió',
+    'Foto de perfil':'Foto de perfil',
     'Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.':'Tu perfil de manejador aún no fue creado. Completa nombre y ubicación para habilitar este botón.',
     'Disponível apenas para manejadores':'Disponible solo para manejadores',
     'Alcance do anúncio (km)':'Alcance del anuncio (km)',
@@ -5903,13 +5918,22 @@ function carregarLimites(){ server('apiListarLimites').then(function(d){ LIMDADO
   .catch(function(){ var el=document.getElementById('limBox'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar.</div>'; }); }
 /* Duas tabelas: os planos de manejador e, abaixo, os de empresa. Os recursos
    são diferentes, então misturar as colunas deixaria a grade quase vazia. */
+/* Recurso de liga/desliga vira Sim/Não; o resto continua número. Antes tudo
+   era caixinha de número e não dava para ver onde se concede ou retira acesso. */
+function celulaLimite(p,r){
+  var v=p.valores[r.chave];
+  if(r.tipo==='liga'){
+    return '<td><select id="lim_'+p.plano+'_'+r.chave+'" class="lim-liga">'+
+      '<option value="1"'+(String(v)==='1'?' selected':'')+'>'+trFrase('Sim')+'</option>'+
+      '<option value="0"'+(String(v)==='1'?'':' selected')+'>'+trFrase('Não')+'</option></select></td>';
+  }
+  return '<td><input id="lim_'+p.plano+'_'+r.chave+'" inputmode="numeric" value="'+esc(String(v))+'"></td>';
+}
 function tabelaLimites(recursos,planos){
   var cab='<tr><th>'+trFrase('Recurso')+'</th>'+planos.map(function(p){return '<th>'+esc(p.nome)+'</th>';}).join('')+'</tr>';
   var linhas=recursos.map(function(r){
     return '<tr><td>'+esc(r.rotulo)+'</td>'+
-      planos.map(function(p){
-        return '<td><input id="lim_'+p.plano+'_'+r.chave+'" inputmode="numeric" value="'+p.valores[r.chave]+'"></td>';
-      }).join('')+'</tr>';
+      planos.map(function(p){ return celulaLimite(p,r); }).join('')+'</tr>';
   }).join('');
   return '<div class="lim-wrap"><table class="lim-tab">'+cab+linhas+'</table></div>';
 }
@@ -5918,7 +5942,9 @@ function pintarLimites(){ var el=document.getElementById('limBox'); if(!el||!LIM
     ? '<h4 style="margin:16px 0 4px">'+trFrase('Planos de empresa')+'</h4>'+
       tabelaLimites(LIMDADOS.recursosEmpresa,LIMDADOS.planosEmpresa)
     : '';
-  el.innerHTML='<h4 style="margin:2px 0 4px">'+trFrase('Planos de manejador')+'</h4>'+
+  el.innerHTML='<div class="meta" style="margin-bottom:8px">'+
+    trFrase('Número = quantidade (-1 é ilimitado, 0 bloqueia). Sim/Não = dá ou tira o acesso ao recurso.')+'</div>'+
+    '<h4 style="margin:2px 0 4px">'+trFrase('Planos de manejador')+'</h4>'+
     tabelaLimites(LIMDADOS.recursos,LIMDADOS.planos)+emp+
     '<div class="row" style="gap:8px;margin-top:12px"><button class="btn grow" onclick="salvarLimites(this)">Salvar acessos</button>'+
     '<button class="btn sec" style="width:auto" onclick="restaurarLimites()">Restaurar padrão</button></div>'; }
