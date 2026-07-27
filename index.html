@@ -57,6 +57,7 @@
   .moeda-rs{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;
     color:var(--txt2);font-size:14px;pointer-events:none}
   input.moeda{padding-left:40px!important;text-align:right;font-variant-numeric:tabular-nums}
+  input.ro{background:#efe9dc;color:var(--txt2);cursor:not-allowed}
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
   .mk-svgwrap{background:none;border:0}
   .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
@@ -628,6 +629,8 @@
 .sb-item.travado{opacity:.6}
   .sb-lock{margin-left:auto;font-size:12px;opacity:.85}
   .sb-nome{display:block;font-size:17px;font-weight:700;line-height:1.3}
+  .sb-email{display:block;font-size:11.5px;opacity:.65;margin-top:1px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sb-plano-inline{display:inline-block;margin-top:5px;padding:3px 10px;border-radius:20px;cursor:pointer;
     font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
     background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);color:#e8e2d6;transition:background .15s}
@@ -992,7 +995,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.260726.2239';
+var APP_VER = 'vJS.260726.2252';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1701,7 +1704,6 @@ var FRASES = {
     'Ponto salvo ✔':'Point saved ✔',
     'Por mês':'Per month',
     'Por tipo de manejo':'By management type',
-    'Preencha a localização (lat/long) para ficar visível':'Fill in the location (lat/long) to be visible',
     'Preencha login e senha':'Fill in login and password',
     'Preencher dados da empresa':'Fill in company details',
     'Preferências salvas':'Preferences saved',
@@ -1827,6 +1829,11 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Seu nome *':'Your name *',
+    'E-mail da conta':'Account email',
+    'Para trocar o e-mail da conta, abra um chamado no Suporte.':'To change the account email, open a ticket in Support.',
+    'Informe seu nome':'Enter your name',
+    'Nome completo':'Full name',
     'Preço':'Price',
     'Preço atual':'Current price',
     'Preço no destaque':'Featured price',
@@ -1980,7 +1987,6 @@ var FRASES = {
     'Anote agora — não será exibida de novo.':'Write it down now — it won\'t be shown again.',
     'Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.':'Appear on the platform\'s fixed card or reward the 1st in the trophy ranking.',
     'Apareça no mapa':'Appear on the map',
-    'Aparecer no mapa da rede (visível)':'Appear on the network map (visible)',
     'Árvore':'Tree',
     'até':'until',
     'até a rota':'to the route',
@@ -2842,7 +2848,6 @@ var FRASES = {
     'Ponto salvo ✔':'Punto guardado ✔',
     'Por mês':'Por mes',
     'Por tipo de manejo':'Por tipo de manejo',
-    'Preencha a localização (lat/long) para ficar visível':'Completa la ubicación (lat/long) para ser visible',
     'Preencha login e senha':'Completa acceso y contraseña',
     'Preencher dados da empresa':'Completar datos de la empresa',
     'Preferências salvas':'Preferencias guardadas',
@@ -2968,6 +2973,11 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Seu nome *':'Tu nombre *',
+    'E-mail da conta':'Correo de la cuenta',
+    'Para trocar o e-mail da conta, abra um chamado no Suporte.':'Para cambiar el correo de la cuenta, abre un ticket en Soporte.',
+    'Informe seu nome':'Indica tu nombre',
+    'Nome completo':'Nombre completo',
     'Preço':'Precio',
     'Preço atual':'Precio actual',
     'Preço no destaque':'Precio destacado',
@@ -3121,7 +3131,6 @@ var FRASES = {
     'Anote agora — não será exibida de novo.':'Anótalo ahora — no se mostrará de nuevo.',
     'Apareça no card fixo da plataforma ou premie o 1º do ranking de troféus.':'Aparece en la tarjeta fija de la plataforma o premia al 1º del ranking de trofeos.',
     'Apareça no mapa':'Aparece en el mapa',
-    'Aparecer no mapa da rede (visível)':'Aparecer en el mapa de la red (visible)',
     'Árvore':'Árbol',
     'até':'hasta',
     'até a rota':'hasta la ruta',
@@ -3552,7 +3561,10 @@ function buildSidebar(){
     var cfg='';   // a engrenagem subiu para a faixa
     /* O selo do plano saiu daqui: ele já aparece na faixa do topo. Sem ele o
        nome pode respirar. */
-    u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span>'; }
+    /* E-mail da conta: aparece, mas não se edita aqui. A troca passa por
+       chamado no Suporte. */
+    u.innerHTML = cfg+'<span class="sb-nome">'+esc(nome)+'</span>'+
+      (STATE.login?'<span class="sb-email no-i18n" title="'+esc(STATE.login)+'">'+esc(STATE.login)+'</span>':''); }
   pintarPlano();          // depois de recriar o bloco, senão o selo é apagado
   pintarStatusUsuario();
   buildTopNav(root, tipo);
@@ -4136,7 +4148,7 @@ function aplicarAuth(r){
   }
   salvarToken(r.token);
   aplicarIdiomaDaConta(r && r.idioma);
-  STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin; STATE.promoInd=r.promoInd||null;
+  STATE.tipo=r.tipo||'manejador'; STATE.admin=!!r.admin; STATE.promoInd=r.promoInd||null; STATE.login=r.login||'';
   if(STATE.tipo==='empresa'){ STATE.empresa=r.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
   else { STATE.manejador=r.manejador||null; AUTH.manejador=r.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
   aplicarFundo(); render(); iniciarPromoPoll(); return true; }
@@ -5775,7 +5787,10 @@ function netCard(av,nome,sub,cidade,wa,tel,email){ var w=waLink(wa); return '<di
 VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu perfil'); setCrumb('Perfil');
   var temCoord=!!((me.latNetwork||me.lat)&&(me.lngNetwork||me.lng));
   app(cardIdioma()+(me.bloqueado==='Sim'?'<div class="card" style="border-left:5px solid #8a3a2c"><div class="meta">🚩 <b>Seu perfil está bloqueado</b> por denúncias e está em análise pelo administrador. Enquanto isso, você não aparece na rede, no mapa nem no ranking.</div></div>':'')+'<div class="card rustic-hero"><div class="row"><img src="'+esc(avatarUrl(me))+'" style="width:66px;height:66px;border-radius:50%;object-fit:cover;border:2px solid #ee8a2e"><div class="grow" style="margin-left:12px"><h2 style="margin:0">'+esc(me.nome||'Manejador')+'</h2><div class="meta">Perfil público na rede</div>'+visitasSelo(me.visitas)+'</div></div></div>'+
-    '<div class="card"><label>Foto do perfil '+(me.fotoUrl?'(escolha para trocar)':'(sem foto, usamos um avatar padrão)')+'</label>'+(me.fotoUrl?'<img class="foto-prev" style="display:block;border-radius:50%;width:90px;height:90px;object-fit:cover" src="'+esc(imgSrc(me.fotoUrl))+'">':'')+'<input id="np_foto" type="file" accept="image/*"><img id="np_prev" class="foto-prev">'+
+    '<div class="card"><label>Seu nome *</label><input id="np_nome" value="'+esc(me.nome||'')+'" placeholder="Nome completo">'+
+    '<label>E-mail da conta</label><input value="'+esc(STATE.login||me.email||'')+'" disabled class="ro">'+
+    '<div class="meta" style="margin:-4px 0 10px">Para trocar o e-mail da conta, abra um chamado no Suporte.</div>'+
+    '<label>Foto do perfil '+(me.fotoUrl?'(escolha para trocar)':'(sem foto, usamos um avatar padrão)')+'</label>'+(me.fotoUrl?'<img class="foto-prev" style="display:block;border-radius:50%;width:90px;height:90px;object-fit:cover" src="'+esc(imgSrc(me.fotoUrl))+'">':'')+'<input id="np_foto" type="file" accept="image/*"><img id="np_prev" class="foto-prev">'+
     '<label>Sexo (define seu avatar padrão)</label><select id="np_sexo"><option value="Masculino"'+(String(me.sexo||'').toLowerCase().indexOf('f')!==0?' selected':'')+'>Masculino</option><option value="Feminino"'+(String(me.sexo||'').toLowerCase().indexOf('f')===0?' selected':'')+'>Feminino</option></select>'+
     '<label>WhatsApp (contato)</label><input id="np_wa" value="'+esc(me.whatsapp||'')+'" placeholder="DDD+número">'+
     '<label>Telefone</label><input id="np_tel" value="'+esc(me.telefone||'')+'">'+
@@ -5783,23 +5798,29 @@ VIEWS.perfilManejador=function(){ var me=STATE.manejador||{}; setTitulo('Meu per
     '<label>Sobre você</label><textarea id="np_bio" placeholder="Ex: manejo com cães, aberto a parcerias">'+esc(me.bioNetwork||'')+'</textarea>'+
     '<label>Sua localização no mapa *</label><div class="two"><div><input id="np_lat" inputmode="decimal" placeholder="Latitude" value="'+esc(me.latNetwork||me.lat||'')+'"></div><div><input id="np_lng" inputmode="decimal" placeholder="Longitude" value="'+esc(me.lngNetwork||me.lng||'')+'"></div></div>'+
     gpsButton('np_lat','np_lng')+
-    '<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;margin-top:14px"><input type="checkbox" id="np_vis" style="width:auto" '+(me.visivelNetwork==='Sim'?'checked':'')+'> Aparecer no mapa da rede (visível)</label>'+
-    '<div class="meta" id="np_hint" style="margin:6px 0 0">⚠️ Só é possível ficar visível com a <b>localização (lat/long) preenchida</b>. Se ficar oculto, você não aparece e também não vê os outros manejadores. Lojistas você vê sempre.</div>'+
+    /* O interruptor de visibilidade saiu daqui: quem manda é o botão PERFIL
+       VISÍVEL/OCULTO da faixa do topo. Este formulário não mexe mais nisso. */
+    '<div class="meta" id="np_hint" style="margin:6px 0 0">⚠️ Sem a <b>localização preenchida</b> você não consegue aparecer no mapa da rede, e também não vê os outros manejadores. Lojistas você vê sempre.</div>'+
     '<button class="btn" onclick="salvarNetwork(this)" style="margin-top:14px">Salvar perfil</button></div>');
   bindFoto('np_foto','np_prev');
-  var chk=document.getElementById('np_vis');
-  function sync(){ var ok=!!(val('np_lat')&&val('np_lng')); chk.disabled=false; if(!ok) chk.checked=false; var h=document.getElementById('np_hint'); if(h) h.style.display=ok?'none':'block'; }
+  function sync(){ var ok=!!(val('np_lat')&&val('np_lng')); var h=document.getElementById('np_hint'); if(h) h.style.display=ok?'none':'block'; }
   ['np_lat','np_lng'].forEach(function(id){ document.getElementById(id).addEventListener('input',sync); });
   var h0=document.getElementById('np_hint'); if(h0) h0.style.display=temCoord?'none':'block'; };
-window.salvarNetwork=function(btn){ 
-  var vis=document.getElementById('np_vis').checked;
-  if(vis && !(val('np_lat')&&val('np_lng'))){ toast('Preencha a localização (lat/long) para ficar visível'); return; }
+window.salvarNetwork=function(btn){
+  if(!val('np_nome')||val('np_nome').trim().length<2){ toast('Informe seu nome'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
-  var d={ visivel:vis, whatsapp:val('np_wa'), telefone:val('np_tel'), cidade:val('np_cidade'), bio:val('np_bio'), lat:val('np_lat'), lng:val('np_lng'), sexo:val('np_sexo'), foto:fotoData('np_foto') };
-  server('apiSalvarNetwork',d).then(function(r){ var me=STATE.manejador;
+  /* Sem `visivel` no pacote: o servidor preserva o estado atual. Quem liga e
+     desliga é o botão da faixa do topo. */
+  var d={ nome:val('np_nome').trim(), whatsapp:val('np_wa'), telefone:val('np_tel'), cidade:val('np_cidade'),
+    bio:val('np_bio'), lat:val('np_lat'), lng:val('np_lng'), sexo:val('np_sexo'), foto:fotoData('np_foto') };
+  server('apiSalvarNetwork',d).then(function(r){ var me=STATE.manejador||{};
     me.visivelNetwork=(r&&r.visivel)?'Sim':'Não'; me.whatsapp=d.whatsapp; me.telefone=d.telefone; me.cidade=d.cidade; me.bioNetwork=d.bio; me.latNetwork=d.lat; me.lngNetwork=d.lng; me.sexo=d.sexo;
+    if(r&&r.nome) me.nome=r.nome;          /* o nome volta do servidor já normalizado */
     if(r&&r.fotoUrl) me.fotoUrl=r.fotoUrl;
-    toast(r&&r.bloqueado?'Salvo. Para ficar visível, preencha a localização.':'Perfil salvo ✔'); STATE.stack=['perfilManejador']; render(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar perfil'; }); };
+    if(AUTH.manejador && AUTH.manejador!==me) AUTH.manejador.nome=me.nome;
+    toast(r&&r.bloqueado?'Salvo. Para ficar visível, preencha a localização.':'Perfil salvo ✔');
+    pintarTopStrip(); STATE.stack=['perfilManejador']; render();
+  }).catch(function(e){ btn.disabled=false; btn.textContent='Salvar perfil'; toast((e&&e.message)||'Não foi possível salvar'); }); };
 
 /* ============================================================
    PROMOÇÕES
@@ -7959,7 +7980,7 @@ function iniciar(){ loadingBox('Conectando ao servidor…');
       console.warn('Versão descasada — HTML', APP_VER, '| função', p.apiVer);
       setTimeout(function(){ toast('Atenção: app '+APP_VER+' e servidor '+p.apiVer+' estão em versões diferentes. Atualize a página.'); }, 800);
     }
-    if(AUTH.token){ return server('apiBoot').then(function(b){ aplicarIdiomaDaConta(b.idioma); STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin; STATE.promoInd=b.promoInd||null;
+    if(AUTH.token){ return server('apiBoot').then(function(b){ aplicarIdiomaDaConta(b.idioma); STATE.tipo=b.tipo||'manejador'; STATE.admin=!!b.admin; STATE.promoInd=b.promoInd||null; STATE.login=b.login||'';
         if(STATE.tipo==='empresa'){ STATE.empresa=b.empresa||null; STATE.manejador=null; STATE.stack=['empresa']; }
         else { STATE.manejador=b.manejador; AUTH.manejador=b.manejador; STATE.empresa=null; STATE.stack=['inicio']; }
         aplicarFundo(); render(); iniciarPromoPoll(); })
