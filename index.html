@@ -1005,7 +1005,7 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.0035';
+var APP_VER = 'vJS.270726.0844';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1076,6 +1076,12 @@ var SENHA_REGRA='A senha precisa ter no mínimo 8 caracteres, com letra maiúscu
 function avisoSenha(alvo){
   return '<div class="meta" style="margin:-4px 0 6px">'+trFrase(SENHA_REGRA)+'</div>'+
     '<div id="'+alvo+'" class="meta" style="margin:-2px 0 8px"></div>';
+}
+/* Traduz códigos que o servidor manda para algo que o usuário entende. */
+function msgErro(e){
+  var m=(e&&e.message)||'Erro';
+  if(m==='PERFIL_INCOMPLETO') return trFrase('Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.');
+  return m;
 }
 function senhaForte(s){
   s=String(s||'');
@@ -1947,6 +1953,15 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.':'Your hunter profile has not been created yet. Fill in name and location to unlock this button.',
+    'Disponível apenas para manejadores':'Available for hunters only',
+    'Alcance do anúncio (km)':'Ad reach (km)',
+    'Patrocínios em andamento':'Sponsorships in progress',
+    'Planos de manejador':'Hunter plans',
+    'Planos de empresa':'Business plans',
+    'Recurso':'Feature',
+    'Produtos na vitrine':'Products in the storefront',
+    'Promoções relâmpago por dia':'Flash promotions per day',
     'Cadastro temporariamente fechado':'Sign-ups temporarily closed',
     'Estamos trabalhando para aumentar nossa comunidade e muito em breve iremos liberar para novos membros.':'We are working to grow our community and will open up for new members very soon.',
     'Máximo de contas de manejador':'Maximum hunter accounts',
@@ -3137,6 +3152,15 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.':'Tu perfil de manejador aún no fue creado. Completa nombre y ubicación para habilitar este botón.',
+    'Disponível apenas para manejadores':'Disponible solo para manejadores',
+    'Alcance do anúncio (km)':'Alcance del anuncio (km)',
+    'Patrocínios em andamento':'Patrocinios en curso',
+    'Planos de manejador':'Planes de manejador',
+    'Planos de empresa':'Planes de empresa',
+    'Recurso':'Recurso',
+    'Produtos na vitrine':'Productos en el escaparate',
+    'Promoções relâmpago por dia':'Promociones relámpago por día',
     'Cadastro temporariamente fechado':'Registro cerrado temporalmente',
     'Estamos trabalhando para aumentar nossa comunidade e muito em breve iremos liberar para novos membros.':'Estamos trabajando para ampliar nuestra comunidad y muy pronto abriremos para nuevos miembros.',
     'Máximo de contas de manejador':'Máximo de cuentas de manejador',
@@ -3825,22 +3849,49 @@ function pintarStatusUsuario(){
   alvo.innerHTML=''; alvo.style.display='none';
   _tf();
 }
+/* A ficha de manejador em memória. STATE e AUTH guardam o MESMO objeto, mas
+   se um deles for zerado a mutação otimista ia para um objeto descartável e
+   o botão parecia não responder. */
+function fichaManejador(){ return STATE.manejador || AUTH.manejador || null; }
+/* Sem ficha não há o que ligar ou desligar. A mensagem diz o que falta, em
+   vez de um "não funcionou" genérico. */
+function perfilPronto(){
+  if(STATE.tipo==='empresa'){ toast('Disponível apenas para manejadores'); return false; }
+  var m=fichaManejador();
+  if(m && m.id){ STATE.manejador=m; AUTH.manejador=m; return true; }
+  toast('Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.');
+  go('perfilManejador'); return false;
+}
 window.alternarSalaVisivel=function(){
-  var m=STATE.manejador||{}; var novo=(m.salaVisivel!=='Sim');
+  if(!perfilPronto()) return;
+  var m=fichaManejador(); var novo=(m.salaVisivel!=='Sim');
   m.salaVisivel = novo?'Sim':'Não'; pintarStatusUsuario(); pintarTopStrip();   // resposta imediata
   server('apiSetSalaVisivel', novo)
-    .then(function(){ toast(novo?'Sala de troféu visível ✔':'Sala de troféu oculta');
-      if(STATE.stack[STATE.stack.length-1]==='trofeus') render(); })
-    .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip(); toast((e&&e.message)||'Erro'); });
+    .then(function(r){
+      m.salaVisivel = (r && r.visivel) ? 'Sim' : 'Não';
+      pintarStatusUsuario(); pintarTopStrip();
+      toast(m.salaVisivel==='Sim'?'Sala de troféu visível ✔':'Sala de troféu oculta');
+      if(STATE.stack[STATE.stack.length-1]==='trofeus') render();
+    })
+    .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip();
+      console.warn('alternarSalaVisivel', e); toast(msgErro(e)); });
 };
 window.alternarPerfilRede=function(){
-  var m=STATE.manejador||{}; var novo=(m.visivelNetwork!=='Sim');
+  if(!perfilPronto()) return;
+  var m=fichaManejador(); var novo=(m.visivelNetwork!=='Sim');
   if(novo && !m.latNetwork){ toast('Defina o ponto do seu perfil no mapa antes de aparecer na rede'); go('perfilManejador'); return; }
   m.visivelNetwork = novo?'Sim':'Não'; pintarStatusUsuario(); pintarTopStrip();
   server('apiSetVisivelNetwork', novo)
-    .then(function(r){ if(r && r.visivel===false && novo){ m.visivelNetwork='Não'; pintarStatusUsuario(); toast(r.motivo||'Não foi possível aparecer na rede'); return; }
-      toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede'); NETDATA=null; pintarTopStrip(); })
-    .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); toast((e&&e.message)||'Erro'); });
+    /* O servidor é a verdade: o repintar final usa o que ELE devolveu, não o
+       palpite otimista. */
+    .then(function(r){
+      m.visivelNetwork = (r && r.visivel) ? 'Sim' : 'Não';
+      pintarStatusUsuario(); pintarTopStrip(); NETDATA=null;
+      if(r && r.visivel===false && novo){ toast(r.motivo||'Não foi possível aparecer na rede'); return; }
+      toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede');
+    })
+    .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip();
+      console.warn('alternarPerfilRede', e); toast(msgErro(e)); });
 };
 var SALAS_COMPART_QTD=0;
 /* Faixa acima do menu suspenso: saldos, chave e atalhos.
@@ -5823,21 +5874,35 @@ function pintarPlanosCortesia(planos){
 }
 function carregarLimites(){ server('apiListarLimites').then(function(d){ LIMDADOS=d; pintarLimites(); pintarPlanosCortesia(d.todosPlanos); })
   .catch(function(){ var el=document.getElementById('limBox'); if(el) el.innerHTML='<div class="meta">Não foi possível carregar.</div>'; }); }
-function pintarLimites(){ var el=document.getElementById('limBox'); if(!el||!LIMDADOS) return;
-  var cab='<tr><th>Recurso</th>'+LIMDADOS.planos.map(function(p){return '<th>'+esc(p.nome)+'</th>';}).join('')+'</tr>';
-  var linhas=LIMDADOS.recursos.map(function(r){
-    return '<tr><td>'+esc(r.rotulo)+(r.tipo==='liga'?' <span class="meta">(0 ou 1)</span>':'')+'</td>'+
-      LIMDADOS.planos.map(function(p){
+/* Duas tabelas: os planos de manejador e, abaixo, os de empresa. Os recursos
+   são diferentes, então misturar as colunas deixaria a grade quase vazia. */
+function tabelaLimites(recursos,planos){
+  var cab='<tr><th>'+trFrase('Recurso')+'</th>'+planos.map(function(p){return '<th>'+esc(p.nome)+'</th>';}).join('')+'</tr>';
+  var linhas=recursos.map(function(r){
+    return '<tr><td>'+esc(r.rotulo)+'</td>'+
+      planos.map(function(p){
         return '<td><input id="lim_'+p.plano+'_'+r.chave+'" inputmode="numeric" value="'+p.valores[r.chave]+'"></td>';
       }).join('')+'</tr>';
   }).join('');
-  el.innerHTML='<div class="lim-wrap"><table class="lim-tab">'+cab+linhas+'</table></div>'+
+  return '<div class="lim-wrap"><table class="lim-tab">'+cab+linhas+'</table></div>';
+}
+function pintarLimites(){ var el=document.getElementById('limBox'); if(!el||!LIMDADOS) return;
+  var emp = (LIMDADOS.recursosEmpresa&&LIMDADOS.planosEmpresa)
+    ? '<h4 style="margin:16px 0 4px">'+trFrase('Planos de empresa')+'</h4>'+
+      tabelaLimites(LIMDADOS.recursosEmpresa,LIMDADOS.planosEmpresa)
+    : '';
+  el.innerHTML='<h4 style="margin:2px 0 4px">'+trFrase('Planos de manejador')+'</h4>'+
+    tabelaLimites(LIMDADOS.recursos,LIMDADOS.planos)+emp+
     '<div class="row" style="gap:8px;margin-top:12px"><button class="btn grow" onclick="salvarLimites(this)">Salvar acessos</button>'+
     '<button class="btn sec" style="width:auto" onclick="restaurarLimites()">Restaurar padrão</button></div>'; }
 window.salvarLimites=function(btn){ if(!LIMDADOS)return;
   var mapa={};
-  LIMDADOS.planos.forEach(function(p){ mapa[p.plano]={};
-    LIMDADOS.recursos.forEach(function(r){ var e=document.getElementById('lim_'+p.plano+'_'+r.chave); if(e) mapa[p.plano][r.chave]=e.value; }); });
+  function colher(planos,recursos){
+    (planos||[]).forEach(function(p){ mapa[p.plano]=mapa[p.plano]||{};
+      (recursos||[]).forEach(function(r){ var e=document.getElementById('lim_'+p.plano+'_'+r.chave); if(e) mapa[p.plano][r.chave]=e.value; }); });
+  }
+  colher(LIMDADOS.planos,LIMDADOS.recursos);
+  colher(LIMDADOS.planosEmpresa,LIMDADOS.recursosEmpresa);
   btn.disabled=true; btn.textContent='Salvando…';
   server('apiSalvarLimites',mapa).then(function(){ toast('Acessos atualizados ✔'); btn.disabled=false; btn.textContent='Salvar acessos'; carregarLimites(); carregarPlano(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Salvar acessos'; toast((e&&e.message)||'Erro'); }); };
