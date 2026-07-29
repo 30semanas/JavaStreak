@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>JavaStreak</title>
+  <!-- PWA: sem estas três linhas o site não é instalável, e sem ser instalável
+       o app da Play Store (TWA) não passa na validação do Google. -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#141b14">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -58,6 +64,13 @@
     color:var(--txt2);font-size:14px;pointer-events:none}
   input.moeda{padding-left:40px!important;text-align:right;font-variant-numeric:tabular-nums}
   input.ro{background:#efe9dc;color:var(--txt2);cursor:not-allowed}
+  .data-wrap{position:relative;display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
+  .data-wrap .data-txt{flex:1;margin:0}
+  .data-wrap .data-txt.ruim{border-color:var(--danger);background:#fdecea}
+  .data-btn{position:relative;flex:0 0 48px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--linha);border-radius:12px;background:var(--areia);cursor:pointer}
+  .data-btn .ic-svg{margin:0;pointer-events:none}
+  .data-iso{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;cursor:pointer}
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
   .mk-svgwrap{background:none;border:0}
   .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
@@ -1016,7 +1029,7 @@
     <h3 style="margin:0 0 8px">📍 Marcar ponto</h3>
     <label>Tipo</label><select id="mk_tipo"></select>
     <label>Descrição / aviso</label><input id="mk_desc" placeholder="Ex: ponto de referência, atenção…">
-    <label>Foto (opcional)</label><input id="mk_foto" type="file" accept="image/*" capture="environment"><img id="mk_prev" class="foto-prev">
+    <label>Foto (opcional)</label><input id="mk_foto" type="file" accept="image/*"><img id="mk_prev" class="foto-prev">
     <button class="btn" onclick="salvarMarcacao(this)">Salvar ponto</button>
     <button class="btn sec" onclick="fecharMark()" style="margin-top:8px">Cancelar</button>
   </div></div>
@@ -1033,7 +1046,14 @@
 /* ============================================================
    ESTADO, SESSÃO E COMUNICAÇÃO
    ============================================================ */
-var APP_VER = 'vJS.270726.1339';
+/* Service worker: só registra em https (ou localhost). Falha aqui não pode
+   derrubar o app, por isso o catch vazio. */
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+var APP_VER = 'vJS.290726.1710';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1981,6 +2001,23 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    '🗺️ Ruas':'🗺️ Streets',
+    '🛰️ Satélite':'🛰️ Satellite',
+    '🛰️ Satélite + nomes':'🛰️ Satellite + labels',
+    '⛰️ Relevo':'⛰️ Terrain',
+    'Escolher no calendário':'Pick from the calendar',
+    '🧪 Diagnóstico do meu perfil':'🧪 My profile diagnostics',
+    'Mostra o que a sessão diz, o que a tabela diz, e se as colunas existem no banco. Use quando os botões de visibilidade não responderem.':'Shows what the session says, what the table says, and whether the columns exist in the database. Use it when the visibility buttons do not respond.',
+    'Rodar diagnóstico':'Run diagnostics',
+    'Rodando…':'Running…',
+    'manejadorId na sessão':'manejadorId in the session',
+    'manejadorId no usuário':'manejadorId on the user',
+    'Os dois batem':'Both match',
+    'Ficha da sessão existe':'Session record exists',
+    'Ficha do usuário existe':'User record exists',
+    'Ponto no mapa definido':'Map point set',
+    'É admin':'Is admin',
+    'Perfil na rede exige ponto no mapa. Sala de troféu não exige nada além da ficha.':'Network profile requires a map point. The trophy room requires nothing beyond the record.',
     'ilimitado':'unlimited',
     'Vitrine com':'Storefront with',
     'produtos':'products',
@@ -3191,6 +3228,23 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    '🗺️ Ruas':'🗺️ Calles',
+    '🛰️ Satélite':'🛰️ Satélite',
+    '🛰️ Satélite + nomes':'🛰️ Satélite + nombres',
+    '⛰️ Relevo':'⛰️ Relieve',
+    'Escolher no calendário':'Elegir en el calendario',
+    '🧪 Diagnóstico do meu perfil':'🧪 Diagnóstico de mi perfil',
+    'Mostra o que a sessão diz, o que a tabela diz, e se as colunas existem no banco. Use quando os botões de visibilidade não responderem.':'Muestra lo que dice la sesión, lo que dice la tabla, y si las columnas existen en la base. Úsalo cuando los botones de visibilidad no respondan.',
+    'Rodar diagnóstico':'Ejecutar diagnóstico',
+    'Rodando…':'Ejecutando…',
+    'manejadorId na sessão':'manejadorId en la sesión',
+    'manejadorId no usuário':'manejadorId en el usuario',
+    'Os dois batem':'Los dos coinciden',
+    'Ficha da sessão existe':'La ficha de la sesión existe',
+    'Ficha do usuário existe':'La ficha del usuario existe',
+    'Ponto no mapa definido':'Punto en el mapa definido',
+    'É admin':'Es admin',
+    'Perfil na rede exige ponto no mapa. Sala de troféu não exige nada além da ficha.':'El perfil en la red exige punto en el mapa. La sala de trofeos no exige nada más que la ficha.',
     'ilimitado':'ilimitado',
     'Vitrine com':'Escaparate con',
     'produtos':'productos',
@@ -4269,6 +4323,50 @@ function moedaNum(id){
   var s=String(val(id)||'').replace(/\./g,'').replace(',','.');
   var n=parseFloat(s); return isNaN(n)?null:n;
 }
+/* ---- Campo de data ----
+   Dois jeitos no mesmo campo: digitar dd/mm/aaaa (bem mais rápido no celular
+   do que rolar o seletor nativo) ou tocar no calendário. O <input type="date">
+   continua existindo com o MESMO id, escondido atrás do botão — assim todo
+   val('x_data') que já existia continua lendo o ISO, sem mudar nada. */
+function dataBR(iso){
+  var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||''));
+  return m ? m[3]+'/'+m[2]+'/'+m[1] : '';
+}
+function dataISO(br){
+  var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(br||'').trim());
+  if(!m) return '';
+  var d=+m[1], mo=+m[2], a=+m[3];
+  if(mo<1||mo>12||d<1||d>31||a<1900||a>2200) return '';
+  var dt=new Date(Date.UTC(a,mo-1,d));
+  /* 31/02 passa na conta acima, mas o Date corrige a data — se corrigiu, é inválida. */
+  if(dt.getUTCDate()!==d||dt.getUTCMonth()!==mo-1) return '';
+  return m[3]+'-'+m[2]+'-'+m[1];
+}
+function campoData(id,label,valor,obrig){
+  var iso=String(valor||'').substring(0,10);
+  return '<label>'+label+(obrig?' *':'')+'</label>'+
+    '<div class="data-wrap">'+
+      '<input id="'+id+'_txt" class="data-txt" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" '+
+        'value="'+dataBR(iso)+'" oninput="dataDigitada(this)">'+
+      '<span class="data-btn" title="'+trFrase('Escolher no calendário')+'">'+ico('calendario',18)+
+        '<input type="date" id="'+id+'" class="data-iso" value="'+esc(iso)+'" onchange="dataEscolhida(this)"></span>'+
+    '</div>';
+}
+window.dataDigitada=function(el){
+  var d=String(el.value).replace(/\D/g,'').slice(0,8), out=d;
+  if(d.length>4) out=d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4);
+  else if(d.length>2) out=d.slice(0,2)+'/'+d.slice(2);
+  el.value=out;
+  var alvo=document.getElementById(el.id.replace(/_txt$/,''));
+  if(!alvo) return;
+  var iso=dataISO(out);
+  alvo.value=iso;                                  /* vazio limpa o campo real */
+  el.classList.toggle('ruim', out.length===10 && !iso);
+};
+window.dataEscolhida=function(el){
+  var t=document.getElementById(el.id+'_txt');
+  if(t){ t.value=dataBR(el.value); t.classList.remove('ruim'); }
+};
 function gpsButton(a,b){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\')">🗺️ Indicar no mapa</button></div>'; }
 var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null;
 /* Limites e cevas do manejo aberto. Servem ao picker do abate e ao desenho de
@@ -4345,7 +4443,10 @@ function pegarGps(a,b,btn){ if(!navigator.geolocation){toast('GPS não suportado
   function(e){ btn.textContent=t; btn.disabled=false; toast('Falha no GPS: '+e.message); }, {enableHighAccuracy:true,timeout:12000}); }
 function mapaLink(lat,lng){ if(!lat||!lng)return''; return '<a class="mapa" target="_blank" href="https://www.google.com/maps?q='+lat+','+lng+'">🗺️ '+lat+', '+lng+'</a>'; }
 function val(id){ var e=document.getElementById(id); return e?String(e.value).trim():''; }
-function setVal(id,v){ var e=document.getElementById(id); if(e&&v!=null&&v!=='') e.value=v; }
+function setVal(id,v){ var e=document.getElementById(id); if(!e||v==null||v==='') return; e.value=v;
+  /* Campo de data preenchido por código: o texto ao lado precisa acompanhar,
+     porque atribuir .value não dispara onchange. */
+  if(e.type==='date'){ var t=document.getElementById(id+'_txt'); if(t) t.value=dataBR(v); } }
 function pv(f){ return (EDIT && EDIT[f]!=null) ? EDIT[f] : ''; }
 function pvCoord(f){ var v=pv(f); if(v==='') return ''; var n=parseFloat(String(v).replace(',','.')); if(isNaN(n)) return '';
   if(f==='lat' && (n<-90||n>90)) return ''; if(f==='lng' && (n<-180||n>180)) return ''; return v; }
@@ -4371,6 +4472,9 @@ window.delItem=function(ent,id){ if(!confirm('Excluir este item? Esta ação nã
 function novo(view){ EDIT=null; nav(view); }
 
 /* foto -> dataURL (redimensiona/comprime) */
+/* Sem `capture` nos inputs de foto: com ele o Android e o iOS abrem a câmera
+   direto e não oferecem a galeria. Sem ele, o próprio sistema pergunta —
+   câmera, galeria ou arquivos. Foto de abate quase sempre já está na galeria. */
 function bindFoto(inputId,prevId){
   var inp=document.getElementById(inputId), prev=document.getElementById(prevId); inp._data='';
   inp.addEventListener('change',function(){ var f=inp.files[0]; if(!f)return; var r=new FileReader();
@@ -4670,8 +4774,8 @@ VIEWS.docForm=function(){ var d=DOCEDIT||{}, cat=DOCCAT;
     '<label>Tipo de documento *</label><select id="dc_tipo">'+tipos.map(function(t){ return '<option'+(d.tipo===t?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+'</select>'+
     vinc+
     '<label>Número / registro</label><input id="dc_num" value="'+esc(d.numero||'')+'">'+
-    '<div class="two"><div><label>Emissão</label><input id="dc_emi" type="date" value="'+esc((d.emissao||'').slice(0,10))+'"></div>'+
-    '<div><label>Vencimento</label><input id="dc_venc" type="date" value="'+esc((d.vencimento||'').slice(0,10))+'"></div></div>'+
+    '<div class="two"><div>'+campoData('dc_emi','Emissão',(d.emissao||'').slice(0,10))+'</div>'+
+    '<div>'+campoData('dc_venc','Vencimento',(d.vencimento||'').slice(0,10))+'</div></div>'+
     '<div class="meta" style="margin:-4px 0 8px">Com vencimento preenchido, o documento aparece na sua Agenda.</div>'+
     '<label>Observações</label><textarea id="dc_obs">'+esc(d.obs||'')+'</textarea>'+
     '<button class="btn" onclick="salvarDoc(this)">'+(DOCEDIT?'Salvar alterações':'Adicionar')+'</button>'+
@@ -4698,7 +4802,7 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>Proprietário</label><input id="pr_dono" value="'+esc(p.dono||'')+'" placeholder="Nome do dono">'+
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
     '<label>Nº da autorização de manejo</label><input id="pr_autnum" value="'+esc(p.autorizacaoNum||'')+'">'+
-    '<label>Validade da autorização</label><input id="pr_autval" type="date" value="'+esc((p.autorizacaoValidade||'').slice(0,10))+'">'+
+    campoData('pr_autval','Validade da autorização',(p.autorizacaoValidade||'').slice(0,10))+
     '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
     (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
@@ -5159,7 +5263,7 @@ VIEWS.registrar=function(){ setTitulo(t('cad_criar_manej')); setCrumb(t('criarCo
     blocoIndicacao()+'</div>'+
     '<div class="card"><h3>Dados do manejador</h3>'+
     '<label>Nome completo *</label><input id="f_nome" placeholder="Nome do manejador">'+
-    '<div class="two"><div><label>Data de nascimento *</label><input id="f_nasc" type="date"></div>'+
+    '<div class="two"><div>'+campoData('f_nasc','Data de nascimento','',true)+'</div>'+
     '<div><label>Sexo *</label><select id="f_sexo"><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></div></div>'+
     '<div class="two"><div><label>CPF</label><input id="f_cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" oninput="mCPF(this)"></div>'+
     '<div><label>CR</label><input id="f_cr"></div></div>'+
@@ -5629,6 +5733,8 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
       '<button class="btn" onclick="adminReset(this)">Redefinir senha</button><div id="rpRes" style="margin-top:10px"></div></div>'+
       '<div class="card" data-adm="planos"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83e\udd1d Indica\u00e7\u00f5es</h3><div class="meta">Quem indicou quem e quantos dias j\u00e1 foram creditados.</div></div><button class="ib" onclick="carregarIndicacoes()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<div id="indBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\ud83e\uddea Diagn\u00f3stico do meu perfil</h3><div class="meta" style="margin-bottom:8px">Mostra o que a sess\u00e3o diz, o que a tabela diz, e se as colunas existem no banco. Use quando os bot\u00f5es de visibilidade n\u00e3o responderem.</div>'+
+      '<button class="btn sec" onclick="diagPerfil(this)">Rodar diagn\u00f3stico</button><div id="dpRes" style="margin-top:10px"></div></div>'+
       '<div class="card" data-adm="ajustes"><h3 style="margin:0 0 4px">\u2705 Confirmar conta na m\u00e3o</h3><div class="meta" style="margin-bottom:8px">Sa\u00edda de emerg\u00eancia para quando o e-mail n\u00e3o chega. Libera o acesso e paga a indica\u00e7\u00e3o pendente.</div>'+
       '<label>E-mail do usu\u00e1rio *</label><input id="cf_login" type="email" placeholder="email@cadastrado.com">'+
       '<button class="btn sec" onclick="adminConfirmar(this)">Confirmar conta</button><div id="cfRes" style="margin-top:10px"></div></div>'+
@@ -5736,6 +5842,41 @@ window.darCortesia=function(btn){ var d=val('ct_destino');
   .catch(function(e){ btn.disabled=false; btn.textContent='Liberar acesso'; toast((e&&e.message)||'Erro'); }); };
 window.encerrarAss=function(id){ if(!confirm('Encerrar este acesso?'))return; server('apiEncerrarAssinatura',id).then(function(){ toast('Encerrado'); carregarAssinaturas(); }); };
 var LIMDADOS=null;
+window.diagPerfil=function(btn){
+  var el=document.getElementById('dpRes');
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Rodando…');
+  el.innerHTML='<div class="loading"><div class="spin"></div></div>';
+  server('apiDiagPerfil').then(function(d){
+    btn.disabled=false; btn.textContent=rot;
+    function linha(rot,val,bom){
+      return '<div class="row" style="padding:4px 0;border-bottom:1px solid var(--linha)">'+
+        '<div class="grow meta">'+trFrase(rot)+'</div>'+
+        '<div class="no-i18n" style="font-weight:700;color:'+(bom===false?'var(--danger)':(bom===true?'var(--verde)':'inherit'))+'">'+
+        esc(String(val===''||val==null?'—':val))+'</div></div>';
+    }
+    var colunas=Object.keys(d).filter(function(k){ return k.indexOf('coluna_')===0; });
+    el.innerHTML='<div class="card" style="margin:0">'+
+      linha('E-mail da conta', d.login)+
+      linha('Tipo', d.tipo)+
+      linha('É admin', d.admin?'sim':'não')+
+      linha('manejadorId na sessão', d.idNaSessao)+
+      linha('manejadorId no usuário', d.idNoUsuario)+
+      linha('Os dois batem', d.idsBatem?'sim':'NÃO', d.idsBatem)+
+      linha('Ficha da sessão existe', d.fichaDaSessaoExiste?'sim':'NÃO', d.fichaDaSessaoExiste)+
+      linha('Ficha do usuário existe', d.fichaDoUsuarioExiste?'sim':'NÃO', d.fichaDoUsuarioExiste)+
+      linha('Nome', d.nome, !!d.nome)+
+      linha('Ponto no mapa definido', d.temPontoNoMapa?'sim':'NÃO', d.temPontoNoMapa)+
+      linha('visivelNetwork', d.visivelNetwork)+
+      linha('salaVisivel', d.salaVisivel)+
+      colunas.map(function(k){
+        return linha('Coluna '+k.replace('coluna_',''), d[k], d[k]==='ok');
+      }).join('')+
+      '<div class="meta" style="margin-top:10px">'+
+      trFrase('Perfil na rede exige ponto no mapa. Sala de troféu não exige nada além da ficha.')+'</div></div>';
+    traduzirDOM(el);
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot;
+    el.innerHTML='<div class="meta no-i18n">'+esc((e&&e.message)||'')+'</div>'; });
+};
 window.adminConfirmar=function(btn){
   var el=document.getElementById('cfRes'), lg=val('cf_login');
   if(!lg){ el.innerHTML='<div class="meta">Informe o e-mail</div>'; traduzirDOM(el); return; }
@@ -6702,7 +6843,7 @@ VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'
     gpsButton('c_lat','c_lng')+'<label>Observações</label><textarea id="c_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(do comedouro/ponto)')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
-    '<input id="c_foto" type="file" accept="image/*" capture="environment"><img id="c_prev" class="foto-prev">'+
+    '<input id="c_foto" type="file" accept="image/*"><img id="c_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarCeva(this)">'+(ed?'Salvar alterações':'Salvar ceva')+'</button></div>');
   if(ed) setVal('c_tipo',EDIT.tipo); bindFoto('c_foto','c_prev'); };
 window.salvarCeva=function(btn){ if(!val('c_nome')){toast('Informe o nome');return;} btn.disabled=true; btn.textContent='Salvando…';
@@ -6725,10 +6866,10 @@ VIEWS.alimentoForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar alimento':'Re
   app('<div class="card"><label>Tipo *</label><select id="a_tipo">'+TIPOS_ALIM.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<div class="two"><div><label>Quantidade</label><input id="a_qtd" inputmode="decimal" value="'+esc(pv('quantidade'))+'"></div>'+
     '<div><label>Unidade</label><select id="a_uni"><option>kg</option><option>saco(s)</option><option>litro(s)</option><option>lata(s)</option></select></div></div>'+
-    '<label>Data</label><input id="a_data" type="date">'+
+    campoData('a_data','Data')+
     '<label>Observações</label><textarea id="a_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarAlimento(this)">'+(ed?'Salvar':'Salvar')+'</button></div>');
-  document.getElementById('a_data').value = ed && EDIT.data ? String(EDIT.data).substring(0,10) : new Date().toISOString().substring(0,10);
+  setVal('a_data', ed && EDIT.data ? String(EDIT.data).substring(0,10) : diaHoje());
   if(ed){ setVal('a_tipo',EDIT.tipo); setVal('a_uni',EDIT.unidade); } };
 window.salvarAlimento=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
   var d={cevaId:STATE.ceva.id,tipo:val('a_tipo'),quantidade:val('a_qtd'),unidade:val('a_uni'),data:val('a_data'),obs:val('a_obs')};
@@ -6744,9 +6885,9 @@ VIEWS.nivelForm=function(){ var ed=!!EDIT; setTitulo('Nível do tratadouro'); se
   var vv=ed?(parseFloat(EDIT.percentual)||50):50;
   app('<div class="card"><label>Percentual no tratadouro *</label><input id="n_perc" type="range" min="0" max="100" value="'+vv+'" oninput="document.getElementById(\'n_lbl\').textContent=this.value+\'%\'">'+
     '<div style="text-align:center;font-size:30px;font-weight:700;color:var(--verde)" id="n_lbl">'+vv+'%</div>'+
-    '<label>Data</label><input id="n_data" type="date"><label>Observações</label><textarea id="n_obs">'+esc(pv('obs'))+'</textarea>'+
+    campoData('n_data','Data')+'<label>Observações</label><textarea id="n_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarNivel(this)">Salvar leitura</button></div>');
-  document.getElementById('n_data').value = ed && EDIT.data ? String(EDIT.data).substring(0,10) : new Date().toISOString().substring(0,10); };
+  setVal('n_data', ed && EDIT.data ? String(EDIT.data).substring(0,10) : diaHoje()); };
 window.salvarNivel=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
   var d={cevaId:STATE.ceva.id,percentual:val('n_perc'),data:val('n_data'),obs:val('n_obs')};
   var p=EDIT? server('apiEditar','nivel',EDIT.id,d) : server('apiRegistrarNivel',d);
@@ -6862,7 +7003,7 @@ VIEWS.manutForm=function(){ var ed=!!EDIT; var t=STATE.transporte||{};
     '<input type="hidden" id="mt_data">'+
     '<div class="two">'+
       '<div><label>'+(unid==='h'?'Horas de motor':'KM atual')+'</label><input id="mt_km" inputmode="numeric" value="'+esc(pv('km'))+'"></div>'+
-      '<div><label>Próxima data</label><input id="mt_prox" type="date"></div>'+
+      '<div>'+campoData('mt_prox','Próxima data')+'</div>'+
     '</div>'+
     '<label>Observações</label><textarea id="mt_obs" rows="4" style="width:100%">'+esc(pv('obs'))+'</textarea>'+
     '<div class="two" style="margin-top:10px">'+
@@ -6883,7 +7024,7 @@ VIEWS.transpSaudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde do cavalo'); 
   app('<div class="card"><label>Tipo *</label><select id="ts_tipo">'+TIPOS_SAUDE_CAVALO.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="ts_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: Influenza equina, casqueamento…">'+
     '<input type="hidden" id="ts_data">'+
-    '<label>Próxima data</label><input id="ts_prox" type="date">'+
+    campoData('ts_prox','Próxima data')+
     '<div class="meta" style="margin:-4px 0 8px">Registrado hoje automaticamente. Informe só quando repetir.</div>'+
     '<label>Observações</label><textarea id="ts_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarSaudeTransp(this)">Salvar</button></div>');
@@ -6909,11 +7050,11 @@ VIEWS.transpForm=function(){ var ed=!!EDIT; var cat=ed?categoriaTransp(EDIT.tipo
       ? '<input type="hidden" id="t_tipo" value="Cavalo">'
       : '<label>Tipo *</label><select id="t_tipo">'+tiposDaCat(cat).map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>')+
     '<label>'+(soCavalo?'Nome do cavalo *':'Identificação / apelido')+'</label><input id="t_id" value="'+esc(pv('identificacao'))+'" placeholder="'+(soCavalo?'Ex: Trovão':'Ex: Placa ABC-1234')+'">'+
-    (soCavalo?'<label>Data de nascimento</label><input id="t_nasc" type="date" value="'+esc(String(pv('dataNascimento')||'').substring(0,10))+'">':'')+
+    (soCavalo?campoData('t_nasc','Data de nascimento',String(pv('dataNascimento')||'').substring(0,10)):'')+
     '<label>Observações</label><textarea id="t_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
-    '<input id="t_foto" type="file" accept="image/*" capture="environment"><img id="t_prev" class="foto-prev">'+
+    '<input id="t_foto" type="file" accept="image/*"><img id="t_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarTransp(this)">'+(ed?'Salvar alterações':'Salvar transporte')+'</button></div>');
   if(ed&&!soCavalo) setVal('t_tipo',EDIT.tipo); bindFoto('t_foto','t_prev'); };
 window.salvarTransp=function(btn){ btn.disabled=true; btn.textContent='Salvando…';
@@ -7459,11 +7600,11 @@ VIEWS.caoForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar cão':'Novo cão')
   app('<div class="card"><label>Nome *</label><input id="d_nome" value="'+esc(pv('nome'))+'">'+
     '<label>Função *</label><select id="d_func">'+FUNCOES_CAO.map(function(f){return '<option>'+f+'</option>';}).join('')+'</select>'+
     '<div class="two"><div><label>Raça</label><input id="d_raca" value="'+esc(pv('raca'))+'"></div><div><label>Sexo</label><select id="d_sexo"><option>Macho</option><option>Fêmea</option></select></div></div>'+
-    '<label>Data de nascimento</label><input id="d_nasc" type="date">'+
+    campoData('d_nasc','Data de nascimento')+
     '<label>Observações</label><textarea id="d_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
-    '<input id="d_foto" type="file" accept="image/*" capture="environment"><img id="d_prev" class="foto-prev">'+
+    '<input id="d_foto" type="file" accept="image/*"><img id="d_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarCao(this)">'+(ed?'Salvar alterações':'Salvar cão')+'</button></div>');
   if(ed){ setVal('d_func',EDIT.funcao); setVal('d_sexo',EDIT.sexo); if(EDIT.dataNascimento) setVal('d_nasc',String(EDIT.dataNascimento).substring(0,10)); }
   bindFoto('d_foto','d_prev'); };
@@ -7487,7 +7628,7 @@ VIEWS.saudeForm=function(){ var ed=!!EDIT; setTitulo('Saúde / Vacina'); setCrum
   app('<div class="card"><label>Tipo *</label><select id="s_tipo">'+TIPOS_SAUDE.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<label>Descrição</label><input id="s_desc" value="'+esc(pv('descricao'))+'" placeholder="Ex: V10, Raiva…">'+
     '<input type="hidden" id="s_data">'+
-    '<label>Próxima data</label><input id="s_prox" type="date">'+
+    campoData('s_prox','Próxima data')+
     '<div class="meta" style="margin:-4px 0 8px">Registrado hoje automaticamente. Informe só quando repetir.</div>'+
     '<label>Observações</label><textarea id="s_obs">'+esc(pv('obs'))+'</textarea>'+
     '<button class="btn" onclick="salvarSaude(this)">Salvar</button></div>');
@@ -8082,7 +8223,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<label>Observações</label><textarea id="ab_obs">'+esc(pv('obs'))+'</textarea>'+
         '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(opcional)')+'</label>'+
         (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
-        '<input id="ab_foto" type="file" accept="image/*" capture="environment"><img id="ab_prev" class="foto-prev">'+
+        '<input id="ab_foto" type="file" accept="image/*"><img id="ab_prev" class="foto-prev">'+
         '<button class="btn" onclick="salvarAbate(this)">'+(ed?'Salvar alterações':'Registrar abate')+'</button></div>');
     document.getElementById('ab_dh').value = ed&&EDIT.dataHora?String(EDIT.dataHora).substring(0,16):nowLocal();
     if(ed) setVal('ab_sexo',EDIT.sexo);
@@ -8235,12 +8376,40 @@ function resetarFiltrosMapa(){ for(var k in MAPFILTER_PADRAO) MAPFILTER[k]=MAPFI
 function ajustarFiltroPorPerfil(){ if(STATE.tipo==='empresa'){ MAPFILTER.espera=false; MAPFILTER.armadilha=false; MAPFILTER.busca=false; MAPFILTER.canil=false; MAPFILTER.propriedade=false; MAPFILTER.rede=true; } }
 var NETDATA=null;
 function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace(',','.')); return isNaN(n)?null:n; }
+/* Camadas de todos os mapas do app. Uma função só, usada pelos nove mapas.
+
+   ZOOM: `maxNativeZoom` é até onde o servidor tem imagem; `maxZoom` é até onde
+   o Leaflet deixa aproximar, ampliando o último azulejo. Passar de 19 para 21
+   não traz detalhe novo, mas permite posicionar o dedo com precisão — que é o
+   que faz falta ao marcar ceva e abate no celular.
+
+   NOMES: satélite puro não tem rótulo, então bairro e rua ficavam invisíveis
+   justamente na camada mais útil no campo. A opção "Satélite + nomes" põe os
+   rótulos do Esri por cima da imagem. */
 function addBase(map, def){
-  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
-  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap'});
-  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'});
-  var layers={'🗺️ Ruas':ruas,'⛰️ Relevo':relevo,'🛰️ Satélite':sat};
-  ((def==='relevo'?relevo:(def==='sat'?sat:ruas))).addTo(map);
+  var SUB={subdomains:'abc'};
+  var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {maxNativeZoom:19,maxZoom:21,attribution:'© OpenStreetMap'});
+  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    {maxNativeZoom:17,maxZoom:21,attribution:'© OpenTopoMap'});
+  var satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  var sat=L.tileLayer(satUrl,{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'});
+  /* Híbrido: a mesma imagem com uma camada de rótulos em cima. */
+  var hibrido=L.layerGroup([
+    L.tileLayer(satUrl,{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'}),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      {maxNativeZoom:19,maxZoom:21,attribution:'Labels © Esri'})
+  ]);
+  var layers={};
+  layers[trFrase('🗺️ Ruas')]=ruas;
+  layers[trFrase('🛰️ Satélite + nomes')]=hibrido;
+  layers[trFrase('🛰️ Satélite')]=sat;
+  layers[trFrase('⛰️ Relevo')]=relevo;
+  var escolhida = (def==='relevo'?relevo:(def==='sat'?sat:(def==='hibrido'?hibrido:ruas)));
+  escolhida.addTo(map);
+  /* O mapa nasce com o teto do Leaflet (18). Sem subir aqui, o maxZoom das
+     camadas não tem efeito nenhum. */
+  try{ map.setMaxZoom(21); }catch(_){ }
   L.control.layers(layers,null,{position:'topright',collapsed:true}).addTo(map);
   /* Popup do mapa nasce fora do #app: iconiza na hora que abre. */
   try{ map.on('popupopen', function(e){ try{ iconizar(e.popup.getElement()); }catch(_){ } }); }catch(_){ }
