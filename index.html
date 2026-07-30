@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1600';
+var APP_VER = 'vJS.300726.1609';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1159,6 +1159,11 @@ function avisoSenha(alvo){
 function msgErro(e){
   var m=(e&&e.message)||'Erro';
   if(m==='PERFIL_INCOMPLETO') return trFrase('Seu perfil de manejador ainda não foi criado. Preencha nome e localização para liberar este botão.');
+  if(m==='PROPRIEDADE_OBRIGATORIA') return trFrase('Escolha a propriedade onde fica esta ceva');
+  var pipe=m.indexOf('|'), cod=pipe>0?m.slice(0,pipe):m, nome=pipe>0?m.slice(pipe+1):'';
+  if(cod==='PROP_SEM_LIMITE') return trFrase('Esta propriedade não tem limite desenhado e não pode receber ceva.');
+  if(cod==='PROP_IRREGULAR')  return trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.');
+  if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   return m;
 }
 function senhaForte(s){
@@ -1560,6 +1565,15 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'escolha a propriedade':'choose the property',
+    'irregular':'irregular',
+    'Esta propriedade não tem limite desenhado e não pode receber ceva.':'This property has no boundary drawn and cannot host a feeder.',
+    'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.':'This property is irregular (permit expired or missing) and cannot host a feeder.',
+    'A ceva precisa ficar dentro do limite desenhado desta propriedade.':'The feeder must sit inside the drawn boundary of this property.',
+    'Escolha a propriedade onde fica esta ceva':'Choose the property this feeder belongs to',
+    'Marque a localização da ceva':'Mark the feeder location',
+    'Este ponto está fora do limite desenhado de':'This point is outside the drawn boundary of',
+    'Salvar ceva':'Save feeder',
     'Ruas':'Streets',
     'Satélite':'Satellite',
     'Autorização IBAMA':'IBAMA permit',
@@ -2830,6 +2844,15 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'escolha a propriedade':'elige la propiedad',
+    'irregular':'irregular',
+    'Esta propriedade não tem limite desenhado e não pode receber ceva.':'Esta propiedad no tiene límite dibujado y no puede recibir comedero.',
+    'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.':'Esta propiedad está irregular (autorización vencida o faltante) y no puede recibir comedero.',
+    'A ceva precisa ficar dentro do limite desenhado desta propriedade.':'El comedero debe quedar dentro del límite dibujado de esta propiedad.',
+    'Escolha a propriedade onde fica esta ceva':'Elige la propiedad donde está este comedero',
+    'Marque a localização da ceva':'Marca la ubicación del comedero',
+    'Este ponto está fora do limite desenhado de':'Este punto está fuera del límite dibujado de',
+    'Salvar ceva':'Guardar comedero',
     'Ruas':'Calles',
     'Satélite':'Satélite',
     'Autorização IBAMA':'Autorización IBAMA',
@@ -7143,8 +7166,39 @@ VIEWS.espera=function(){ setTitulo('Espera – Cevas'); setCrumb('Manejo','Esper
       : '<div class="empty"><div class="big">🌽</div>Nenhuma ceva cadastrada.</div>';
     app(html); fab(botaoCriar('＋ Nova Ceva','cevas',l.length,"novo('cevaForm')")); }).catch(erroTela); };
 
-VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'); setCrumb('Espera',ed?'Editar':'Nova');
+/* Propriedades disponíveis para prender ceva/rota. Guardadas aqui para o
+   aviso de irregular e a checagem do ponto acontecerem sem ida ao servidor. */
+var PROPS_SEL=[];
+function propSelecionada(){ var id=val('c_prop');
+  for(var i=0;i<PROPS_SEL.length;i++) if(PROPS_SEL[i].id===id) return PROPS_SEL[i];
+  return null; }
+/* Aviso ao escolher: propriedade irregular aparece no seletor, mas não pode
+   ser usada. Mostrar e explicar é melhor do que esconder e deixar a pessoa
+   procurando uma propriedade que ela sabe que cadastrou. */
+window.avisarProp=function(){
+  var p=propSelecionada(), box=document.getElementById('c_propAviso'); if(!box) return;
+  if(!p){ box.innerHTML=''; return; }
+  if(!p.temLimite){
+    box.innerHTML='<div class="meta" style="color:var(--danger)">⚠️ '+
+      trFrase('Esta propriedade não tem limite desenhado e não pode receber ceva.')+'</div>';
+  } else if(!p.regular){
+    box.innerHTML='<div class="meta" style="color:var(--danger)">⚠️ '+
+      trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.')+'</div>';
+  } else {
+    box.innerHTML='<div class="meta" style="color:var(--ok)">✔ '+
+      trFrase('A ceva precisa ficar dentro do limite desenhado desta propriedade.')+'</div>';
+  }
+  traduzirDOM(box);
+};
+VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'); setCrumb('Espera',ed?'Editar':'Nova'); loadingBox();
+  server('apiListarPropriedades').then(function(l){ PROPS_SEL=l||[];
   app('<div class="card"><label>Nome / identificação *</label><input id="c_nome" value="'+esc(pv('nome'))+'" placeholder="Ex: Ceva do Riacho">'+
+    '<label>Propriedade *</label><select id="c_prop" onchange="avisarProp()">'+
+      '<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+
+      PROPS_SEL.map(function(p){
+        var marca=p.regular?'':(p.temLimite?' ('+trFrase('irregular')+')':' ('+trFrase('sem limite')+')');
+        return '<option value="'+esc(p.id)+'">'+esc(p.nome||'')+esc(marca)+'</option>'; }).join('')+
+    '</select><div id="c_propAviso"></div>'+
     '<label>Tipo de ponto *</label><select id="c_tipo">'+TIPOS_CEVA.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<div class="two"><div><label>Latitude</label><input id="c_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="c_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
     gpsButton('c_lat','c_lng')+'<label>Observações</label><textarea id="c_obs">'+esc(pv('obs'))+'</textarea>'+
@@ -7152,11 +7206,28 @@ VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
     '<input id="c_foto" type="file" accept="image/*"><img id="c_prev" class="foto-prev">'+
     '<button class="btn" onclick="salvarCeva(this)">'+(ed?'Salvar alterações':'Salvar ceva')+'</button></div>');
-  if(ed) setVal('c_tipo',EDIT.tipo); bindFoto('c_foto','c_prev'); };
-window.salvarCeva=function(btn){ if(!val('c_nome')){toast('Informe o nome');return;} btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('c_nome'),tipo:val('c_tipo'),lat:val('c_lat'),lng:val('c_lng'),obs:val('c_obs'),foto:fotoData('c_foto')};
+  if(ed) setVal('c_tipo',EDIT.tipo);
+  if(ed&&EDIT.propriedadeId) setVal('c_prop',EDIT.propriedadeId);
+  bindFoto('c_foto','c_prev'); avisarProp();
+  }).catch(erroTela); };
+window.salvarCeva=function(btn){
+  if(!val('c_nome')){toast(trFrase('Informe o nome'));return;}
+  var prop=propSelecionada();
+  /* O servidor recusa de qualquer jeito; isto é só para a pessoa não esperar
+     o ida-e-volta para descobrir. A regra que vale é a de lá. */
+  if(!prop){ toast(trFrase('Escolha a propriedade onde fica esta ceva')); return; }
+  if(!prop.temLimite){ toast(trFrase('Esta propriedade não tem limite desenhado e não pode receber ceva.')); return; }
+  if(!prop.regular){ toast(trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.')); return; }
+  var la=coord(val('c_lat')), ln=coord(val('c_lng'));
+  if(!ptOk(la,ln)){ toast(trFrase('Marque a localização da ceva')); return; }
+  if(!pontoDentro({lat:la,lng:ln}, prop.limite||[])){
+    toast(trFrase('Este ponto está fora do limite desenhado de')+' '+(prop.nome||'')); return; }
+  btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  var d={nome:val('c_nome'),tipo:val('c_tipo'),lat:val('c_lat'),lng:val('c_lng'),obs:val('c_obs'),
+         foto:fotoData('c_foto'),propriedadeId:prop.id};
   var p=EDIT? server('apiEditar','ceva',EDIT.id,d) : server('apiCriarCeva',d);
-  p.then(function(){ EDIT=null; toast('Ceva salva ✔'); voltar(); }).catch(function(){ btn.disabled=false; btn.textContent='Salvar ceva'; }); };
+  p.then(function(){ EDIT=null; toast('Ceva salva ✔'); voltar(); })
+   .catch(function(e){ toast(msgErro(e)); btn.disabled=false; btn.textContent=trFrase('Salvar ceva'); }); };
 window.abrirCeva=function(id){ STATE.ceva=(CACHE.ceva||[]).filter(function(c){return c.id===id;})[0]; STATE.cevaTab='alimento'; nav('cevaDetail'); };
 
 var TIPOS_ALIM=['Milho','Fubá','Farelo','Soja','Ração','Sal mineral','Melaço','Outro'];
