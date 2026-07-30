@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1709';
+var APP_VER = 'vJS.300726.1717';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1165,6 +1165,8 @@ function msgErro(e){
   if(cod==='PROP_IRREGULAR')  return trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.');
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
+  if(cod==='PROP_SEM_PRAZO') return trFrase('Faltam as autorizações desta propriedade.');
+  if(cod==='PROP_VENCIDA') return trFrase('A autorização desta propriedade venceu em')+' '+fmtData(nome);
   if(cod==='ROTA_FORA'){ var pp=nome.split('|');
     return trFrase('A rota tem')+' '+(pp[1]||'')+' '+trFrase('ponto(s) fora do limite de')+' '+(pp[0]||''); }
   return m;
@@ -1568,6 +1570,12 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Esta propriedade está irregular e não pode abrir ciclo de caça.':'This property is irregular and cannot open a hunt cycle.',
+    'O ciclo vai até':'The cycle runs until',
+    'vencimento da primeira autorização. Você pode encerrar antes.':'expiry of the first permit. You can close it earlier.',
+    'Faltam as autorizações desta propriedade.':'This property is missing its permits.',
+    'Escolha a propriedade deste ciclo':'Choose the property for this cycle',
+    'A autorização desta propriedade venceu em':'This property permit expired on',
     'Caçar agora':'Hunt now',
     '＋ NOVO CICLO DE CAÇA':'＋ NEW HUNT CYCLE',
     'Criar nova Rota':'Create new route',
@@ -2864,6 +2872,12 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Esta propriedade está irregular e não pode abrir ciclo de caça.':'Esta propiedad está irregular y no puede abrir ciclo de caza.',
+    'O ciclo vai até':'El ciclo va hasta',
+    'vencimento da primeira autorização. Você pode encerrar antes.':'vencimiento de la primera autorización. Puedes cerrarlo antes.',
+    'Faltam as autorizações desta propriedade.':'Faltan las autorizaciones de esta propiedad.',
+    'Escolha a propriedade deste ciclo':'Elige la propiedad de este ciclo',
+    'A autorização desta propriedade venceu em':'La autorización de esta propiedad venció el',
     'Caçar agora':'Cazar ahora',
     '＋ NOVO CICLO DE CAÇA':'＋ NUEVO CICLO DE CAZA',
     'Criar nova Rota':'Crear nueva ruta',
@@ -8530,6 +8544,16 @@ VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
       '<label>Tipo *</label><select id="mn_tipo" onchange="pintarAvisoTipo()">'+
         ['ceva','rota','livre'].map(function(t){ return '<option value="'+t+'"'+(String(m.tipo||'ceva')===t?' selected':'')+'>'+rotuloTipoManejo(t)+'</option>'; }).join('')+'</select>'+
       '<div id="mn_aviso" class="meta" style="margin:-6px 0 10px"></div>'+
+      /* Propriedade saiu do bloco por tipo: agora vale para todos, porque é
+         dela que sai o prazo do ciclo e são dela os documentos que o amigo
+         convidado enxerga. */
+      '<label>Propriedade *</label><select id="mn_propFixa" onchange="avisarPropCiclo()">'+
+        '<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+
+        MANEJO_OPTS.props.map(function(p){
+          var marca=p.regular?'':' ('+trFrase('irregular')+')';
+          return '<option value="'+esc(p.id)+'"'+(String(m.propriedadeId||'')===p.id?' selected':'')+'>'+
+                 esc(p.nome||'')+esc(marca)+'</option>'; }).join('')+
+      '</select><div id="mn_propAviso"></div>'+
       '<div id="mn_ctx"></div>'+
       '<label style="margin-top:10px;display:block">Canil (opcional)</label>'+
         listaChecks('mn_canis',MANEJO_OPTS.canis,(m.canis||[]).map(function(c){return c.id;}).join(','),'Nenhum canil cadastrado.')+
@@ -8537,7 +8561,31 @@ VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
       '<div class="meta" style="margin:2px 0 10px">Amigos são convidados depois, dentro do manejo aberto.</div>'+
       '<button class="btn" id="mn_salvar" onclick="salvarManejo(this)">'+(ed?'Salvar alterações':'Iniciar manejo')+'</button>'+
       '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
-    pintarAvisoTipo(); }); };
+    pintarAvisoTipo(); avisarPropCiclo(); }); };
+/* Mostra por que a propriedade não serve e, quando serve, até quando o ciclo
+   vai durar. O teto é o vencimento da primeira das duas autorizações. */
+function propCicloSelecionada(){ var id=val('mn_propFixa'); var l=(MANEJO_OPTS&&MANEJO_OPTS.props)||[];
+  for(var i=0;i<l.length;i++) if(l[i].id===id) return l[i];
+  return null; }
+function tetoDaProp(p){
+  var a=(p&&p.autManejo&&p.autManejo.vencimento)||'';
+  var b=(p&&p.autIbama&&p.autIbama.vencimento)||'';
+  if(!a&&!b) return ''; if(!a) return b; if(!b) return a;
+  return a<b?a:b; }
+window.avisarPropCiclo=function(){
+  var p=propCicloSelecionada(), box=document.getElementById('mn_propAviso'); if(!box) return;
+  if(!p){ box.innerHTML=''; return; }
+  if(!p.regular){
+    box.innerHTML='<div class="meta" style="color:var(--danger)">⚠️ '+
+      trFrase('Esta propriedade está irregular e não pode abrir ciclo de caça.')+'</div>';
+    traduzirDOM(box); return; }
+  var teto=tetoDaProp(p);
+  box.innerHTML=teto
+    ? '<div class="meta" style="color:var(--ok)">✔ '+trFrase('O ciclo vai até')+' '+fmtData(teto)+' — '+
+        trFrase('vencimento da primeira autorização. Você pode encerrar antes.')+'</div>'
+    : '<div class="meta" style="color:var(--danger)">⚠️ '+trFrase('Faltam as autorizações desta propriedade.')+'</div>';
+  traduzirDOM(box);
+};
 
 /* O tipo manda: manejo de ceva só escolhe ceva, de rota só rota, livre só
    propriedade com limite. Sem o item cadastrado, o manejo nem começa. */
@@ -8573,8 +8621,13 @@ window.salvarManejo=function(btn){
     cevasIds:'', rotasIds:'', propriedadeId:'' };
   if(tipo==='ceva'){ d.cevasIds=idsMarcados('mn_cevas'); if(!d.cevasIds){ toast('Escolha ao menos uma ceva'); return; } }
   if(tipo==='rota'){ d.rotasIds=idsMarcados('mn_rotas'); if(!d.rotasIds){ toast('Escolha ao menos uma rota'); return; } }
-  if(tipo==='livre'){ d.propriedadeId=val('mn_prop')||''; }   /* opcional */
-  btn.disabled=true; btn.textContent='Salvando…';
+  /* Propriedade agora é de todos os tipos, e barrada antes de ir ao servidor. */
+  var pSel=propCicloSelecionada();
+  if(!pSel){ toast(trFrase('Escolha a propriedade deste ciclo')); return; }
+  if(!pSel.regular){ toast(trFrase('Esta propriedade está irregular e não pode abrir ciclo de caça.')); return; }
+  if(!tetoDaProp(pSel)){ toast(trFrase('Faltam as autorizações desta propriedade.')); return; }
+  d.propriedadeId=pSel.id;
+  btn.disabled=true; btn.textContent=trFrase('Salvando…');
   var p = MANEJO_EDIT ? server('apiAtualizarManejo',MANEJO_EDIT.id,d) : server('apiCriarManejo',d);
   p.then(function(res){ var id=(MANEJO_EDIT&&MANEJO_EDIT.id)||(res&&res.id);
       toast(MANEJO_EDIT?'Manejo salvo ✔':'Manejo iniciado ✔'); MANEJO_EDIT=null; MANEJO_ABERTO=null;
