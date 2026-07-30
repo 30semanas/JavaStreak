@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1631';
+var APP_VER = 'vJS.300726.1639';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1568,6 +1568,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Criar nova Rota':'Create new route',
+    'Criar nova rota de pesca':'Create new fishing route',
     'Esta propriedade não tem limite desenhado e não pode receber rota.':'This property has no boundary drawn and cannot host a route.',
     'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.':'This property is irregular (permit expired or missing) and cannot host a route.',
     'A rota inteira precisa ficar dentro do limite desenhado desta propriedade.':'The whole route must stay inside the drawn boundary of this property.',
@@ -2860,6 +2862,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Criar nova Rota':'Crear nueva ruta',
+    'Criar nova rota de pesca':'Crear nueva ruta de pesca',
     'Esta propriedade não tem limite desenhado e não pode receber rota.':'Esta propiedad no tiene límite dibujado y no puede recibir ruta.',
     'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.':'Esta propiedad está irregular (autorización vencida o faltante) y no puede recibir ruta.',
     'A rota inteira precisa ficar dentro do limite desenhado desta propriedade.':'La ruta entera debe quedar dentro del límite dibujado de esta propiedad.',
@@ -7552,7 +7556,7 @@ VIEWS.rotas=function(){ var mod=modalidadeAtual(); var ehPesca=(mod==='pesca');
       '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="compartilhar(\''+r.id+'\')">🔗 Compartilhar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
       : '<div class="empty"><div class="big">🧭</div>Nenhuma rota gravada ainda.<br>Toque em <b>Gravar nova rota</b>.</div>';
     var compHtml = comp.length? '<h3 style="margin:16px 4px 6px">🤝 Compartilhadas comigo</h3>'+comp.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="guiarRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+' <span class="pill '+(r.permissao==='editar'?'ok':'gray')+'">'+(r.permissao==='editar'?'Editar':'Seguir')+'</span></h3><div class="meta">de '+esc(r.donoNome||'manejador')+' · '+((r.pontos||[]).length)+' pts GPS</div></div><div class="chev">›</div></div><button class="btn sm" style="margin-top:8px;width:auto;background:linear-gradient(#3a5a34,#2e4d2e)" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar / seguir rota</button></div>'; }).join('') : '';
-    app(banner+minhas+compHtml); fab(botaoCriar('＋ Gravar nova '+(ehPesca?'rota de pesca':'rota'),'rotas',todas.length,"novaRota()")); }); };
+    app(banner+minhas+compHtml); fab(botaoCriar('＋ '+trFrase(ehPesca?'Criar nova rota de pesca':'Criar nova Rota'),'rotas',todas.length,"novaRota()")); }); };
 window.compartilhar=function(id){ STATE.shareRotaId=id; nav('compartilharRota'); };
 VIEWS.compartilharRota=function(){ var id=STATE.shareRotaId; var r=(CACHE.rota||[]).filter(function(x){return x.id===id;})[0]||{}; setTitulo('Compartilhar rota'); setCrumb('Rotas','Compartilhar');
   app('<div class="card"><h3 style="margin:0 0 4px">🔗 '+esc(r.nome||'Rota')+'</h3><div class="meta">Compartilhe com outro manejador informando o <b>login</b> dele.</div>'+
@@ -7567,18 +7571,18 @@ window.enviarCompart=function(btn){ var login=val('sh_login'); if(!login){toast(
   server('apiCompartilharRota',STATE.shareRotaId,login,val('sh_perm')).then(function(r){ toast('Compartilhada com '+(r.nome||login)+' ✔'); document.getElementById('sh_login').value=''; btn.disabled=false; btn.textContent='Compartilhar'; carregarShares(STATE.shareRotaId); }).catch(function(e){ btn.disabled=false; btn.textContent='Compartilhar'; toast((e&&e.message)||'Erro ao compartilhar'); }); };
 window.revogarShare=function(sid,rid){ server('apiRevogarCompart',sid).then(function(){ toast('Acesso removido'); carregarShares(rid); }); };
 
-VIEWS.rotaForm=function(){ var ehPesca=(modalidadeAtual()==='pesca'); var soManual=!!STATE.rotaSoManual;
-  setTitulo(soManual?'Criar rota manual':(ehPesca?'Nova rota de pesca':'Nova rota')); setCrumb(soManual?'Manejo':'Rotas',soManual?'Rota manual':'Nova');
+VIEWS.rotaForm=function(){ var ehPesca=(modalidadeAtual()==='pesca');
+  setTitulo(ehPesca?'Nova rota de pesca':'Criar nova Rota'); setCrumb('Rotas','Nova');
   app('<div class="card"><label>Nome da rota *</label><input id="ro_nome" placeholder="'+(ehPesca?'Ex: Ponto do remanso':'Ex: Contorno da mata')+'">'+
     '<label>Propriedade *</label><select id="ro_propId" onchange="avisarPropRota()"><option value="">— '+trFrase('escolha a propriedade')+' —</option></select>'+
     '<div id="ro_propAviso"></div>'+
     '<label>'+(ehPesca?'Embarcação':'Tipo de transporte')+'</label><select id="ro_transp"><option value="">— selecione —</option></select>'+
     (ehPesca?'<div class="meta" style="margin:-6px 0 8px">Somente embarcações cadastradas em Meio de transporte.</div>':'')+
-    (soManual?'':'<div class="meta" style="margin:12px 0 4px"><b>Como criar a rota?</b></div>'+
-    '<button class="btn" onclick="comecarGravacao(this)">▶️ Gravar andando (GPS)</button>'+
-    '<div class="meta" style="margin:4px 0 8px;font-size:12px">Mantenha o app aberto e o GPS ligado — ele registra sua posição enquanto você percorre o caminho.</div>')+
-    '<button class="btn'+(soManual?'':' sec')+'" onclick="comecarDesenho(this)">🗺️ Marcar no mapa (clicando)</button>'+
-    '<div class="meta" style="margin:4px 0 0;font-size:12px">Abra um mapa e toque/clique nos pontos para desenhar o trajeto — sem precisar estar no local.</div></div>');
+    /* Gravar andando (GPS) saiu: rota agora é desenhada dentro do limite da
+       propriedade, e o traçado de GPS não tem como respeitar isso ponto a
+       ponto. O caminho é um só. */
+    '<button class="btn" onclick="comecarDesenho(this)">🗺️ Marcar no mapa (clicando)</button>'+
+    '<div class="meta" style="margin:4px 0 0;font-size:12px">Salva estas informações e abre o mapa para você tocar nos pontos do trajeto, dentro do limite da propriedade.</div></div>');
   carregarSelectsRota(ehPesca); };
 /* Propriedades disponíveis para a rota. Irregular e sem-limite continuam na
    lista, marcadas — esconder faria a pessoa procurar o que ela sabe que
@@ -8428,8 +8432,9 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
   var cards='<div id="mnManejos"></div>'+
       moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
       moduloCard('ceva','Espera (ceva)','Cevas, alimento e nível do tratadouro',true,"nav('espera')")+
-      moduloCard('rotas','Rotas','Trajetos gravados por GPS',true,"abrirRotas('manejo')")+
-      moduloCard('areas','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()");
+      /* "Criar rota manual" saiu daqui: Rotas passou a ser manual por
+         definição, então eram dois caminhos para a mesma tela. */
+      moduloCard('rotas','Rotas','Trajetos desenhados dentro da propriedade',true,"abrirRotas('manejo')");
   app('<div id="mnConvites"></div>'+cards);
   pintarCardManejos(null);
   /* O botão flutuante saiu daqui: quem abre manejo é o card "Manejos" (ou o
@@ -8460,8 +8465,7 @@ window.novoManejo=function(){
   server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null;
     if(meuAberto(m)){ toast('Você já tem um manejo aberto'); abrirManejo(m.id); } else { MANEJO_EDIT=null; nav('manejoForm'); } })
   .catch(function(){ MANEJO_EDIT=null; nav('manejoForm'); }); };
-window.criarRotaManual=function(){ STATE.modalidade='manejo'; STATE.rotaSoManual=true; nav('rotaForm'); };
-window.novaRota=function(){ STATE.rotaSoManual=false; nav('rotaForm'); };
+window.novaRota=function(){ nav('rotaForm'); };
 
 /* ---- Compartilhar ceva e propriedade (entrega 6) ---- */
 var COMPART_ALVO=null;
