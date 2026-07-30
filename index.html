@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1624';
+var APP_VER = 'vJS.300726.1631';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1164,6 +1164,9 @@ function msgErro(e){
   if(cod==='PROP_SEM_LIMITE') return trFrase('Esta propriedade não tem limite desenhado e não pode receber ceva.');
   if(cod==='PROP_IRREGULAR')  return trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.');
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
+  if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
+  if(cod==='ROTA_FORA'){ var pp=nome.split('|');
+    return trFrase('A rota tem')+' '+(pp[1]||'')+' '+trFrase('ponto(s) fora do limite de')+' '+(pp[0]||''); }
   return m;
 }
 function senhaForte(s){
@@ -1565,6 +1568,16 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Esta propriedade não tem limite desenhado e não pode receber rota.':'This property has no boundary drawn and cannot host a route.',
+    'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.':'This property is irregular (permit expired or missing) and cannot host a route.',
+    'A rota inteira precisa ficar dentro do limite desenhado desta propriedade.':'The whole route must stay inside the drawn boundary of this property.',
+    'Escolha a propriedade onde fica esta rota':'Choose the property this route belongs to',
+    'A rota tem':'The route has',
+    'ponto(s) fora do limite de':'point(s) outside the boundary of',
+    'Rota salva, mas':'Route saved, but',
+    'ponto(s) ficaram fora do limite da propriedade':'point(s) fell outside the property boundary',
+    'Esta rota não está ligada a nenhuma propriedade.':'This route is not linked to any property.',
+    'Ver propriedade no mapa':'View property on map',
     'Autorização de Acesso':'Access permit',
     'Toque dentro da área verde para marcar a ceva':'Tap inside the green area to place the feeder',
     'Fora do limite de':'Outside the boundary of',
@@ -2847,6 +2860,16 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Esta propriedade não tem limite desenhado e não pode receber rota.':'Esta propiedad no tiene límite dibujado y no puede recibir ruta.',
+    'Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.':'Esta propiedad está irregular (autorización vencida o faltante) y no puede recibir ruta.',
+    'A rota inteira precisa ficar dentro do limite desenhado desta propriedade.':'La ruta entera debe quedar dentro del límite dibujado de esta propiedad.',
+    'Escolha a propriedade onde fica esta rota':'Elige la propiedad donde está esta ruta',
+    'A rota tem':'La ruta tiene',
+    'ponto(s) fora do limite de':'punto(s) fuera del límite de',
+    'Rota salva, mas':'Ruta guardada, pero',
+    'ponto(s) ficaram fora do limite da propriedade':'punto(s) quedaron fuera del límite de la propiedad',
+    'Esta rota não está ligada a nenhuma propriedade.':'Esta ruta no está vinculada a ninguna propiedad.',
+    'Ver propriedade no mapa':'Ver propiedad en el mapa',
     'Autorização de Acesso':'Autorización de acceso',
     'Toque dentro da área verde para marcar a ceva':'Toca dentro del área verde para marcar el comedero',
     'Fora do limite de':'Fuera del límite de',
@@ -7547,7 +7570,8 @@ window.revogarShare=function(sid,rid){ server('apiRevogarCompart',sid).then(func
 VIEWS.rotaForm=function(){ var ehPesca=(modalidadeAtual()==='pesca'); var soManual=!!STATE.rotaSoManual;
   setTitulo(soManual?'Criar rota manual':(ehPesca?'Nova rota de pesca':'Nova rota')); setCrumb(soManual?'Manejo':'Rotas',soManual?'Rota manual':'Nova');
   app('<div class="card"><label>Nome da rota *</label><input id="ro_nome" placeholder="'+(ehPesca?'Ex: Ponto do remanso':'Ex: Contorno da mata')+'">'+
-    '<label>Propriedade</label><select id="ro_propId"><option value="">— selecione (opcional) —</option></select>'+
+    '<label>Propriedade *</label><select id="ro_propId" onchange="avisarPropRota()"><option value="">— '+trFrase('escolha a propriedade')+' —</option></select>'+
+    '<div id="ro_propAviso"></div>'+
     '<label>'+(ehPesca?'Embarcação':'Tipo de transporte')+'</label><select id="ro_transp"><option value="">— selecione —</option></select>'+
     (ehPesca?'<div class="meta" style="margin:-6px 0 8px">Somente embarcações cadastradas em Meio de transporte.</div>':'')+
     (soManual?'':'<div class="meta" style="margin:12px 0 4px"><b>Como criar a rota?</b></div>'+
@@ -7556,9 +7580,35 @@ VIEWS.rotaForm=function(){ var ehPesca=(modalidadeAtual()==='pesca'); var soManu
     '<button class="btn'+(soManual?'':' sec')+'" onclick="comecarDesenho(this)">🗺️ Marcar no mapa (clicando)</button>'+
     '<div class="meta" style="margin:4px 0 0;font-size:12px">Abra um mapa e toque/clique nos pontos para desenhar o trajeto — sem precisar estar no local.</div></div>');
   carregarSelectsRota(ehPesca); };
+/* Propriedades disponíveis para a rota. Irregular e sem-limite continuam na
+   lista, marcadas — esconder faria a pessoa procurar o que ela sabe que
+   cadastrou. Quem barra é o aviso e o salvamento. */
+var ROTA_PROPS=[];
+function propRotaSelecionada(){ var id=val('ro_propId');
+  for(var i=0;i<ROTA_PROPS.length;i++) if(ROTA_PROPS[i].id===id) return ROTA_PROPS[i];
+  return null; }
+window.avisarPropRota=function(){
+  var p=propRotaSelecionada(), box=document.getElementById('ro_propAviso'); if(!box) return;
+  if(!p){ box.innerHTML=''; return; }
+  if(!p.temLimite) box.innerHTML='<div class="meta" style="color:var(--danger)">⚠️ '+trFrase('Esta propriedade não tem limite desenhado e não pode receber rota.')+'</div>';
+  else if(!p.regular) box.innerHTML='<div class="meta" style="color:var(--danger)">⚠️ '+trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.')+'</div>';
+  else box.innerHTML='<div class="meta" style="color:var(--ok)">✔ '+trFrase('A rota inteira precisa ficar dentro do limite desenhado desta propriedade.')+'</div>';
+  traduzirDOM(box);
+};
+/* Barra antes de entrar no mapa: nome, propriedade e regularidade. */
+function rotaPropOk(){
+  if(!val('ro_nome')){ toast(trFrase('Informe o nome da rota')); return null; }
+  var p=propRotaSelecionada();
+  if(!p){ toast(trFrase('Escolha a propriedade onde fica esta rota')); return null; }
+  if(!p.temLimite){ toast(trFrase('Esta propriedade não tem limite desenhado e não pode receber rota.')); return null; }
+  if(!p.regular){ toast(trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber rota.')); return null; }
+  return p;
+}
 function carregarSelectsRota(ehPesca){
-  server('apiListarPropriedades').then(function(l){ var s=document.getElementById('ro_propId'); if(!s)return;
-    s.innerHTML='<option value="">— selecione (opcional) —</option>'+(l||[]).map(function(p){ return '<option value="'+p.id+'">'+esc(p.nome)+'</option>'; }).join(''); }).catch(function(){});
+  server('apiListarPropriedades').then(function(l){ ROTA_PROPS=l||[]; var s=document.getElementById('ro_propId'); if(!s)return;
+    s.innerHTML='<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+ROTA_PROPS.map(function(p){
+      var marca=p.regular?'':(p.temLimite?' ('+trFrase('irregular')+')':' ('+trFrase('sem limite')+')');
+      return '<option value="'+esc(p.id)+'">'+esc(p.nome)+esc(marca)+'</option>'; }).join(''); }).catch(function(){});
   server('apiListarTransportes').then(function(l){ var s=document.getElementById('ro_transp'); if(!s)return;
     var f=(l||[]).filter(function(t){ var m=String(t.meio||'terrestre'); return ehPesca ? m==='maritimo' : m!=='maritimo'; });
     /* Além dos transportes cadastrados, sempre cabe ir a pé (ou algo que não
@@ -7568,7 +7618,7 @@ function carregarSelectsRota(ehPesca){
       f.map(function(t){ return '<option value="'+esc(t.tipo+(t.identificacao?' - '+t.identificacao:''))+'">'+esc(t.tipo)+(t.identificacao?' · '+esc(t.identificacao):'')+'</option>'; }).join('')+
       extras.map(function(x){ return '<option value="'+esc(x)+'">'+trFrase(x)+'</option>'; }).join(''); }).catch(function(){});
 }
-window.comecarGravacao=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
+window.comecarGravacao=function(btn){ var pSel=rotaPropOk(); if(!pSel) return; var nome=val('ro_nome');
   if(!navigator.geolocation){ toast('GPS não suportado neste aparelho'); return; }
   /* Gravar rota em deslocamento também só dentro de manejo (a rota manual continua livre). */
   if(!MANEJO_ABERTO){ btn.disabled=true; btn.textContent='Verificando…';
@@ -7677,9 +7727,15 @@ window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota 
   soltarWakeLock();
   btn.disabled=true; btn.textContent='Salvando…';
   var pend=ROTA_REC.marcacoes||[];
-  server('apiCriarRota',{ nome:ROTA_REC.nome, propriedadeId:ROTA_REC.propriedadeId, tipoTransporte:ROTA_REC.tipoTransporte,
+  server('apiCriarRota',{ origem:'gps', nome:ROTA_REC.nome, propriedadeId:ROTA_REC.propriedadeId, tipoTransporte:ROTA_REC.tipoTransporte,
     modalidade:ROTA_REC.modalidade, pontos:simplificar(ROTA_REC.pontos,800), distancia:Math.round(ROTA_REC.distancia||0) })
   .then(function(rota){
+    /* Rota gravada andando AVISA em vez de recusar — quem andou com sinal
+       ruim na divisa não perde o percurso. O servidor conta os pontos fora e
+       devolve o número; a recusa fica só para a rota marcada no mapa. */
+    if(rota && rota.foraDoLimite>0){
+      toast(trFrase('Rota salva, mas')+' '+rota.foraDoLimite+' '+trFrase('ponto(s) ficaram fora do limite da propriedade'));
+    }
     if(!pend.length) return null;
     return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
   })
@@ -7901,11 +7957,46 @@ window.salvarMarcacao=function(btn){ if(!MARKPOS){ toast('Sem posição'); retur
 
 /* ----- Detalhe da rota (trajeto + pontos que enriquecem a rota) ----- */
 window.abrirRota=function(id){ STATE.rota=(CACHE.rota||[]).filter(function(r){return r.id===id;})[0]; if(STATE.rota) nav('rotaDetalhe'); else toast('Rota não encontrada'); };
+/* Desenha o limite da propriedade da rota e monta a ficha com as duas
+   autorizações. Reusa o pdAut do detalhe da propriedade — o botão do anexo
+   passa pela URL assinada, o bucket `docs` é privado. */
+function desenharPropDaRota(r,map,pts){
+  var pid=String(r.propriedadeId||''); var box=document.getElementById('rdProp');
+  if(!pid){ if(box) box.innerHTML='<div class="card"><div class="meta">'+
+    trFrase('Esta rota não está ligada a nenhuma propriedade.')+'</div></div>'; return; }
+  server('apiListarPropriedades').then(function(l){
+    if(ROUTEMAP!==map) return;
+    /* PROPS só é preenchido pela tela de Propriedades. Sem semear aqui, o
+       botão "Ver propriedade no mapa" abriria vazio e voltaria sozinho. */
+    PROPS=l||[];
+    var p=null; (l||[]).forEach(function(x){ if(x.id===pid) p=x; });
+    if(!p) return;
+    var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; })
+                           .filter(function(xy){ return ptOk(xy[0],xy[1]); });
+    if(poly.length>=3){
+      L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12}).addTo(map);
+      /* Enquadra nos dois juntos: sem isso, rota curta dentro de área grande
+         abria com a propriedade fora da tela. */
+      if(!pts.length){ try{ map.fitBounds(poly,{padding:[40,40],maxZoom:16}); }catch(e){} }
+      else { try{ map.fitBounds(pts.concat(poly),{padding:[40,40],maxZoom:16}); }catch(e){} }
+    }
+    var b=document.getElementById('rdProp'); if(!b) return;
+    b.innerHTML='<div class="card"><h3 style="margin:0 0 6px">🏞️ '+esc(p.nome||'')+'</h3>'+
+      '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+'</div>'+
+      (p.car?'<div class="meta">CAR: <span class="no-i18n">'+esc(p.car)+'</span></div>':'')+
+      pdAut('Autorização de Acesso',p.autManejo)+
+      pdAut('Autorização IBAMA',p.autIbama)+
+      '<button class="btn sm sec" style="width:auto;margin-top:8px" onclick="verProp(\''+escJs(p.id)+'\')">'+
+        trFrase('Ver propriedade no mapa')+'</button></div>';
+    traduzirDOM(b); iconizar(b);
+  }).catch(function(){});
+}
 VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita','rotas']; render(); return; }
   setTitulo(r.nome||'Rota'); setCrumb('Rotas',esc(r.nome||'Rota'));
   var pts=(r.pontos||[]).map(function(p){return [p.lat,p.lng];});
   app('<div class="card"><div class="meta">'+(r.propriedade?'🏡 '+esc(r.propriedade)+' · ':'')+esc(r.tipoTransporte||'')+' · '+fmtDist(parseFloat(r.distancia)||0)+'</div></div>'+
     '<div id="rdMap" style="height:44vh;min-height:260px;border-radius:12px;border:1px solid var(--linha)"></div>'+
+    '<div id="rdProp"></div>'+
     '<h3 style="margin:12px 4px 6px">📍 Pontos registrados</h3><div id="rdPontos"><div class="loading"><div class="spin"></div></div></div>');
   var map=L.map('rdMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView(pts.length?pts[0]:[-15.78,-47.93],pts.length?15:4);
   addBase(map);
@@ -7914,6 +8005,10 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
     L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
     L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada'); }
   var mk=L.featureGroup().addTo(map);
+  /* Propriedade da rota: o desenho no mapa e a ficha com as autorizações,
+     igual ao detalhe da propriedade. Quem está no campo com a rota aberta
+     precisa do documento à mão, não a dois menus de distância. */
+  desenharPropDaRota(r,map,pts);
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} } },150);
   server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms;
     (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(ptOk(la,ln)) L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(mk).bindPopup(marcaPopup(m)); });
@@ -7927,8 +8022,8 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
 
 /* ----- Rota desenhada manualmente (clicando no mapa) ----- */
 var DRAW=null;
-window.comecarDesenho=function(btn){ var nome=val('ro_nome'); if(!nome){toast('Informe o nome da rota');return;}
-  DRAW={ nome:nome, propriedadeId:val('ro_propId'), tipo:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[] };
+window.comecarDesenho=function(btn){ var p=rotaPropOk(); if(!p) return;
+  DRAW={ nome:val('ro_nome'), propriedadeId:p.id, prop:p, tipo:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[] };
   STATE.stack=['espreita','rotas','rotaDesenhar']; render(); };
 VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; render(); return; }
   if(!DRAW.marcacoes) DRAW.marcacoes=[]; if(!DRAW.modo) DRAW.modo='traco';
@@ -7946,13 +8041,20 @@ VIEWS.rotaDesenhar=function(){ if(!DRAW){ STATE.stack=['espreita','rotas']; rend
   ROUTEMAP=map; DRAW.layer=L.featureGroup().addTo(map); DRAW._markLayer=L.featureGroup().addTo(map);
   /* Limite da propriedade do manejo: desenhar a rota dentro da área. */
   DRAW._limLayer=L.featureGroup().addTo(map);
-  carregarGuiaManejo().then(function(){
-    if(ROUTEMAP!==map) return;
-    var ps=limitesDoManejoEm(map,DRAW._limLayer);
-    if(ps.length && !DRAW.pontos.length){ try{ map.fitBounds(ps,{padding:[40,40],maxZoom:15}); }catch(e){} }
-    var h=document.getElementById('drawHint');
-    if(ps.length && h) h.innerHTML=trFrase('A área verde é o limite da propriedade do manejo aberto.');
-  });
+  /* Limite da propriedade escolhida no formulário: é ele que manda aqui.
+     Enquadra já no desenho e é contra ele que cada vértice é conferido. */
+  DRAW._poly=((DRAW.prop&&DRAW.prop.limite)||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; })
+                                                .filter(function(xy){ return ptOk(xy[0],xy[1]); });
+  if(DRAW._poly.length>=3){
+    L.polygon(DRAW._poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.14}).addTo(DRAW._limLayer);
+    if(!DRAW.pontos.length){ try{ map.fitBounds(DRAW._poly,{padding:[40,40],maxZoom:16}); }catch(e){} }
+  } else {
+    carregarGuiaManejo().then(function(){
+      if(ROUTEMAP!==map) return;
+      var ps=limitesDoManejoEm(map,DRAW._limLayer);
+      if(ps.length && !DRAW.pontos.length){ try{ map.fitBounds(ps,{padding:[40,40],maxZoom:15}); }catch(e){} }
+    });
+  }
   map.on('click', function(e){ if(DRAW.modo==='ponto') abrirMark('draw',{lat:e.latlng.lat,lng:e.latlng.lng}); else desenhoAdd(e.latlng.lat, e.latlng.lng); });
   (DRAW.marcacoes||[]).forEach(function(m){ L.marker([m.lat,m.lng],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(DRAW._markLayer).bindPopup(marcaPopup(m)); });
   setTimeout(function(){ map.invalidateSize();
@@ -7964,7 +8066,15 @@ window.setModoDesenho=function(m){ if(!DRAW)return; DRAW.modo=m;
   var bt=document.getElementById('btnTraco'), bp=document.getElementById('btnPonto'), h=document.getElementById('drawHint');
   if(bt) bt.className='btn sm grow'+(m==='traco'?'':' sec'); if(bp) bp.className='btn sm grow'+(m==='ponto'?'':' sec');
   if(h) h.innerHTML = m==='ponto' ? '📍 <b>Modo aviso/foto:</b> toque no mapa onde quer colocar um aviso, referência ou foto.' : '✏️ <b>Modo traçado:</b> toque no mapa para ligar os pontos do caminho.'; };
-function desenhoAdd(lat,lng){ if(!DRAW)return; DRAW.pontos.push({lat:+lat.toFixed(6),lng:+lng.toFixed(6)}); redrawDesenho(); }
+/* Vértice a vértice, como combinado: o ponto fora do limite não entra no
+   traçado. Recusar aqui é mais claro do que deixar desenhar tudo e reprovar
+   no fim, quando já não dá para saber qual ponto estragou. */
+function desenhoAdd(lat,lng){ if(!DRAW)return;
+  if((DRAW._poly||[]).length>=3 && !pontoDentro({lat:lat,lng:lng},(DRAW.prop&&DRAW.prop.limite)||[])){
+    toast(trFrase('Fora do limite de')+' '+((DRAW.prop&&DRAW.prop.nome)||''));
+    return;
+  }
+  DRAW.pontos.push({lat:+lat.toFixed(6),lng:+lng.toFixed(6)}); redrawDesenho(); }
 function redrawDesenho(){ if(!DRAW||!DRAW.layer) return; DRAW.layer.clearLayers();
   var pts=DRAW.pontos.map(function(p){return [p.lat,p.lng];});
   if(pts.length>1) L.polyline(pts,{color:'#b23b3b',weight:4}).addTo(DRAW.layer);
@@ -7979,13 +8089,13 @@ window.desenhoLimpar=function(){ if(DRAW){ DRAW.pontos=[]; redrawDesenho(); } };
 window.salvarDesenho=function(btn){ if(!DRAW||DRAW.pontos.length<2){ toast('Marque ao menos 2 pontos no traçado'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
   var pend=DRAW.marcacoes||[];
-  server('apiCriarRota',{ nome:DRAW.nome, propriedadeId:DRAW.propriedadeId, tipoTransporte:DRAW.tipo, modalidade:DRAW.modalidade, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
+  server('apiCriarRota',{ origem:'manual', nome:DRAW.nome, propriedadeId:DRAW.propriedadeId, tipoTransporte:DRAW.tipo, modalidade:DRAW.modalidade, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
   .then(function(rota){
     if(!pend.length) return null;
     return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
   })
   .then(function(){ DRAW=null; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
-  .catch(function(){ btn.disabled=false; btn.textContent='💾 Salvar rota'; }); };
+  .catch(function(e){ toast(msgErro(e)); btn.disabled=false; btn.textContent='💾 Salvar rota'; }); };
 window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; DRAW=null; STATE.stack=['espreita','rotas']; render(); };
 
 /* ============================================================
