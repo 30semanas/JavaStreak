@@ -165,6 +165,14 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+/* Detalhe da propriedade: mapa e ficha lado a lado, empilhando sozinho no
+   celular por causa do flex-wrap com base mínima. */
+.pd-wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.pd-mapa{flex:1 1 420px;min-width:280px}
+.pd-info{flex:1 1 320px;min-width:270px}
+#pdMap{height:460px;border-radius:12px;overflow:hidden;border:1px solid var(--linha)}
+@media (max-width:760px){ #pdMap{height:320px} }
+.doc-linha.click{cursor:pointer}
   .pop h4{margin:0 0 4px;font-size:14px;color:var(--verde)}
   .pop .meta{font-size:12px;color:var(--txt2);line-height:1.5}
   .dash{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -1063,7 +1071,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1253';
+var APP_VER = 'vJS.300726.1503';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1540,6 +1548,16 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Ver no mapa':'View on map',
+    'regular para ceva e rota':'cleared for feeders and routes',
+    'pendente: desenho ou autorização':'pending: boundary or permit',
+    'Esta propriedade não tem limite desenhado. Sem o desenho não há como saber o que está dentro dela.':'This property has no boundary drawn. Without it there is no way to tell what lies inside.',
+    'Desenhar agora':'Draw it now',
+    'Procurando o que está dentro…':'Looking for what is inside…',
+    'Dentro desta área':'Inside this area',
+    'Nada cadastrado dentro desta área ainda.':'Nothing registered inside this area yet.',
+    'Sem o limite desenhado, só aparece o que estiver ligado a ela por cadastro.':'Without a drawn boundary, only items linked by record show up.',
+    'Não foi possível carregar o que está dentro da área':'Could not load what is inside the area',
     'Criar meu perfil':'Create my profile',
     'Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.':'Your manager record does not exist yet. Without it the entry is saved with no owner and never shows up in the list.',
     'Seu plano atual não inclui este recurso.':'Your current plan does not include this feature.',
@@ -2794,6 +2812,16 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Ver no mapa':'Ver en el mapa',
+    'regular para ceva e rota':'habilitada para comederos y rutas',
+    'pendente: desenho ou autorização':'pendiente: límite o autorización',
+    'Esta propriedade não tem limite desenhado. Sem o desenho não há como saber o que está dentro dela.':'Esta propiedad no tiene límite dibujado. Sin él no hay forma de saber qué está dentro.',
+    'Desenhar agora':'Dibujar ahora',
+    'Procurando o que está dentro…':'Buscando lo que está dentro…',
+    'Dentro desta área':'Dentro de esta área',
+    'Nada cadastrado dentro desta área ainda.':'Aún no hay nada registrado dentro de esta área.',
+    'Sem o limite desenhado, só aparece o que estiver ligado a ela por cadastro.':'Sin el límite dibujado, solo aparece lo vinculado por registro.',
+    'Não foi possível carregar o que está dentro da área':'No se pudo cargar lo que está dentro del área',
     'Criar meu perfil':'Crear mi perfil',
     'Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.':'Tu ficha de manejador aún no existe. Sin ella el registro se guarda sin dueño y no aparece en la lista.',
     'Seu plano atual não inclui este recurso.':'Tu plan actual no incluye este recurso.',
@@ -4993,6 +5021,7 @@ function corpoPropriedades(){
       '<div class="meta">'+(p.temLimite?'<span class="pill ok">'+trFrase('limite desenhado')+'</span>':'<span class="pill gray">'+trFrase('sem limite')+'</span>')+'</div>'+
       (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
       '<button class="ib" onclick="abrirCompartilhar(\'propriedade\',\''+escJs(p.id)+'\',\''+escJs(p.nome||'')+'\')" title="Compartilhar">🔗</button>'+
+      '<button class="ib" onclick="verProp(\''+p.id+'\')" title="Ver no mapa">🗺️</button>'+
       '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar">✏️</button>'+
       '<button class="ib" onclick="excluirProp(\''+p.id+'\')" title="Excluir">🗑️</button></div>';
   }).join('') : '<div class="meta" style="padding:14px 0">Nenhuma propriedade cadastrada.</div>';
@@ -8456,6 +8485,151 @@ VIEWS.propriedades=function(){ PROP_ORIGEM='propriedades'; setTitulo('Propriedad
       '<div class="meta no-i18n">'+esc((e&&e.message)||'')+'</div>'+
       '<button class="btn sec" style="margin-top:10px" onclick="render()">'+trFrase('Tentar de novo')+'</button></div>');
   }); };
+
+/* ============================================================
+   PROPRIEDADE — ver no mapa
+   Mapa com o limite desenhado e, ao lado, a ficha. O que estiver
+   dentro do desenho vira pino clicável que leva para a aba que já
+   existe (ceva, rota, armadilha).
+
+   Sem ação nova no backend: `apiListarPropriedades` já devolve o
+   polígono em `limite`, e `apiMapaDados` já traz ceva, armadilha e
+   rota com coordenada. O vínculo é geométrico (`pontoDentro`), com
+   uma exceção: rota tem `propriedadeId`, e esse vínculo explícito
+   vale mesmo que o traçado saia da área.
+   ============================================================ */
+var PROP_VER_ID='', PDMAP=null, PD_ITENS={cevas:[],armadilhas:[],rotas:[]};
+
+window.verProp=function(id){ PROP_VER_ID=id; nav('propDetalhe'); };
+
+/* Item de lista do painel, com o mesmo clique do pino. */
+function pdLinha(icone,titulo,sub,acao){
+  return '<div class="doc-linha click" onclick="'+acao+'">'+
+    '<div class="grow"><b>'+icone+' '+esc(titulo)+'</b>'+
+    (sub?'<div class="meta">'+esc(sub)+'</div>':'')+'</div>'+
+    '<span class="meta">›</span></div>';
+}
+
+VIEWS.propDetalhe=function(){
+  var p=null;
+  for(var i=0;i<PROPS.length;i++){ if(PROPS[i].id===PROP_VER_ID){ p=PROPS[i]; break; } }
+  if(!p){ voltar(); return; }
+  setTitulo(p.nome||'Propriedade'); setCrumb('CAÇAR','Propriedades',p.nome||'');
+  var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; })
+                         .filter(function(xy){ return ptOk(xy[0],xy[1]); });
+  var temPoly=poly.length>=3;
+
+  app('<div class="pd-wrap">'+
+        '<div class="pd-mapa"><div id="pdMap"></div>'+
+          (temPoly?'':'<div class="meta" style="padding:10px">⚠️ '+
+            trFrase('Esta propriedade não tem limite desenhado. Sem o desenho não há como saber o que está dentro dela.')+
+            ' <button class="btn sm sec" style="width:auto;margin-top:8px" onclick="editarProp(\''+escJs(p.id)+'\')">'+
+            trFrase('Desenhar agora')+'</button></div>')+
+        '</div>'+
+        '<div class="pd-info">'+
+          '<div class="card"><h3 style="margin:0 0 6px">🏞️ '+esc(p.nome||'')+'</h3>'+
+            '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+
+              (p.documentoDono?' · <span class="no-i18n">'+esc(p.documentoDono):'')+'</span></div>'+
+            (p.car?'<div class="meta">CAR: <span class="no-i18n">'+esc(p.car)+'</span></div>':'')+
+            '<div class="meta" style="margin-top:6px">'+trFrase('Manejo')+': '+
+              (p.autManejo?statusVenc(p.autManejo.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
+              ' · '+trFrase('IBAMA')+': '+
+              (p.autIbama?statusVenc(p.autIbama.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+'</div>'+
+            (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+
+            '<div class="meta" style="margin-top:6px">'+
+              (p.regular?'<span class="pill ok">'+trFrase('regular para ceva e rota')+'</span>'
+                        :'<span class="pill gray">'+trFrase('pendente: desenho ou autorização')+'</span>')+'</div>'+
+          '</div>'+
+          '<div class="card" id="pdItens"><div class="meta">'+trFrase('Procurando o que está dentro…')+'</div></div>'+
+        '</div>'+
+      '</div>');
+
+  /* Mapa: monta já, para a pessoa ver o desenho enquanto os itens carregam. */
+  if(PDMAP){ try{ PDMAP.remove(); }catch(e){} PDMAP=null; }
+  setTimeout(function(){
+    var el=document.getElementById('pdMap'); if(!el) return;
+    PDMAP=L.map('pdMap',{preferCanvas:true,zoomControl:true}).setView([-15.78,-47.93],4);
+    addBase(PDMAP);
+    if(temPoly){
+      L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12}).addTo(PDMAP);
+      try{ PDMAP.fitBounds(poly,{padding:[24,24],maxZoom:16}); }catch(e){}
+    } else if(ptOk(coord(p.lat),coord(p.lng))){
+      L.marker([coord(p.lat),coord(p.lng)],{icon:svgIconMapa('propriedade',28,'#2f7d3a')}).addTo(PDMAP);
+      PDMAP.setView([coord(p.lat),coord(p.lng)],14);
+    }
+    setTimeout(function(){ if(PDMAP){ try{PDMAP.invalidateSize();}catch(e){} } },150);
+    carregarItensProp(p,poly,temPoly);
+  },60);
+};
+
+/* Busca ceva, armadilha e rota e separa o que pertence a esta área. */
+function carregarItensProp(p,poly,temPoly){
+  server('apiMapaDados').then(function(d){
+    if(!PDMAP) return;                       /* a pessoa já saiu da tela */
+    function dentro(x){ return temPoly && pontoDentro({lat:x.lat,lng:x.lng},p.limite); }
+
+    var cevas=(d.cevas||[]).filter(dentro);
+    var arms=(d.armadilhas||[]).filter(dentro);
+    var rotas=(d.rotas||[]).filter(function(r){
+      if(String(r.propriedadeId||'')===String(p.id)) return true;   /* vínculo explícito */
+      if(!temPoly) return false;
+      return (r.pontos||[]).some(function(pt){ return pontoDentro(pt,p.limite); });
+    });
+    PD_ITENS={cevas:cevas,armadilhas:arms,rotas:rotas};
+
+    /* As telas de destino leem de CACHE.ceva / CACHE.rota, que só são
+       preenchidos ao visitar as listas. Vindo direto daqui o clique abriria
+       vazio — em rota, "Rota não encontrada". O formato bate: apiMapaDados e
+       apiListarCevas/apiListarRotas saem os três de doMeu_, com `pontos` já
+       parseado nos dois lados. Mescla por id para não descartar cache válido. */
+    function semear(chave,itens){
+      var atual=CACHE[chave]||[], ids={};
+      atual.forEach(function(x){ ids[x.id]=1; });
+      (itens||[]).forEach(function(x){ if(!ids[x.id]) atual.push(x); });
+      CACHE[chave]=atual;
+    }
+    semear('ceva',d.cevas); semear('rota',d.rotas);
+
+    cevas.forEach(function(c){
+      var la=coord(c.lat),ln=coord(c.lng); if(!ptOk(la,ln)) return;
+      L.marker([la,ln],{icon:svgIconMapa('ceva',26,'#b8863b')}).addTo(PDMAP)
+       .bindPopup('<div class="pop"><h4>'+esc(c.nome||'Ceva')+'</h4>'+
+         '<button class="btn sm" onclick="abrirCeva(\''+escJs(c.id)+'\')">'+trFrase('Abrir')+'</button></div>');
+    });
+    arms.forEach(function(a){
+      var la=coord(a.lat),ln=coord(a.lng); if(!ptOk(la,ln)) return;
+      L.marker([la,ln],{icon:svgIconMapa('armadilha',26,'#b23b3b')}).addTo(PDMAP)
+       .bindPopup('<div class="pop"><h4>'+esc(a.tipo||'Armadilha')+'</h4>'+
+         '<button class="btn sm" onclick="nav(\'armadilha\')">'+trFrase('Abrir')+'</button></div>');
+    });
+    rotas.forEach(function(r){
+      var linha=(r.pontos||[]).map(function(pt){ return [coord(pt.lat),coord(pt.lng)]; })
+                              .filter(function(xy){ return ptOk(xy[0],xy[1]); });
+      if(linha.length<2) return;
+      L.polyline(linha,{color:'#3b6ea5',weight:3,opacity:.85}).addTo(PDMAP)
+       .bindPopup('<div class="pop"><h4>🧭 '+esc(r.nome||'Rota')+'</h4>'+
+         '<button class="btn sm" onclick="abrirRota(\''+escJs(r.id)+'\')">'+trFrase('Abrir')+'</button></div>');
+    });
+
+    var box=document.getElementById('pdItens'); if(!box) return;
+    var total=cevas.length+arms.length+rotas.length;
+    if(!total){
+      box.innerHTML='<div class="meta">'+
+        (temPoly?trFrase('Nada cadastrado dentro desta área ainda.')
+                :trFrase('Sem o limite desenhado, só aparece o que estiver ligado a ela por cadastro.'))+'</div>';
+      return;
+    }
+    box.innerHTML='<h3 style="margin:0 0 6px">'+trFrase('Dentro desta área')+'</h3>'+
+      cevas.map(function(c){ return pdLinha('🌽',c.nome||'Ceva',c.tipo||'',"abrirCeva('"+escJs(c.id)+"')"); }).join('')+
+      rotas.map(function(r){ return pdLinha('🧭',r.nome||'Rota',fmtDist(parseFloat(r.distancia)||0),"abrirRota('"+escJs(r.id)+"')"); }).join('')+
+      arms.map(function(a){ return pdLinha('🪤',a.tipo||'Armadilha',a.status||'',"nav('armadilha')"); }).join('');
+    traduzirDOM(box); iconizar(box);
+  }).catch(function(e){
+    var box=document.getElementById('pdItens'); if(!box) return;
+    box.innerHTML='<div class="meta">'+trFrase('Não foi possível carregar o que está dentro da área')+
+      '<br><span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div>';
+  });
+}
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Manejo',ed?'Editar':'Abate'); loadingBox('Carregando…');
   var pManejo = ed ? Promise.resolve(null) : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):server('apiManejoAberto'));
