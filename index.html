@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1639';
+var APP_VER = 'vJS.300726.1709';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1568,6 +1568,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Caçar agora':'Hunt now',
+    '＋ NOVO CICLO DE CAÇA':'＋ NEW HUNT CYCLE',
     'Criar nova Rota':'Create new route',
     'Criar nova rota de pesca':'Create new fishing route',
     'Esta propriedade não tem limite desenhado e não pode receber rota.':'This property has no boundary drawn and cannot host a route.',
@@ -2862,6 +2864,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Caçar agora':'Cazar ahora',
+    '＋ NOVO CICLO DE CAÇA':'＋ NUEVO CICLO DE CAZA',
     'Criar nova Rota':'Crear nueva ruta',
     'Criar nova rota de pesca':'Crear nueva ruta de pesca',
     'Esta propriedade não tem limite desenhado e não pode receber rota.':'Esta propiedad no tiene límite dibujado y no puede recibir ruta.',
@@ -8022,7 +8026,9 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
       '<div class="grow"><h3 style="font-size:15px">'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h3><div class="meta">'+(m.descricao?esc(m.descricao)+'<br>':'')+fmtDataHora(m.dataHora)+'</div></div><button class="ib" onclick="delItem(\'marcacao\',\''+m.id+'\')" title="Excluir">🗑️</button></div></div>'; }).join('')
       : '<div class="empty">Nenhum ponto ainda. Toque em <b>Guiar</b> e use <b>📍 Marcar ponto</b> no caminho para enriquecer esta rota.</div>';
   }).catch(function(){});
-  fab('<button class="btn" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar por esta rota</button>'); };
+  /* "Guiar por esta rota" saiu daqui: guiar passa a ser ação do ciclo de
+     caça, não de olhar a rota no mapa. A função segue existindo. */
+  fab(''); };
 
 /* ----- Rota desenhada manualmente (clicando no mapa) ----- */
 var DRAW=null;
@@ -8457,7 +8463,7 @@ function pintarCardManejos(m){
       (m.souDono===false?' · '+trFrase('Convidado por')+' '+esc(m.donoNome||'—'):'')
     : trFrase('Abertos e encerrados · abates de cada um');
   el.innerHTML='<div class="card menu-card click'+(aberto?' manejo-aberto':'')+'" onclick="nav(\'manejoLista\')">'+
-    '<div class="ic">'+ico('painel')+'</div><div class="txt"><h3>'+trFrase('Manejos')+'</h3><p>'+sub+'</p></div>'+
+    '<div class="ic">'+ico('painel')+'</div><div class="txt"><h3>'+trFrase('Caçar agora')+'</h3><p>'+sub+'</p></div>'+
     (aberto?'<span class="selo-aberto">1 '+trFrase('aberto')+'</span>':'')+'<div class="chev">›</div></div>'; }
 window.novoManejo=function(){
   var meuAberto=function(m){ return m && m.souDono!==false; };
@@ -8587,7 +8593,7 @@ VIEWS.manejoLista=function(){ setTitulo('Manejos'); setCrumb('Manejo','Manejos')
     var corpo = lista.length ? lista.map(cardManejo).join('')
       : '<div class="empty"><div class="big">🎯</div>'+(MANEJO_ABA==='aberto'?'Nenhum manejo aberto.':'Nenhum manejo encerrado ainda.')+'</div>';
     app(abas+corpo);
-    if(MANEJO_ABA==='aberto' && !abertos.length) fab('<button class="btn" onclick="novoManejo()">＋ NOVO MANEJO</button>'); }).catch(erroTela); };
+    if(MANEJO_ABA==='aberto' && !abertos.length) fab('<button class="btn" onclick="novoManejo()">＋ NOVO CICLO DE CAÇA</button>'); }).catch(erroTela); };
 
 window.mudarAbaManejo=function(a){ MANEJO_ABA=a; render(); };
 function cardManejo(m){
@@ -8910,7 +8916,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
   pManejo.then(function(m){
     if(!ed && !m){ app('<div class="card"><div class="empty"><div class="big">🎯</div>'+
         'O abate agora pertence a um manejo, e você não tem manejo aberto.</div>'+
-        '<button class="btn" onclick="voltarENovoManejo()">＋ NOVO MANEJO</button></div>'); return; }
+        '<button class="btn" onclick="voltarENovoManejo()">＋ NOVO CICLO DE CAÇA</button></div>'); return; }
     ABATE_MANEJO = m || null;
     var cevas=(m&&m.cevas)||[], rotas=(m&&m.rotas)||[], gente=(m&&m.participantes)||[];
     var mostraLocal = ed ? true : !(m && m.tipo==='ceva');
