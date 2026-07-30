@@ -64,6 +64,14 @@
     color:var(--txt2);font-size:14px;pointer-events:none}
   input.moeda{padding-left:40px!important;text-align:right;font-variant-numeric:tabular-nums}
   input.ro{background:#efe9dc;color:var(--txt2);cursor:not-allowed}
+  .acv-abas{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+  .acv-aba{padding:9px 16px;border-radius:999px;border:1px solid var(--linha);background:#fff;
+    color:var(--txt);font-size:14px;font-weight:600;cursor:pointer}
+  .acv-aba.on{background:linear-gradient(#3a5a34,#2e4d2e);color:#fff;border-color:#2e4d2e}
+  .acv-aba .acv-num{display:inline-block;min-width:20px;padding:1px 6px;border-radius:999px;
+    background:rgba(0,0,0,.12);font-size:12px;margin-left:4px}
+  .acv-aba.on .acv-num{background:rgba(255,255,255,.22)}
+  .acv-linha{border:1px solid var(--linha);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--areia)}
   .data-wrap{position:relative;display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
   .data-wrap .data-txt{flex:1;margin:0}
   .data-wrap .data-txt.ruim{border-color:var(--danger);background:#fdecea}
@@ -1053,7 +1061,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1041';
+var APP_VER = 'vJS.300726.1124';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -2001,6 +2009,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Número do documento':'Document number',
+    'Certificado de Registro de Arma de Fogo. Um por arma.':'Firearm Registration Certificate. One per firearm.',
+    'Certificado de Registro do Exército.':'Army Registration Certificate.',
+    'Guia de Tráfego. O número é longo — o campo acompanha.':'Transport Permit. The number is long — the field fits it.',
+    'Linha apagada aqui é removida do seu acervo ao salvar.':'A row deleted here is removed from your collection when you save.',
+    'Os outros documentos do acervo continuam na lista abaixo.':'The other collection documents remain in the list below.',
+    'Acervo salvo ✔':'Collection saved ✔',
     'Arquivo (PDF ou imagem)':'File (PDF or image)',
     'Anexo atual':'Current attachment',
     'O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.':'The file stays private: only you can see it, and your partners only while a cycle is open with you.',
@@ -3236,6 +3251,13 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Número do documento':'Número del documento',
+    'Certificado de Registro de Arma de Fogo. Um por arma.':'Certificado de Registro de Arma de Fuego. Uno por arma.',
+    'Certificado de Registro do Exército.':'Certificado de Registro del Ejército.',
+    'Guia de Tráfego. O número é longo — o campo acompanha.':'Guía de Tráfico. El número es largo — el campo lo acompaña.',
+    'Linha apagada aqui é removida do seu acervo ao salvar.':'Una fila borrada aquí se elimina de tu acervo al guardar.',
+    'Os outros documentos do acervo continuam na lista abaixo.':'Los demás documentos del acervo siguen en la lista de abajo.',
+    'Acervo salvo ✔':'Acervo guardado ✔',
     'Arquivo (PDF ou imagem)':'Archivo (PDF o imagen)',
     'Anexo atual':'Adjunto actual',
     'O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.':'El archivo queda privado: solo tú lo ves, y tus compañeros solo mientras haya un ciclo abierto contigo.',
@@ -4735,7 +4757,7 @@ function pintarDocs(){
       '<img src="'+ICONS[DOC_ICONE[c]]+'" alt="">'+
       '<span class="lbl">'+DOC_ROTULO[c]+'</span>'+(n?'<span class="sn-num">'+n+'</span>':'')+'</div>';
   }).join('')+'</nav>';
-  var corpo = corpoDocumentos(DOCCAT);
+  var corpo = (DOCCAT==='acervo') ? corpoAcervoSub() : corpoDocumentos(DOCCAT);
   app(heroFoto('documentacao','Documentação','Guarde seus documentos e acompanhe os vencimentos. Tudo entra na agenda.','Documentos')+abas+corpo);
 }
 window.mudarDocCat=function(c){ DOCCAT=c; pintarDocs(); };
@@ -4745,8 +4767,86 @@ function statusVenc(v){ if(!v) return '';
   if(dias<0) return '<span class="doc-tag venc">vencido há '+Math.abs(dias)+'d</span>';
   if(dias<=30) return '<span class="doc-tag perto">vence em '+dias+'d</span>';
   return '<span class="doc-tag ok">válido</span>'; }
-function corpoDocumentos(cat){
-  var l=DOCLISTA.filter(function(d){return String(d.categoria)===cat;});
+/* ---- Acervo: subabas CRAF / CR / GT ----
+   São os três documentos que o manejador tem em quantidade. Cada um vira uma
+   lista de linhas que se acrescenta na própria tela e salva de uma vez. */
+var ACERVO_SUB=['CRAF','CR','GT'], ACERVO_ATUAL='CRAF';
+var ACERVO_ROT={CRAF:'CRAF',CR:'CR',GT:'GT'};
+var ACERVO_AJUDA={
+  CRAF:'Certificado de Registro de Arma de Fogo. Um por arma.',
+  CR:'Certificado de Registro do Exército.',
+  GT:'Guia de Tráfego. O número é longo — o campo acompanha.'
+};
+window.mudarAcervoSub=function(s){ ACERVO_ATUAL=s; pintarDocs(); };
+function linhaAcervo(d,i){
+  d=d||{};
+  return '<div class="acv-linha" data-i="'+i+'">'+
+    '<div class="row" style="align-items:center;gap:8px">'+
+      '<div class="grow"><label>'+trFrase('Número')+' *</label>'+
+        '<input class="acv-num" value="'+esc(d.numero||'')+'" placeholder="'+esc(trFrase('Número do documento'))+'"></div>'+
+      '<button class="ib" onclick="removerLinhaAcervo(this)" title="'+trFrase('Remover')+'">🗑️</button>'+
+    '</div>'+
+    '<input type="hidden" class="acv-id" value="'+esc(d.id||'')+'">'+
+    '<div class="two">'+
+      '<div>'+campoData('acv_emi_'+i,'Emissão',(d.emissao||'').slice(0,10))+'</div>'+
+      '<div>'+campoData('acv_venc_'+i,'Vencimento',(d.vencimento||'').slice(0,10))+'</div>'+
+    '</div></div>';
+}
+window.removerLinhaAcervo=function(btn){
+  var l=btn.closest('.acv-linha'); if(l) l.parentNode.removeChild(l);
+};
+window.addLinhaAcervo=function(){
+  var box=document.getElementById('acvLista'); if(!box) return;
+  var i=Date.now();                     /* índice único: os ids de data não podem repetir */
+  var d=document.createElement('div');
+  d.innerHTML=linhaAcervo({},i);
+  var nova=d.firstChild; box.appendChild(nova);
+  traduzirDOM(nova); iconizar(nova);
+};
+function corpoAcervoSub(){
+  var l=DOCLISTA.filter(function(d){
+    return String(d.categoria)==='acervo' && String(d.tipo)===ACERVO_ATUAL;
+  }).sort(function(a,b){ return String(a.vencimento||'').localeCompare(String(b.vencimento||'')); });
+  var subabas='<div class="acv-abas">'+ACERVO_SUB.map(function(s){
+    var n=DOCLISTA.filter(function(d){ return String(d.categoria)==='acervo'&&String(d.tipo)===s; }).length;
+    return '<button class="acv-aba'+(ACERVO_ATUAL===s?' on':'')+'" onclick="mudarAcervoSub(\''+s+'\')">'+
+      ACERVO_ROT[s]+(n?' <span class="acv-num">'+n+'</span>':'')+'</button>';
+  }).join('')+'</div>';
+  var linhas=l.length ? l.map(function(d,i){ return linhaAcervo(d,i); }).join('') : linhaAcervo({},0);
+  return subabas+
+    '<div class="card"><div class="meta" style="margin-bottom:10px">'+trFrase(ACERVO_AJUDA[ACERVO_ATUAL])+'</div>'+
+    '<div id="acvLista">'+linhas+'</div>'+
+    '<button class="btn sec" onclick="addLinhaAcervo()">＋ '+trFrase('Adicionar')+' '+ACERVO_ROT[ACERVO_ATUAL]+'</button>'+
+    '<button class="btn" style="margin-top:10px" onclick="salvarAcervo(this)">'+trFrase('Salvar')+'</button>'+
+    '<div class="meta" style="margin-top:8px">'+trFrase('Linha apagada aqui é removida do seu acervo ao salvar.')+'</div></div>'+
+    '<div class="card"><div class="meta">'+trFrase('Os outros documentos do acervo continuam na lista abaixo.')+'</div></div>'+
+    corpoDocumentos('acervo', ACERVO_SUB);
+}
+window.salvarAcervo=function(btn){
+  var box=document.getElementById('acvLista'); if(!box) return;
+  var itens=[], erro=false;
+  Array.prototype.forEach.call(box.querySelectorAll('.acv-linha'), function(l){
+    var i=l.getAttribute('data-i');
+    var num=(l.querySelector('.acv-num')||{}).value||'';
+    var id=(l.querySelector('.acv-id')||{}).value||'';
+    var emi=val('acv_emi_'+i), venc=val('acv_venc_'+i);
+    if(!num.trim() && !emi && !venc) return;
+    if(!num.trim()){ erro=true; return; }
+    itens.push({id:id,numero:num.trim(),emissao:emi,vencimento:venc});
+  });
+  if(erro){ toast('Informe o número de cada '+ACERVO_ROT[ACERVO_ATUAL]); return; }
+  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiSalvarAcervoLote',ACERVO_ATUAL,itens).then(function(){
+    toast('Acervo salvo ✔');
+    server('apiListarDocumentos').then(function(l){ DOCLISTA=l||[]; pintarDocs(); });
+  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível salvar'); });
+};
+function corpoDocumentos(cat, excluirTipos){
+  var l=DOCLISTA.filter(function(d){
+    if(String(d.categoria)!==cat) return false;
+    /* Os tipos que têm subaba própria não se repetem na lista geral. */
+    return !(excluirTipos && excluirTipos.indexOf(String(d.tipo))>=0);
+  });
   var linhas = l.length ? l.map(function(d){
     var extra='';
     if(cat==='veiculo'&&d.transporteId){ var t=TRANSPS.filter(function(x){return x.id===d.transporteId;})[0];
