@@ -1061,7 +1061,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1124';
+var APP_VER = 'vJS.300726.1139';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -2009,6 +2009,7 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Escolher outro arquivo substitui este.':'Choosing another file replaces this one.',
     'Número do documento':'Document number',
     'Certificado de Registro de Arma de Fogo. Um por arma.':'Firearm Registration Certificate. One per firearm.',
     'Certificado de Registro do Exército.':'Army Registration Certificate.',
@@ -3251,6 +3252,7 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Escolher outro arquivo substitui este.':'Elegir otro archivo reemplaza este.',
     'Número do documento':'Número del documento',
     'Certificado de Registro de Arma de Fogo. Um por arma.':'Certificado de Registro de Arma de Fuego. Uno por arma.',
     'Certificado de Registro do Exército.':'Certificado de Registro del Ejército.',
@@ -4757,8 +4759,11 @@ function pintarDocs(){
       '<img src="'+ICONS[DOC_ICONE[c]]+'" alt="">'+
       '<span class="lbl">'+DOC_ROTULO[c]+'</span>'+(n?'<span class="sn-num">'+n+'</span>':'')+'</div>';
   }).join('')+'</nav>';
-  var corpo = (DOCCAT==='acervo') ? corpoAcervoSub() : corpoDocumentos(DOCCAT);
+  var ehAcervo=(DOCCAT==='acervo');
+  var corpo = ehAcervo ? corpoAcervoSub() : corpoDocumentos(DOCCAT);
   app(heroFoto('documentacao','Documentação','Guarde seus documentos e acompanhe os vencimentos. Tudo entra na agenda.','Documentos')+abas+corpo);
+  /* Depois do app(), senão os inputs de arquivo ainda não existem no DOM. */
+  if(ehAcervo) bindArquivosAcervo();
 }
 window.mudarDocCat=function(c){ DOCCAT=c; pintarDocs(); };
 function statusVenc(v){ if(!v) return '';
@@ -4790,7 +4795,19 @@ function linhaAcervo(d,i){
     '<div class="two">'+
       '<div>'+campoData('acv_emi_'+i,'Emissão',(d.emissao||'').slice(0,10))+'</div>'+
       '<div>'+campoData('acv_venc_'+i,'Vencimento',(d.vencimento||'').slice(0,10))+'</div>'+
-    '</div></div>';
+    '</div>'+
+    '<label>'+trFrase('Arquivo (PDF ou imagem)')+'</label>'+
+    '<input id="acv_arq_'+i+'" type="file" accept="application/pdf,image/*">'+
+    '<div class="meta" style="margin:-4px 0 8px">'+
+      (d.arquivo
+        ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(d.arquivoNome||'arquivo')+'</span> · '+
+          '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(d.id)+'\')">'+trFrase('Abrir')+'</button>'+
+          '<br>'+trFrase('Escolher outro arquivo substitui este.')
+        : trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.'))+
+    '</div>'+
+    '<label>'+trFrase('Observações')+'</label>'+
+    '<textarea class="acv-obs" rows="2">'+esc(d.obs||'')+'</textarea>'+
+    '</div>';
 }
 window.removerLinhaAcervo=function(btn){
   var l=btn.closest('.acv-linha'); if(l) l.parentNode.removeChild(l);
@@ -4802,7 +4819,15 @@ window.addLinhaAcervo=function(){
   d.innerHTML=linhaAcervo({},i);
   var nova=d.firstChild; box.appendChild(nova);
   traduzirDOM(nova); iconizar(nova);
+  bindArquivo('acv_arq_'+i);            /* sem isto o anexo da linha nova não é lido */
 };
+/* Liga o leitor de arquivo em todas as linhas já desenhadas. */
+function bindArquivosAcervo(){
+  var box=document.getElementById('acvLista'); if(!box) return;
+  Array.prototype.forEach.call(box.querySelectorAll('input[type=file]'), function(el){
+    if(el.id) bindArquivo(el.id);
+  });
+}
 function corpoAcervoSub(){
   var l=DOCLISTA.filter(function(d){
     return String(d.categoria)==='acervo' && String(d.tipo)===ACERVO_ATUAL;
@@ -4830,9 +4855,13 @@ window.salvarAcervo=function(btn){
     var num=(l.querySelector('.acv-num')||{}).value||'';
     var id=(l.querySelector('.acv-id')||{}).value||'';
     var emi=val('acv_emi_'+i), venc=val('acv_venc_'+i);
-    if(!num.trim() && !emi && !venc) return;
+    var obs=((l.querySelector('.acv-obs')||{}).value||'');
+    var arq=arquivoData('acv_arq_'+i);
+    if(!num.trim() && !emi && !venc && !obs.trim() && !arq) return;
     if(!num.trim()){ erro=true; return; }
-    itens.push({id:id,numero:num.trim(),emissao:emi,vencimento:venc});
+    var item={id:id,numero:num.trim(),emissao:emi,vencimento:venc,obs:obs};
+    if(arq){ item.arquivo=arq.dados; item.arquivoNome=arq.nome; }
+    itens.push(item);
   });
   if(erro){ toast('Informe o número de cada '+ACERVO_ROT[ACERVO_ATUAL]); return; }
   var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
