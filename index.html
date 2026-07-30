@@ -1063,7 +1063,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1153';
+var APP_VER = 'vJS.300726.1205';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -2011,6 +2011,7 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Não foi possível carregar suas propriedades':'Could not load your properties',
     'Autorização de manejo':'Management permit',
     'Autorização do IBAMA':'IBAMA permit',
     'Número da autorização':'Permit number',
@@ -3260,6 +3261,7 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Não foi possível carregar suas propriedades':'No se pudieron cargar tus propiedades',
     'Autorização de manejo':'Autorización de manejo',
     'Autorização do IBAMA':'Autorización del IBAMA',
     'Número da autorização':'Número de la autorización',
@@ -4788,7 +4790,7 @@ VIEWS.documentacao=function(){ PROP_ORIGEM='documentacao'; setTitulo('Documenta�
   Promise.all([
     DOCTIPOS?Promise.resolve(DOCTIPOS):server('apiTiposDocumento'),
     server('apiListarDocumentos'),
-    server('apiListarPropriedades').catch(function(){return [];}),
+    server('apiListarPropriedades').catch(function(e){ console.warn('propriedades',e); return []; }),
     server('apiListarTransportes').catch(function(){return [];})
   ]).then(function(res){
     DOCTIPOS=res[0]; DOCLISTA=res[1]||[]; PROPS=res[2]||[]; TRANSPS=res[3]||[];
@@ -8399,9 +8401,17 @@ window.encerrarManejo=function(btn){ var m=MANEJO_ATUAL; if(!m) return;
   .catch(function(e){ btn.disabled=false; btn.textContent='🔒 Encerrar manejo'; toast((e&&e.message)||'Erro'); }); };
 
 /* Propriedades como tela própria do MANEJO (a mesma lista da Documentação). */
-VIEWS.propriedades=function(){ PROP_ORIGEM='propriedades'; setTitulo('Propriedades'); setCrumb('Manejo','Propriedades'); loadingBox();
-  server('apiListarPropriedades').catch(function(){return [];}).then(function(l){ PROPS=l||[];
-    app('<div class="card"><div class="meta">Cadastre aqui as áreas onde você maneja — a mesma lista aparece em Documentação.</div></div>'+corpoPropriedades()); }); };
+VIEWS.propriedades=function(){ PROP_ORIGEM='propriedades'; setTitulo('Propriedades'); setCrumb('CAÇAR','Propriedades'); loadingBox();
+  /* Antes um erro aqui virava lista vazia: a propriedade estava salva e a tela
+     dizia que não havia nenhuma. Agora a falha aparece com o motivo. */
+  server('apiListarPropriedades').then(function(l){ PROPS=l||[];
+    app('<div class="card"><div class="meta">Cadastre aqui as áreas onde você maneja. O limite desenhado e as duas autorizações são o que liberam a área para ceva e rota.</div></div>'+corpoPropriedades());
+  }).catch(function(e){
+    app('<div class="card" style="border-left:5px solid var(--danger)">'+
+      '<h3 style="margin:0 0 4px">'+trFrase('Não foi possível carregar suas propriedades')+'</h3>'+
+      '<div class="meta no-i18n">'+esc((e&&e.message)||'')+'</div>'+
+      '<button class="btn sec" style="margin-top:10px" onclick="render()">'+trFrase('Tentar de novo')+'</button></div>');
+  }); };
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Manejo',ed?'Editar':'Abate'); loadingBox('Carregando…');
   var pManejo = ed ? Promise.resolve(null) : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):server('apiManejoAberto'));
