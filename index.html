@@ -1083,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1609';
+var APP_VER = 'vJS.300726.1624';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1565,6 +1565,9 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Autorização de Acesso':'Access permit',
+    'Toque dentro da área verde para marcar a ceva':'Tap inside the green area to place the feeder',
+    'Fora do limite de':'Outside the boundary of',
     'escolha a propriedade':'choose the property',
     'irregular':'irregular',
     'Esta propriedade não tem limite desenhado e não pode receber ceva.':'This property has no boundary drawn and cannot host a feeder.',
@@ -2844,6 +2847,9 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Autorização de Acesso':'Autorización de acceso',
+    'Toque dentro da área verde para marcar a ceva':'Toca dentro del área verde para marcar el comedero',
+    'Fora do limite de':'Fuera del límite de',
     'escolha a propriedade':'elige la propiedad',
     'irregular':'irregular',
     'Esta propriedade não tem limite desenhado e não pode receber ceva.':'Esta propiedad no tiene límite dibujado y no puede recibir comedero.',
@@ -4573,8 +4579,11 @@ window.dataEscolhida=function(el){
   var t=document.getElementById(el.id+'_txt');
   if(t){ t.value=dataBR(el.value); t.classList.remove('ruim'); }
 };
-function gpsButton(a,b){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\')">🗺️ Indicar no mapa</button></div>'; }
-var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null;
+/* `ctx` liga o picker ao contexto de quem chamou. Hoje só 'ceva' usa: com ele
+   o mapa abre já enquadrado no desenho da propriedade escolhida e recusa
+   toque fora dela. Sem ctx, o comportamento é o de antes. */
+function gpsButton(a,b,ctx){ return '<div class="two" style="margin-top:2px"><button type="button" class="btn gps" onclick="pegarGps(\''+a+'\',\''+b+'\',this)">📍 Minha localização</button><button type="button" class="btn sec" onclick="abrirMapaPicker(\''+a+'\',\''+b+'\',\''+(ctx||'')+'\')">🗺️ Indicar no mapa</button></div>'; }
+var PICKMAP=null, PICK_TARGET=null, PICK_LATLNG=null, PICK_PROP=null;
 /* Limites e cevas do manejo aberto. Servem ao picker do abate e ao desenho de
    rota manual: sem eles não dá para saber se o ponto caiu dentro da área. */
 var GUIA_MANEJO=null, GUIA_MANEJO_ID='';
@@ -4613,25 +4622,67 @@ function limitesDoManejoEm(map,layer,interativo){
     pts.push([la,ln]); });
   return pts;
 }
-window.abrirMapaPicker=function(a,b){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
+window.abrirMapaPicker=function(a,b,ctx){ PICK_TARGET={a:a,b:b}; PICK_LATLNG=null;
+  /* Propriedade em jogo, quando há. É ela que define o enquadramento e o que
+     o toque pode ou não marcar. */
+  PICK_PROP=(ctx==='ceva' && typeof propSelecionada==='function') ? propSelecionada() : null;
+  var polyProp=(PICK_PROP&&PICK_PROP.temLimite&&PICK_PROP.regular)
+    ? (PICK_PROP.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; })
+                            .filter(function(xy){ return ptOk(xy[0],xy[1]); })
+    : [];
   document.getElementById('mapPicker').classList.add('open');
   var cc=document.getElementById('pickCoord'); if(cc) cc.textContent='Toque no mapa para marcar o ponto';
+  /* Arrastar o pino também precisa respeitar o limite — senão bastava soltar
+     o marcador fora para burlar a recusa do toque. Fora da área, volta. */
+  function pontoAceito(la,ln){
+    if(polyProp.length<3) return true;
+    return pontoDentro({lat:la,lng:ln}, (PICK_PROP&&PICK_PROP.limite)||[]);
+  }
+  function ligarArrasto(mk){
+    mk.on('dragend',function(){
+      var q=mk.getLatLng();
+      if(!pontoAceito(q.lat,q.lng)){
+        toast(trFrase('Fora do limite de')+' '+((PICK_PROP&&PICK_PROP.nome)||''));
+        if(PICK_LATLNG) mk.setLatLng([PICK_LATLNG.lat,PICK_LATLNG.lng]);
+        return;
+      }
+      PICK_LATLNG={lat:q.lat,lng:q.lng}; setPickCoord();
+    });
+  }
   setTimeout(function(){ if(PICKMAP){ PICKMAP.remove(); PICKMAP=null; }
     var la=coord(val(a)), ln=coord(val(b)); var ok=ptOk(la,ln); var center=ok?[la,ln]:[-15.78,-47.93], zoom=ok?15:4;
     PICKMAP=L.map('pickMap',{preferCanvas:true}).setView(center,zoom);
     addBase(PICKMAP);
     var marker = ok ? L.marker([la,ln],{draggable:true}).addTo(PICKMAP) : null;
-    if(ok){ PICK_LATLNG={lat:la,lng:ln}; marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); }
+    if(ok){ PICK_LATLNG={lat:la,lng:ln}; ligarArrasto(marker); }
+    /* Propriedade escolhida no formulário da ceva: desenha, enquadra e passa
+       a mandar no que o toque aceita. Enquadrar já no desenho evita a pessoa
+       procurar a área no mapa do Brasil inteiro. */
+    if(polyProp.length>=3){
+      L.polygon(polyProp,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.14}).addTo(PICKMAP);
+      try{ PICKMAP.fitBounds(polyProp,{padding:[26,26],maxZoom:17}); }catch(e){}
+      if(cc) cc.textContent=trFrase('Toque dentro da área verde para marcar a ceva');
+    }
     /* Limite da propriedade do manejo aberto, para dar para ver se o abate
        caiu dentro da área. */
-    carregarGuiaManejo().then(function(){
+    if(polyProp.length<3) carregarGuiaManejo().then(function(){
       if(!PICKMAP) return;
       var ps=limitesDoManejoEm(PICKMAP);
       var cc=document.getElementById('pickCoord');
       if(ps.length && !ok){ try{ PICKMAP.fitBounds(ps,{padding:[30,30],maxZoom:15}); }catch(e){} }
       if(ps.length && cc && !PICK_LATLNG) cc.textContent=trFrase('Toque no mapa — a área verde é o limite da propriedade do manejo');
     });
-    PICKMAP.on('click',function(e){ PICK_LATLNG={lat:e.latlng.lat,lng:e.latlng.lng}; if(marker){ marker.setLatLng(e.latlng); } else { marker=L.marker(e.latlng,{draggable:true}).addTo(PICKMAP); marker.on('dragend',function(){ var p=marker.getLatLng(); PICK_LATLNG={lat:p.lat,lng:p.lng}; setPickCoord(); }); } setPickCoord(); });
+    PICKMAP.on('click',function(e){
+      /* Recusa na hora, não só ao salvar: marcar o ponto, fechar o mapa e só
+         então descobrir que estava fora era trabalho jogado fora. */
+      if(polyProp.length>=3 && !pontoDentro({lat:e.latlng.lat,lng:e.latlng.lng}, PICK_PROP.limite||[])){
+        toast(trFrase('Fora do limite de')+' '+((PICK_PROP&&PICK_PROP.nome)||''));
+        return;
+      }
+      PICK_LATLNG={lat:e.latlng.lat,lng:e.latlng.lng};
+      if(marker){ marker.setLatLng(e.latlng); }
+      else { marker=L.marker(e.latlng,{draggable:true}).addTo(PICKMAP); ligarArrasto(marker); }
+      setPickCoord(); });
     setTimeout(function(){ PICKMAP.invalidateSize(); },120);
   },80); };
 function setPickCoord(){ var cc=document.getElementById('pickCoord'); if(cc&&PICK_LATLNG) cc.textContent='📍 '+PICK_LATLNG.lat.toFixed(6)+', '+PICK_LATLNG.lng.toFixed(6); }
@@ -5129,7 +5180,7 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
 
     '<label>Número do CAR</label><input id="pr_car" value="'+esc(p.car||'')+'" placeholder="Cadastro Ambiental Rural">'+
-    blocoAutProp('manejo','Autorização de manejo',p.autManejo,false)+
+    blocoAutProp('manejo','Autorização de Acesso',p.autManejo,false)+
     blocoAutProp('ibama','Autorização do IBAMA',p.autIbama,true)+
     '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
     (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
@@ -7201,7 +7252,7 @@ VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'
     '</select><div id="c_propAviso"></div>'+
     '<label>Tipo de ponto *</label><select id="c_tipo">'+TIPOS_CEVA.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select>'+
     '<div class="two"><div><label>Latitude</label><input id="c_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="c_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+
-    gpsButton('c_lat','c_lng')+'<label>Observações</label><textarea id="c_obs">'+esc(pv('obs'))+'</textarea>'+
+    gpsButton('c_lat','c_lng','ceva')+'<label>Observações</label><textarea id="c_obs">'+esc(pv('obs'))+'</textarea>'+
     '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(do comedouro/ponto)')+'</label>'+
     (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
     '<input id="c_foto" type="file" accept="image/*"><img id="c_prev" class="foto-prev">'+
@@ -7475,7 +7526,7 @@ VIEWS.rotas=function(){ var mod=modalidadeAtual(); var ehPesca=(mod==='pesca');
     var banner = ROTA_REC.ativo ? '<div class="card" style="border-left:5px solid var(--danger)"><h3 style="margin:0 0 4px">● Gravação em andamento</h3><div class="meta">'+esc(ROTA_REC.nome||'')+' · '+((ROTA_REC.pontos||[]).length)+' pontos</div><button class="btn sm" style="margin-top:8px" onclick="nav(\'rotaGravar\')">Retomar gravação</button></div>' : '';
     var minhas = l.length? l.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+'</h3>'+
       '<div class="meta">'+(r.propriedade?esc(r.propriedade)+' · ':'')+esc(r.tipoTransporte||'')+'<br>'+fmtDist(parseFloat(r.distancia)||0)+' · '+((r.pontos||[]).length)+' pts GPS · '+fmtData(r.dataCadastro)+'</div></div><div class="chev">›</div></div>'+
-      '<button class="btn sm" style="margin-top:8px;width:auto" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar</button> <button class="btn sm sec" style="margin-top:8px;width:auto" onclick="compartilhar(\''+r.id+'\')">🔗 Compartilhar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
+      '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="compartilhar(\''+r.id+'\')">🔗 Compartilhar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
       : '<div class="empty"><div class="big">🧭</div>Nenhuma rota gravada ainda.<br>Toque em <b>Gravar nova rota</b>.</div>';
     var compHtml = comp.length? '<h3 style="margin:16px 4px 6px">🤝 Compartilhadas comigo</h3>'+comp.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="guiarRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+' <span class="pill '+(r.permissao==='editar'?'ok':'gray')+'">'+(r.permissao==='editar'?'Editar':'Seguir')+'</span></h3><div class="meta">de '+esc(r.donoNome||'manejador')+' · '+((r.pontos||[]).length)+' pts GPS</div></div><div class="chev">›</div></div><button class="btn sm" style="margin-top:8px;width:auto;background:linear-gradient(#3a5a34,#2e4d2e)" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar / seguir rota</button></div>'; }).join('') : '';
     app(banner+minhas+compHtml); fab(botaoCriar('＋ Gravar nova '+(ehPesca?'rota de pesca':'rota'),'rotas',todas.length,"novaRota()")); }); };
@@ -8642,7 +8693,7 @@ VIEWS.propDetalhe=function(){
             '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+
               (p.documentoDono?' · <span class="no-i18n">'+esc(p.documentoDono):'')+'</span></div>'+
             (p.car?'<div class="meta">CAR: <span class="no-i18n">'+esc(p.car)+'</span></div>':'')+
-            pdAut('Autorização de manejo',p.autManejo)+
+            pdAut('Autorização de Acesso',p.autManejo)+
             pdAut('Autorização IBAMA',p.autIbama)+
             (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+
             '<div class="meta" style="margin-top:6px">'+
