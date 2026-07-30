@@ -1053,7 +1053,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.290726.1710';
+var APP_VER = 'vJS.300726.1041';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -2001,6 +2001,14 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Arquivo (PDF ou imagem)':'File (PDF or image)',
+    'Anexo atual':'Current attachment',
+    'O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.':'The file stays private: only you can see it, and your partners only while a cycle is open with you.',
+    'Número do CAR':'CAR number',
+    'Arquivo muito grande (máximo 12 MB)':'File too large (max 12 MB)',
+    'Não foi possível abrir':'Could not open it',
+    'CAÇAR':'HUNT',
+    'Cevas, alimento e nível do tratadouro':'Baits, feed and trough level',
     '🗺️ Ruas':'🗺️ Streets',
     '🛰️ Satélite':'🛰️ Satellite',
     '🛰️ Satélite + nomes':'🛰️ Satellite + labels',
@@ -3228,6 +3236,14 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Arquivo (PDF ou imagem)':'Archivo (PDF o imagen)',
+    'Anexo atual':'Adjunto actual',
+    'O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.':'El archivo queda privado: solo tú lo ves, y tus compañeros solo mientras haya un ciclo abierto contigo.',
+    'Número do CAR':'Número del CAR',
+    'Arquivo muito grande (máximo 12 MB)':'Archivo demasiado grande (máx. 12 MB)',
+    'Não foi possível abrir':'No se pudo abrir',
+    'CAÇAR':'CAZAR',
+    'Cevas, alimento e nível do tratadouro':'Cebos, alimento y nivel del comedero',
     '🗺️ Ruas':'🗺️ Calles',
     '🛰️ Satélite':'🛰️ Satélite',
     '🛰️ Satélite + nomes':'🛰️ Satélite + nombres',
@@ -3849,10 +3865,9 @@ function updateHeader(){
   if(!logado) closeMenu();
 }
 var NAV_MANEJADOR=[
-  {v:'manejoHub', label:'Manejo',            icon:'abate', destaque:true},
+  {v:'manejoHub', label:'CAÇAR',             icon:'abate', destaque:true},
   {v:'inicio',    label:'Início',            icon:'inicio'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
-  {v:'espera',    label:'Espera (ceva)',     icon:'espera'},
   {v:'espreita',  label:'Transportes',       icon:'espreita'},
   {v:'caes',      label:'Meu canil',         icon:'caes'},
   {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
@@ -4472,6 +4487,28 @@ window.delItem=function(ent,id){ if(!confirm('Excluir este item? Esta ação nã
 function novo(view){ EDIT=null; nav(view); }
 
 /* foto -> dataURL (redimensiona/comprime) */
+/* Anexo de documento: devolve o conteúdo em base64 e o nome original.
+   Aceita PDF, ao contrário do fotoData, que só lida com imagem. */
+var ARQUIVOS={};
+function arquivoData(id){ return ARQUIVOS[id]||null; }
+window.bindArquivo=function(id){
+  var el=document.getElementById(id); if(!el) return;
+  el.addEventListener('change', function(){
+    var f=el.files&&el.files[0]; if(!f){ delete ARQUIVOS[id]; return; }
+    if(f.size>12*1024*1024){ toast('Arquivo muito grande (máximo 12 MB)'); el.value=''; return; }
+    var r=new FileReader();
+    r.onload=function(){ ARQUIVOS[id]={dados:r.result,nome:f.name}; };
+    r.readAsDataURL(f);
+  });
+};
+/* Abre o documento por URL assinada, válida por 5 minutos. */
+window.abrirDoc=function(id){
+  server('apiAbrirDocumento',id).then(function(r){
+    if(r&&r.url) window.open(r.url,'_blank');
+    else toast('Não foi possível abrir');
+  }).catch(function(e){ toast((e&&e.message)||'Não foi possível abrir'); });
+};
+
 /* Sem `capture` nos inputs de foto: com ele o Android e o iOS abrem a câmera
    direto e não oferecem a galeria. Sem ele, o próprio sistema pergunta —
    câmera, galeria ou arquivos. Foto de abate quase sempre já está na galeria. */
@@ -4673,8 +4710,10 @@ function telCompleto(id){ var sel=document.getElementById(id+'_pais'); var cod=s
 
 /* ================= DOCUMENTAÇÃO ================= */
 var DOCTIPOS=null, DOCCAT='acervo', DOCLISTA=[], PROPS=[], TRANSPS=[];
-var DOC_ROTULO={acervo:'Acervo',veiculo:'Veículos',pessoal:'Pessoal',propriedade:'Propriedade'};
-var DOC_ICONE={acervo:'doc_acervo',veiculo:'doc_veiculo',pessoal:'doc_pessoal',propriedade:'doc_propriedade'};
+/* Propriedade saiu daqui: ela mora em CAÇAR → Propriedade, onde o limite é
+   desenhado e as autorizações ficam junto da área. */
+var DOC_ROTULO={acervo:'Acervo',veiculo:'Veículos',pessoal:'Pessoal'};
+var DOC_ICONE={acervo:'doc_acervo',veiculo:'doc_veiculo',pessoal:'doc_pessoal'};
 VIEWS.documentacao=function(){ PROP_ORIGEM='documentacao'; setTitulo('Documentação'); setCrumb('Documentação'); loadingBox('Carregando…');
   Promise.all([
     DOCTIPOS?Promise.resolve(DOCTIPOS):server('apiTiposDocumento'),
@@ -4691,12 +4730,12 @@ VIEWS.documentacao=function(){ PROP_ORIGEM='documentacao'; setTitulo('Documenta�
   }); };
 function pintarDocs(){
   var abas='<nav class="subnav">'+Object.keys(DOC_ROTULO).map(function(c){
-    var n=(c==='propriedade')?PROPS.length:DOCLISTA.filter(function(d){return String(d.categoria)===c;}).length;
+    var n=DOCLISTA.filter(function(d){return String(d.categoria)===c;}).length;
     return '<div class="sn-item'+(DOCCAT===c?' active':'')+'" onclick="mudarDocCat(\''+c+'\')">'+
       '<img src="'+ICONS[DOC_ICONE[c]]+'" alt="">'+
       '<span class="lbl">'+DOC_ROTULO[c]+'</span>'+(n?'<span class="sn-num">'+n+'</span>':'')+'</div>';
   }).join('')+'</nav>';
-  var corpo = (DOCCAT==='propriedade') ? corpoPropriedadesDoc() : corpoDocumentos(DOCCAT);
+  var corpo = corpoDocumentos(DOCCAT);
   app(heroFoto('documentacao','Documentação','Guarde seus documentos e acompanhe os vencimentos. Tudo entra na agenda.','Documentos')+abas+corpo);
 }
 window.mudarDocCat=function(c){ DOCCAT=c; pintarDocs(); };
@@ -4737,29 +4776,6 @@ function corpoPropriedades(){
   return '<div class="card">'+linhas+
     '<button class="btn" style="margin-top:12px" onclick="novaProp()">＋ Adicionar propriedade</button></div>';
 }
-/* Em Documentação a propriedade é só papelada: aparecem apenas as que já têm
-   limite desenhado, e não se cria nem se desenha por aqui. O desenho é
-   exclusivo de Manejo → Propriedades. */
-function corpoPropriedadesDoc(){
-  var comLimite = PROPS.filter(function(p){ return p.temLimite; });
-  var semLimite = PROPS.length - comLimite.length;
-  if(!comLimite.length){
-    return '<div class="card"><div class="empty"><div class="big">🏞️</div>'+
-      trFrase('Nenhuma propriedade com limite desenhado.')+'</div>'+
-      '<div class="meta" style="text-align:center">'+trFrase('A documentação de uma propriedade só existe depois que o limite dela é desenhado.')+'</div>'+
-      '<button class="btn" style="margin-top:10px" onclick="go(\'propriedades\')">'+trFrase('Ir para Manejo → Propriedades')+'</button></div>';
-  }
-  var linhas = comLimite.map(function(p){
-    return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
-      '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
-      '<div class="meta">'+(p.autorizacaoNum?trFrase('Autorização nº')+' '+esc(p.autorizacaoNum):trFrase('sem autorização'))+(p.autorizacaoValidade?' · '+trFrase('válida até')+' '+fmtData(p.autorizacaoValidade):'')+'</div></div>'+
-      '<button class="ib" onclick="editarProp(\''+p.id+'\')" title="Editar documentação">✏️</button></div>';
-  }).join('');
-  return '<div class="card">'+linhas+
-    '<div class="meta" style="margin-top:12px">'+trFrase('Para criar propriedade ou desenhar o limite, use Manejo → Propriedades.')+
-    (semLimite?' <b>'+semLimite+'</b> '+trFrase(semLimite===1?'propriedade sem limite não aparece aqui.':'propriedades sem limite não aparecem aqui.'):'')+
-    '</div></div>';
-}
 /* ---- formulário de documento ---- */
 var DOCEDIT=null;
 window.novoDoc=function(){ DOCEDIT=null; nav('docForm'); };
@@ -4777,13 +4793,24 @@ VIEWS.docForm=function(){ var d=DOCEDIT||{}, cat=DOCCAT;
     '<div class="two"><div>'+campoData('dc_emi','Emissão',(d.emissao||'').slice(0,10))+'</div>'+
     '<div>'+campoData('dc_venc','Vencimento',(d.vencimento||'').slice(0,10))+'</div></div>'+
     '<div class="meta" style="margin:-4px 0 8px">Com vencimento preenchido, o documento aparece na sua Agenda.</div>'+
+    '<label>Arquivo (PDF ou imagem)</label>'+
+    '<input id="dc_arq" type="file" accept="application/pdf,image/*">'+
+    '<div class="meta" style="margin:-4px 0 10px">'+
+      (d.arquivo
+        ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(d.arquivoNome||'arquivo')+'</span> · '+
+          '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(d.id)+'\')">'+trFrase('Abrir')+'</button>'
+        : trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.'))+
+    '</div>'+
     '<label>Observações</label><textarea id="dc_obs">'+esc(d.obs||'')+'</textarea>'+
     '<button class="btn" onclick="salvarDoc(this)">'+(DOCEDIT?'Salvar alterações':'Adicionar')+'</button>'+
-    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  bindArquivo('dc_arq'); };
 window.salvarDoc=function(btn){ if(!val('dc_tipo')){toast('Selecione o tipo');return;}
   btn.disabled=true; btn.textContent='Salvando…';
   var d={categoria:DOCCAT,tipo:val('dc_tipo'),numero:val('dc_num'),emissao:val('dc_emi'),
     vencimento:val('dc_venc'),obs:val('dc_obs'),transporteId:val('dc_transp')||''};
+  var arq=arquivoData('dc_arq');
+  if(arq){ d.arquivo=arq.dados; d.arquivoNome=arq.nome; }
   if(DOCEDIT) d.id=DOCEDIT.id;
   server('apiSalvarDocumento',d).then(function(){ toast('Documento salvo ✔'); DOCEDIT=null; STATE.stack=['documentacao']; render(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
@@ -4803,6 +4830,7 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
     '<label>Nº da autorização de manejo</label><input id="pr_autnum" value="'+esc(p.autorizacaoNum||'')+'">'+
     campoData('pr_autval','Validade da autorização',(p.autorizacaoValidade||'').slice(0,10))+
+    '<label>Número do CAR</label><input id="pr_car" value="'+esc(p.car||'')+'" placeholder="Cadastro Ambiental Rural">'+
     '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
     (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
@@ -4899,7 +4927,7 @@ window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');ret
   var temLim = !!(PROPEDIT&&PROPEDIT.temLimite) || !!(LIM_DRAW&&LIM_DRAW.propId===((PROPEDIT&&PROPEDIT.id)||'')&&LIM_DRAW.pontos&&LIM_DRAW.pontos.length>=3);
   if(!temLim && PROP_ORIGEM==='propriedades'){ toast('Desenhe o limite da propriedade antes de salvar'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
-  var d={nome:val('pr_nome'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
+  var d={nome:val('pr_nome'),car:val('pr_car'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
     autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),obs:val('pr_obs')};
   if(PROPEDIT) d.id=PROPEDIT.id;
   server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; voltarPropriedades(); })
@@ -7882,9 +7910,13 @@ function condResumo(a){ var p=[]; var lf=luaDoAbate(a);
    Entrega 1: Propriedades e Criar rota manual já funcionam.
    Novo manejo / Manejos chegam na entrega 2 (tabelas manejos/manejopart).
    ============================================================ */
-VIEWS.manejoHub=function(){ setTitulo('Manejo'); setCrumb('Manejo');
+VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
+  /* Ordem dos submenus definida pelo dono: CTF, Propriedade, Ceva, Rotas.
+     O CTF ainda não existe — entra na próxima entrega, junto com o bloqueio
+     que ele impõe ao restante do menu. */
   var cards='<div id="mnManejos"></div>'+
       moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
+      moduloCard('ceva','Espera (ceva)','Cevas, alimento e nível do tratadouro',true,"nav('espera')")+
       moduloCard('rotas','Rotas','Trajetos gravados por GPS',true,"abrirRotas('manejo')")+
       moduloCard('areas','Criar rota manual','Desenhar o traçado clicando no mapa',true,"criarRotaManual()");
   app('<div id="mnConvites"></div>'+cards);
