@@ -72,6 +72,8 @@
     background:rgba(0,0,0,.12);font-size:12px;margin-left:4px}
   .acv-aba.on .acv-num{background:rgba(255,255,255,.22)}
   .acv-linha{border:1px solid var(--linha);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--areia)}
+  .aut-bloco{border:1px solid var(--linha);border-left:4px solid var(--laranja);border-radius:12px;
+    padding:12px;margin:12px 0;background:var(--areia)}
   .data-wrap{position:relative;display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
   .data-wrap .data-txt{flex:1;margin:0}
   .data-wrap .data-txt.ruim{border-color:var(--danger);background:#fdecea}
@@ -1061,7 +1063,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1139';
+var APP_VER = 'vJS.300726.1153';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -2009,6 +2011,12 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Sponsorship queue',
     '📰 Artigos do blog':'📰 Blog articles',
     '🔑 Redefinir senha de usuário':'🔑 Reset user password',
+    'Autorização de manejo':'Management permit',
+    'Autorização do IBAMA':'IBAMA permit',
+    'Número da autorização':'Permit number',
+    'Validade':'Valid until',
+    'IBAMA':'IBAMA',
+    'falta':'missing',
     'Escolher outro arquivo substitui este.':'Choosing another file replaces this one.',
     'Número do documento':'Document number',
     'Certificado de Registro de Arma de Fogo. Um por arma.':'Firearm Registration Certificate. One per firearm.',
@@ -3252,6 +3260,12 @@ var FRASES = {
     '📬 Fila de patrocínios':'📬 Cola de patrocinios',
     '📰 Artigos do blog':'📰 Artículos del blog',
     '🔑 Redefinir senha de usuário':'🔑 Restablecer contraseña de usuario',
+    'Autorização de manejo':'Autorización de manejo',
+    'Autorização do IBAMA':'Autorización del IBAMA',
+    'Número da autorização':'Número de la autorización',
+    'Validade':'Validez',
+    'IBAMA':'IBAMA',
+    'falta':'falta',
     'Escolher outro arquivo substitui este.':'Elegir otro archivo reemplaza este.',
     'Número do documento':'Número del documento',
     'Certificado de Registro de Arma de Fogo. Um por arma.':'Certificado de Registro de Arma de Fuego. Uno por arma.',
@@ -4381,6 +4395,38 @@ function dataISO(br){
   if(dt.getUTCDate()!==d||dt.getUTCMonth()!==mo-1) return '';
   return m[3]+'-'+m[2]+'-'+m[1];
 }
+/* Bloco de autorização da propriedade: validade, arquivo e — no caso do
+   IBAMA — número. Os dois são guardados como documento, então entram sozinhos
+   na Agenda pelo vencimento. */
+/* Lê um bloco de autorização da tela. O arquivo vem do mapa ARQUIVOS, que é
+   variável global — por isso sobrevive à ida e volta do desenho do limite. */
+function coletaAut(chave,comNumero){
+  var pref='ap_'+chave;
+  var o={ validade: val(pref+'_val') };
+  if(comNumero) o.numero=val(pref+'_num');
+  var a=arquivoData(pref+'_arq');
+  if(a){ o.arquivo=a.dados; o.arquivoNome=a.nome; }
+  return o;
+}
+function blocoAutProp(chave,titulo,doc,comNumero){
+  doc=doc||{};
+  var pref='ap_'+chave;
+  return '<div class="aut-bloco">'+
+    '<h4 style="margin:0 0 6px">'+trFrase(titulo)+
+      (doc.vencimento ? ' '+statusVenc(doc.vencimento) : '')+'</h4>'+
+    (comNumero ? '<label>'+trFrase('Número da autorização')+'</label>'+
+      '<input id="'+pref+'_num" value="'+esc(doc.numero||'')+'">' : '')+
+    campoData(pref+'_val','Validade',(doc.vencimento||'').slice(0,10))+
+    '<label>'+trFrase('Arquivo (PDF ou imagem)')+'</label>'+
+    '<input id="'+pref+'_arq" type="file" accept="application/pdf,image/*">'+
+    '<div class="meta" style="margin:-4px 0 4px">'+
+      (doc.temArquivo
+        ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(doc.arquivoNome||'arquivo')+'</span> · '+
+          '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(doc.id)+'\')">'+trFrase('Abrir')+'</button>'+
+          '<br>'+trFrase('Escolher outro arquivo substitui este.')
+        : trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.'))+
+    '</div></div>';
+}
 function campoData(id,label,valor,obrig){
   var iso=String(valor||'').substring(0,10);
   return '<label>'+label+(obrig?' *':'')+'</label>'+
@@ -4895,7 +4941,9 @@ function corpoPropriedades(){
   var linhas = PROPS.length ? PROPS.map(function(p){
     return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
       '<div class="meta">'+(p.dono?'Proprietário: '+esc(p.dono):'sem proprietário')+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
-      '<div class="meta">'+(p.autorizacaoNum?'Autorização nº '+esc(p.autorizacaoNum):'sem autorização')+(p.autorizacaoValidade?' · válida até '+fmtData(p.autorizacaoValidade):'')+'</div>'+
+      '<div class="meta">'+trFrase('Manejo')+': '+(p.autManejo?statusVenc(p.autManejo.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
+      ' · '+trFrase('IBAMA')+': '+(p.autIbama?statusVenc(p.autIbama.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
+      (p.autIbama&&p.autIbama.numero?' <span class="no-i18n">nº '+esc(p.autIbama.numero)+'</span>':'')+'</div>'+
       '<div class="meta">'+(p.temLimite?'<span class="pill ok">'+trFrase('limite desenhado')+'</span>':'<span class="pill gray">'+trFrase('sem limite')+'</span>')+'</div>'+
       (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
       '<button class="ib" onclick="abrirCompartilhar(\'propriedade\',\''+escJs(p.id)+'\',\''+escJs(p.nome||'')+'\')" title="Compartilhar">🔗</button>'+
@@ -4957,9 +5005,10 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>Nome da propriedade *</label><input id="pr_nome" value="'+esc(p.nome||'')+'" placeholder="Ex: Fazenda Boa Vista">'+
     '<label>Proprietário</label><input id="pr_dono" value="'+esc(p.dono||'')+'" placeholder="Nome do dono">'+
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
-    '<label>Nº da autorização de manejo</label><input id="pr_autnum" value="'+esc(p.autorizacaoNum||'')+'">'+
-    campoData('pr_autval','Validade da autorização',(p.autorizacaoValidade||'').slice(0,10))+
+
     '<label>Número do CAR</label><input id="pr_car" value="'+esc(p.car||'')+'" placeholder="Cadastro Ambiental Rural">'+
+    blocoAutProp('manejo','Autorização de manejo',p.autManejo,false)+
+    blocoAutProp('ibama','Autorização do IBAMA',p.autIbama,true)+
     '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
     (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
@@ -4972,7 +5021,9 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
         '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O desenho define a localização da propriedade (centro da área) e aparece no seu mapa.')+'</div>'
       : '<div class="meta" style="margin:4px 0 10px;font-size:12px">'+trFrase('O limite é desenhado em Manejo → Propriedades. Aqui você cuida só da documentação.')+'</div>')+
     '<button class="btn" onclick="salvarProp(this)">'+(PROPEDIT?'Salvar alterações':'Adicionar')+'</button>'+
-    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>'); };
+    '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
+  /* Depois do app(): antes disso os inputs de arquivo ainda não existem. */
+  bindArquivo('ap_manejo_arq'); bindArquivo('ap_ibama_arq'); };
 function desenharLimitesEm(layer, props, pts){
   (props||[]).forEach(function(p){
     var poly=(p.limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; }).filter(function(xy){ return ptOk(xy[0],xy[1]); });
@@ -4996,7 +5047,7 @@ window.desenharLimite=function(){
   LIM_DRAW={ propId:p.id||'', nome:val('pr_nome')||p.nome||'Propriedade',
     pontos:(p.limite&&p.limite.length?p.limite.slice():[]),
     volta:{ nome:val('pr_nome'), dono:val('pr_dono'), documentoDono:val('pr_docdono'),
-      autorizacaoNum:val('pr_autnum'), autorizacaoValidade:val('pr_autval'),
+      autManejo:coletaAut('manejo',false), autIbama:coletaAut('ibama',true),
       lat:val('pr_lat'), lng:val('pr_lng'), obs:val('pr_obs') } };
   nav('propLimite'); };
 VIEWS.propLimite=function(){ if(!LIM_DRAW){ voltar(); return; }
@@ -5043,8 +5094,8 @@ function fmtArea(m2){ if(!m2) return '—';
 window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
   if(LIM_DRAW.pontos.length && LIM_DRAW.pontos.length<3){ toast('Marque ao menos 3 pontos para fechar a área'); return; }
   var v=LIM_DRAW.volta;
-  var d={ nome:v.nome||LIM_DRAW.nome, dono:v.dono, documentoDono:v.documentoDono, autorizacaoNum:v.autorizacaoNum,
-    autorizacaoValidade:v.autorizacaoValidade, obs:v.obs, limite:LIM_DRAW.pontos };
+  var d={ nome:v.nome||LIM_DRAW.nome, car:v.car, dono:v.dono, documentoDono:v.documentoDono,
+    autManejo:v.autManejo, autIbama:v.autIbama, obs:v.obs, limite:LIM_DRAW.pontos };
   if(!d.nome){ toast('Informe o nome da propriedade'); return; }
   if(LIM_DRAW.propId) d.id=LIM_DRAW.propId;
   btn.disabled=true; btn.textContent='Salvando…';
@@ -5057,7 +5108,7 @@ window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');ret
   if(!temLim && PROP_ORIGEM==='propriedades'){ toast('Desenhe o limite da propriedade antes de salvar'); return; }
   btn.disabled=true; btn.textContent='Salvando…';
   var d={nome:val('pr_nome'),car:val('pr_car'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
-    autorizacaoNum:val('pr_autnum'),autorizacaoValidade:val('pr_autval'),obs:val('pr_obs')};
+    autManejo:coletaAut('manejo',false),autIbama:coletaAut('ibama',true),obs:val('pr_obs')};
   if(PROPEDIT) d.id=PROPEDIT.id;
   server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; voltarPropriedades(); })
   .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
