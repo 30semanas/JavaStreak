@@ -165,6 +165,18 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+/* Seletor de camada do mapa: dois botões grandes no lugar do radio do Leaflet. */
+.js-camadas{display:flex;gap:0;border-radius:12px;overflow:hidden;
+  box-shadow:0 2px 10px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25)}
+.js-camadas button{appearance:none;border:0;cursor:pointer;font:inherit;font-size:13px;
+  font-weight:700;letter-spacing:.2px;padding:10px 14px;min-height:42px;display:flex;
+  align-items:center;gap:6px;background:rgba(255,255,255,.94);color:var(--txt2);
+  transition:background .15s,color .15s}
+.js-camadas button+button{border-left:1px solid var(--linha)}
+.js-camadas button:hover{background:#fff;color:var(--txt)}
+.js-camadas button.on{background:var(--verde);color:#fff}
+.js-camadas button.on svg{filter:brightness(0) invert(1)}
+@media (max-width:520px){ .js-camadas button{padding:9px 11px;font-size:12px} }
 /* Detalhe da propriedade: mapa e ficha lado a lado, empilhando sozinho no
    celular por causa do flex-wrap com base mínima. */
 .pd-wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
@@ -1071,7 +1083,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1530';
+var APP_VER = 'vJS.300726.1600';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1548,6 +1560,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Ruas':'Streets',
+    'Satélite':'Satellite',
     'Autorização IBAMA':'IBAMA permit',
     'sem número':'no number',
     'vence':'expires',
@@ -2816,6 +2830,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Ruas':'Calles',
+    'Satélite':'Satélite',
     'Autorização IBAMA':'Autorización IBAMA',
     'sem número':'sin número',
     'vence':'vence',
@@ -8849,33 +8865,48 @@ function coord(x){ if(x==null) return null; var n=parseFloat(String(x).replace('
    justamente na camada mais útil no campo. A opção "Satélite + nomes" põe os
    rótulos do Esri por cima da imagem. */
 function addBase(map, def){
-  var SUB={subdomains:'abc'};
   var ruas=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {maxNativeZoom:19,maxZoom:21,attribution:'© OpenStreetMap'});
-  var relevo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    {maxNativeZoom:17,maxZoom:21,attribution:'© OpenTopoMap'});
   var satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  var sat=L.tileLayer(satUrl,{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'});
-  /* Híbrido: a mesma imagem com uma camada de rótulos em cima. */
-  var hibrido=L.layerGroup([
+  /* "Satélite" aqui é a imagem COM os rótulos do Esri por cima. Satélite puro
+     esconde nome de rua e bairro justamente na camada mais útil no campo, e
+     agora que só há duas opções não dá para deixar a versão cega como a única. */
+  var sat=L.layerGroup([
     L.tileLayer(satUrl,{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'}),
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
       {maxNativeZoom:19,maxZoom:21,attribution:'Labels © Esri'})
   ]);
-  var layers={};
-  layers[trFrase('🗺️ Ruas')]=ruas;
-  layers[trFrase('🛰️ Satélite + nomes')]=hibrido;
-  layers[trFrase('🛰️ Satélite')]=sat;
-  layers[trFrase('⛰️ Relevo')]=relevo;
-  var escolhida = (def==='relevo'?relevo:(def==='sat'?sat:(def==='hibrido'?hibrido:ruas)));
-  escolhida.addTo(map);
-  /* O mapa nasce com o teto do Leaflet (18). Sem subir aqui, o maxZoom das
-     camadas não tem efeito nenhum. */
+  var camadas={ruas:ruas,sat:sat};
+  var atual=(def==='sat')?'sat':'ruas';
+  camadas[atual].addTo(map);
   try{ map.setMaxZoom(21); }catch(_){ }
-  L.control.layers(layers,null,{position:'topright',collapsed:true}).addTo(map);
-  /* Popup do mapa nasce fora do #app: iconiza na hora que abre. */
+
+  /* Controle próprio no lugar do L.control.layers: dois botões grandes, do
+     tamanho de dedo, em vez do radio miúdo do Leaflet. */
+  var ctl=L.control({position:'topright'});
+  ctl.onAdd=function(){
+    var d=L.DomUtil.create('div','js-camadas');
+    d.innerHTML='<button type="button" data-c="ruas">🗺️ '+trFrase('Ruas')+'</button>'+
+                '<button type="button" data-c="sat">🛰️ '+trFrase('Satélite')+'</button>';
+    function pintar(){ var bs=d.getElementsByTagName('button');
+      for(var k=0;k<bs.length;k++) bs[k].className=(bs[k].getAttribute('data-c')===atual)?'on':''; }
+    d.onclick=function(ev){
+      var b=ev.target; while(b&&b!==d&&b.tagName!=='BUTTON') b=b.parentNode;
+      if(!b||b===d) return;
+      var c=b.getAttribute('data-c'); if(c===atual) return;
+      try{ map.removeLayer(camadas[atual]); }catch(_){ }
+      atual=c; camadas[atual].addTo(map); pintar();
+    };
+    pintar();
+    L.DomEvent.disableClickPropagation(d);
+    L.DomEvent.disableScrollPropagation(d);
+    try{ iconizar(d); }catch(_){ }
+    return d;
+  };
+  ctl.addTo(map);
+
   try{ map.on('popupopen', function(e){ try{ iconizar(e.popup.getElement()); }catch(_){ } }); }catch(_){ }
-  return layers;
+  return camadas;
 }
 function ptOk(la,ln){ return la!=null&&ln!=null&&la>=-90&&la<=90&&ln>=-180&&ln<=180&&!(la===0&&ln===0); }
 
