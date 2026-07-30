@@ -168,8 +168,8 @@
 /* Detalhe da propriedade: mapa e ficha lado a lado, empilhando sozinho no
    celular por causa do flex-wrap com base mínima. */
 .pd-wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
-.pd-mapa{flex:1 1 420px;min-width:280px}
-.pd-info{flex:1 1 320px;min-width:270px}
+.pd-mapa{flex:2 1 340px;min-width:260px}
+.pd-info{flex:1 1 290px;min-width:260px}
 #pdMap{height:460px;border-radius:12px;overflow:hidden;border:1px solid var(--linha)}
 @media (max-width:760px){ #pdMap{height:320px} }
 .doc-linha.click{cursor:pointer}
@@ -1071,7 +1071,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1503';
+var APP_VER = 'vJS.300726.1530';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1548,6 +1548,10 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Autorização IBAMA':'IBAMA permit',
+    'sem número':'no number',
+    'vence':'expires',
+    'sem arquivo anexado':'no file attached',
     'Ver no mapa':'View on map',
     'regular para ceva e rota':'cleared for feeders and routes',
     'pendente: desenho ou autorização':'pending: boundary or permit',
@@ -2812,6 +2816,10 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Autorização IBAMA':'Autorización IBAMA',
+    'sem número':'sin número',
+    'vence':'vence',
+    'sem arquivo anexado':'sin archivo adjunto',
     'Ver no mapa':'Ver en el mapa',
     'regular para ceva e rota':'habilitada para comederos y rutas',
     'pendente: desenho ou autorização':'pendiente: límite o autorización',
@@ -8510,6 +8518,22 @@ function pdLinha(icone,titulo,sub,acao){
     '<span class="meta">›</span></div>';
 }
 
+/* Bloco de uma autorização da propriedade: selo de vencimento, número, data e
+   o anexo. O arquivo mora no bucket PRIVADO `docs`, então abre por URL
+   assinada de 5 min via abrirDoc() — nunca por link direto. */
+function pdAut(rotulo,aut){
+  if(!aut) return '<div class="doc-linha"><div class="grow"><b>📄 '+trFrase(rotulo)+'</b>'+
+    '<div class="meta"><span class="doc-tag venc">'+trFrase('falta')+'</span></div></div></div>';
+  return '<div class="doc-linha"><div class="grow"><b>📄 '+trFrase(rotulo)+'</b> '+statusVenc(aut.vencimento)+
+    '<div class="meta">'+(aut.numero?'<span class="no-i18n">nº '+esc(aut.numero)+'</span>':trFrase('sem número'))+
+      (aut.vencimento?' · '+trFrase('vence')+' '+fmtData(aut.vencimento):'')+'</div>'+
+    (aut.temArquivo
+      ? '<button class="btn sm sec" style="width:auto;margin-top:6px" onclick="abrirDoc(\''+escJs(aut.id)+'\')">'+
+          '📎 <span class="no-i18n">'+esc(aut.arquivoNome||'')+'</span></button>'
+      : '<div class="meta">'+trFrase('sem arquivo anexado')+'</div>')+
+    '</div></div>';
+}
+
 VIEWS.propDetalhe=function(){
   var p=null;
   for(var i=0;i<PROPS.length;i++){ if(PROPS[i].id===PROP_VER_ID){ p=PROPS[i]; break; } }
@@ -8531,10 +8555,8 @@ VIEWS.propDetalhe=function(){
             '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+
               (p.documentoDono?' · <span class="no-i18n">'+esc(p.documentoDono):'')+'</span></div>'+
             (p.car?'<div class="meta">CAR: <span class="no-i18n">'+esc(p.car)+'</span></div>':'')+
-            '<div class="meta" style="margin-top:6px">'+trFrase('Manejo')+': '+
-              (p.autManejo?statusVenc(p.autManejo.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
-              ' · '+trFrase('IBAMA')+': '+
-              (p.autIbama?statusVenc(p.autIbama.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+'</div>'+
+            pdAut('Autorização de manejo',p.autManejo)+
+            pdAut('Autorização IBAMA',p.autIbama)+
             (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+
             '<div class="meta" style="margin-top:6px">'+
               (p.regular?'<span class="pill ok">'+trFrase('regular para ceva e rota')+'</span>'
