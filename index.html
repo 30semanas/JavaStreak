@@ -1063,7 +1063,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1205';
+var APP_VER = 'vJS.300726.1253';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1540,6 +1540,10 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Criar meu perfil':'Create my profile',
+    'Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.':'Your manager record does not exist yet. Without it the entry is saved with no owner and never shows up in the list.',
+    'Seu plano atual não inclui este recurso.':'Your current plan does not include this feature.',
+    'Você chegou ao limite do seu plano':'You have reached your plan limit',
     'Assinar':'Subscribe',
     'Adicionar troféu':'Add trophy',
     'Novo produto':'New product',
@@ -2790,6 +2794,10 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Criar meu perfil':'Crear mi perfil',
+    'Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.':'Tu ficha de manejador aún no existe. Sin ella el registro se guarda sin dueño y no aparece en la lista.',
+    'Seu plano atual não inclui este recurso.':'Tu plan actual no incluye este recurso.',
+    'Você chegou ao limite do seu plano':'Has llegado al límite de tu plan',
     'Assinar':'Suscribir',
     'Adicionar troféu':'Añadir trofeo',
     'Novo produto':'Nuevo producto',
@@ -4056,6 +4064,42 @@ var SALAS_COMPART_QTD=0;
 /* Faixa acima do menu suspenso: saldos, chave e atalhos.
    Uma chamada só (apiMeusCreditos) alimenta tudo. */
 var CREDITOS=null;
+/* ---- Botão de criar que já nasce travado, com o motivo ----
+   Antes o botão estava sempre liberado: a pessoa preenchia o formulário
+   inteiro, desenhava o limite no mapa, e só no fim o servidor recusava. Pior
+   no caso da ficha ausente, em que o servidor NÃO recusava — gravava sem dono
+   e o registro sumia da listagem.
+   `CREDITOS` vem do apiMeusCreditos, que a faixa do topo já chama a cada
+   render, então isto não custa nenhuma chamada nova. */
+function bloqueioCriar(chave,qtdAtual){
+  if(!CREDITOS) return null;                       /* ainda carregando: não trava à toa */
+  if(CREDITOS.perfilCompleto===false){
+    return { motivo:trFrase('Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.'),
+             rotuloAcao:trFrase('Criar meu perfil'), acao:"go('perfilManejador')" };
+  }
+  var lim=(CREDITOS.limites||{})[chave];
+  if(lim===undefined||lim===null||lim===-1) return null;
+  var q=Number(qtdAtual)||0;
+  if(lim===0){
+    return { motivo:trFrase('Seu plano atual não inclui este recurso.'),
+             rotuloAcao:trFrase('Ver planos'), acao:"go('planos')" };
+  }
+  if(q>=lim){
+    return { motivo:trFrase('Você chegou ao limite do seu plano')+': '+lim+'.',
+             rotuloAcao:trFrase('Ver planos'), acao:"go('planos')" };
+  }
+  return null;
+}
+/* Devolve o HTML do botão: liberado, ou travado com a explicação e a saída.
+   `onclick` entra como texto de código, igual aos outros botões do app. */
+function botaoCriar(rotulo,chave,qtdAtual,onclick,estilo){
+  var b=bloqueioCriar(chave,qtdAtual);
+  if(!b) return '<button class="btn"'+(estilo?' style="'+estilo+'"':'')+' onclick="'+onclick+'">'+rotulo+'</button>';
+  return '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0">'+
+    '<div class="meta">🔒 '+esc(b.motivo)+'</div>'+
+    '<button class="btn sm" style="margin-top:8px;width:auto" onclick="'+b.acao+'">'+esc(b.rotuloAcao)+'</button></div>'+
+    '<button class="btn" disabled'+(estilo?' style="'+estilo+'"':'')+'>'+rotulo+'</button>';
+}
 function carregarCreditos(){
   if(!AUTH.token){ pintarTopStrip(); pintarChaveInicio(); return; }
   server('apiMeusCreditos').then(function(c){ CREDITOS=c; pintarTopStrip(); pintarChaveInicio(); }).catch(function(){});
@@ -4953,7 +4997,7 @@ function corpoPropriedades(){
       '<button class="ib" onclick="excluirProp(\''+p.id+'\')" title="Excluir">🗑️</button></div>';
   }).join('') : '<div class="meta" style="padding:14px 0">Nenhuma propriedade cadastrada.</div>';
   return '<div class="card">'+linhas+
-    '<button class="btn" style="margin-top:12px" onclick="novaProp()">＋ Adicionar propriedade</button></div>';
+    botaoCriar('＋ Adicionar propriedade','propriedades',PROPS.length,'novaProp()','margin-top:12px')+'</div>';
 }
 /* ---- formulário de documento ---- */
 var DOCEDIT=null;
@@ -7044,7 +7088,7 @@ VIEWS.espera=function(){ setTitulo('Espera – Cevas'); setCrumb('Manejo','Esper
       '<div class="grow click" onclick="abrirCeva(\''+c.id+'\')"><h3>'+esc(c.nome||'Ceva')+'</h3><div class="meta"><span class="pill">'+esc(c.tipo||'—')+'</span><br>'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+
       '<button class="ib" onclick="abrirCompartilhar(\'ceva\',\''+escJs(c.id)+'\',\''+escJs(c.nome||'Ceva')+'\')" title="Compartilhar">🔗</button>'+acoes('ceva',c.id)+'</div></div>'; }).join('')
       : '<div class="empty"><div class="big">🌽</div>Nenhuma ceva cadastrada.</div>';
-    app(html); fab('<button class="btn" onclick="novo(\'cevaForm\')">＋ Nova Ceva</button>'); }).catch(erroTela); };
+    app(html); fab(botaoCriar('＋ Nova Ceva','cevas',l.length,"novo('cevaForm')")); }).catch(erroTela); };
 
 VIEWS.cevaForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar ceva':'Nova ceva'); setCrumb('Espera',ed?'Editar':'Nova');
   app('<div class="card"><label>Nome / identificação *</label><input id="c_nome" value="'+esc(pv('nome'))+'" placeholder="Ex: Ceva do Riacho">'+
@@ -7310,7 +7354,7 @@ VIEWS.rotas=function(){ var mod=modalidadeAtual(); var ehPesca=(mod==='pesca');
       '<button class="btn sm" style="margin-top:8px;width:auto" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar</button> <button class="btn sm sec" style="margin-top:8px;width:auto" onclick="compartilhar(\''+r.id+'\')">🔗 Compartilhar</button> <button class="ib" style="margin-top:8px" onclick="delItem(\'rota\',\''+r.id+'\')">🗑️</button></div>'; }).join('')
       : '<div class="empty"><div class="big">🧭</div>Nenhuma rota gravada ainda.<br>Toque em <b>Gravar nova rota</b>.</div>';
     var compHtml = comp.length? '<h3 style="margin:16px 4px 6px">🤝 Compartilhadas comigo</h3>'+comp.map(function(r){ return '<div class="card"><div class="row"><div class="grow click" onclick="guiarRota(\''+r.id+'\')"><h3>🧭 '+esc(r.nome||'Rota')+' <span class="pill '+(r.permissao==='editar'?'ok':'gray')+'">'+(r.permissao==='editar'?'Editar':'Seguir')+'</span></h3><div class="meta">de '+esc(r.donoNome||'manejador')+' · '+((r.pontos||[]).length)+' pts GPS</div></div><div class="chev">›</div></div><button class="btn sm" style="margin-top:8px;width:auto;background:linear-gradient(#3a5a34,#2e4d2e)" onclick="guiarRota(\''+r.id+'\')">🧭 Guiar / seguir rota</button></div>'; }).join('') : '';
-    app(banner+minhas+compHtml); fab('<button class="btn" onclick="novaRota()">＋ Gravar nova '+(ehPesca?'rota de pesca':'rota')+'</button>'); }); };
+    app(banner+minhas+compHtml); fab(botaoCriar('＋ Gravar nova '+(ehPesca?'rota de pesca':'rota'),'rotas',todas.length,"novaRota()")); }); };
 window.compartilhar=function(id){ STATE.shareRotaId=id; nav('compartilharRota'); };
 VIEWS.compartilharRota=function(){ var id=STATE.shareRotaId; var r=(CACHE.rota||[]).filter(function(x){return x.id===id;})[0]||{}; setTitulo('Compartilhar rota'); setCrumb('Rotas','Compartilhar');
   app('<div class="card"><h3 style="margin:0 0 4px">🔗 '+esc(r.nome||'Rota')+'</h3><div class="meta">Compartilhe com outro manejador informando o <b>login</b> dele.</div>'+
@@ -7775,7 +7819,7 @@ window.cancelarDesenho=function(){ if(!confirm('Descartar esta rota?'))return; D
 VIEWS.caes=function(){ setTitulo('Meu canil'); setCrumb('Meu canil'); loadingBox();
   server('apiListarCanis').then(function(l){ CACHE.canil=l;
     var html=l.length? l.map(function(c){ return '<div class="card"><div class="row"><div class="grow click" onclick="abrirCanil(\''+c.id+'\')"><h3>🏠 '+esc(c.nome||'Canil')+' <span class="pill">'+(c.qtdCaes||0)+' '+trFrase((c.qtdCaes===1)?'cão':'cães')+'</span></h3><div class="meta">'+mapaLink(c.lat,c.lng)+(c.obs?'<br>'+esc(c.obs):'')+'</div></div>'+acoes('canil',c.id)+'</div></div>'; }).join('') : '<div class="empty"><div class="big">🐕</div>Nenhum canil cadastrado.</div>';
-    app(html); fab('<button class="btn" onclick="novo(\'canilForm\')">＋ Novo canil</button>'); }).catch(erroTela); };
+    app(html); fab(botaoCriar('＋ Novo canil','canis',l.length,"novo('canilForm')")); }).catch(erroTela); };
 
 VIEWS.canilForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar canil':'Novo canil'); setCrumb('Cães',ed?'Editar':'Novo canil');
   app('<div class="card"><label>Nome do canil *</label><input id="k_nome" value="'+esc(pv('nome'))+'">'+
@@ -7858,7 +7902,7 @@ VIEWS.armadilha=function(){ setTitulo('Armadilhas'); setCrumb('Manejo','Armadilh
     var html=l.length? l.map(function(a){ var st=a.status==='Ativa'?'ok':'gray';
       return '<div class="card"><div class="row"><div class="grow"><h3>🪤 '+esc(a.tipo)+'</h3><div class="meta"><span class="pill '+st+'">'+esc(a.status||'Ativa')+'</span> '+mapaLink(a.lat,a.lng)+(a.obs?'<br>'+esc(a.obs):'')+'</div></div>'+
         '<div class="acoes"><button class="ib" onclick="ciclarStatus(\''+a.id+'\',\''+esc(a.status||'Ativa')+'\')" title="Status">🔁</button><button class="ib" onclick="editItem(\'armadilha\',\''+a.id+'\')">✏️</button><button class="ib" onclick="delItem(\'armadilha\',\''+a.id+'\')">🗑️</button></div></div></div>'; }).join('') : '<div class="empty"><div class="big">🪤</div>Nenhuma armadilha cadastrada.</div>';
-    app(html); fab('<button class="btn" onclick="novo(\'armForm\')">＋ Nova armadilha</button>'); }).catch(erroTela); };
+    app(html); fab(botaoCriar('＋ Nova armadilha','armadilhas',l.length,"novo('armForm')")); }).catch(erroTela); };
 
 window.ciclarStatus=function(id,atual){ var prox=(atual==='Ativa')?'Inativa':'Ativa';
   server('apiAtualizarStatusArmadilha',id,prox).then(function(){ toast('Status: '+prox); render(); }); };
