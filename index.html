@@ -1092,7 +1092,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1730';
+var APP_VER = 'vJS.300726.1738';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1175,6 +1175,8 @@ function msgErro(e){
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
   if(cod==='PROP_SEM_PRAZO') return trFrase('Faltam as autorizações desta propriedade.');
+  if(cod==='LIVRE_EXCLUSIVO') return trFrase('Caçada livre não combina com ceva ou rota já cadastrada.');
+  if(cod==='ITEM_DE_OUTRA_PROP') return trFrase('Este item é de outra propriedade')+': '+nome;
   if(cod==='PROP_VENCIDA') return trFrase('A autorização desta propriedade venceu em')+' '+fmtData(nome);
   if(cod==='ROTA_FORA'){ var pp=nome.split('|');
     return trFrase('A rota tem')+' '+(pp[1]||'')+' '+trFrase('ponto(s) fora do limite de')+' '+(pp[0]||''); }
@@ -1579,6 +1581,19 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Caçada livre não combina com ceva ou rota já cadastrada.':'Free hunt does not combine with an existing feeder or route.',
+    'Este item é de outra propriedade':'This item belongs to another property',
+    'Escolha a propriedade para ver as cevas e rotas dela.':'Choose the property to see its feeders and routes.',
+    'Cevas desta propriedade':'Feeders on this property',
+    'Rotas desta propriedade':'Routes on this property',
+    'Nenhuma ceva cadastrada nesta propriedade.':'No feeder registered on this property.',
+    'Nenhuma rota cadastrada nesta propriedade.':'No route registered on this property.',
+    'Caçada livre (grava o percurso)':'Free hunt (records the path)',
+    'O percurso será gravado por GPS quando a caçada começar. O traçado que sair do limite da propriedade aparece em vermelho, mas é salvo do mesmo jeito.':'The path will be recorded by GPS once the hunt starts. Any stretch leaving the property boundary shows in red, but is saved all the same.',
+    'Sem ceva nem rota fixa. O app grava o caminho enquanto você anda.':'No fixed feeder or route. The app records the path as you walk.',
+    'Escolha ao menos uma ceva ou rota, ou marque caçada livre':'Pick at least one feeder or route, or check free hunt',
+    'Caçada livre':'Free hunt',
+    'Rota gravada e anexada à caçada ✔':'Route recorded and attached to the hunt ✔',
     'Esta ceva não está ligada a nenhuma propriedade.':'This feeder is not linked to any property.',
     'Esta propriedade está irregular e não pode abrir ciclo de caça.':'This property is irregular and cannot open a hunt cycle.',
     'O ciclo vai até':'The cycle runs until',
@@ -2882,6 +2897,19 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Caçada livre não combina com ceva ou rota já cadastrada.':'La cacería libre no se combina con comedero o ruta ya registrados.',
+    'Este item é de outra propriedade':'Este elemento es de otra propiedad',
+    'Escolha a propriedade para ver as cevas e rotas dela.':'Elige la propiedad para ver sus comederos y rutas.',
+    'Cevas desta propriedade':'Comederos de esta propiedad',
+    'Rotas desta propriedade':'Rutas de esta propiedad',
+    'Nenhuma ceva cadastrada nesta propriedade.':'Ningún comedero registrado en esta propiedad.',
+    'Nenhuma rota cadastrada nesta propriedade.':'Ninguna ruta registrada en esta propiedad.',
+    'Caçada livre (grava o percurso)':'Cacería libre (graba el recorrido)',
+    'O percurso será gravado por GPS quando a caçada começar. O traçado que sair do limite da propriedade aparece em vermelho, mas é salvo do mesmo jeito.':'El recorrido se grabará por GPS cuando empiece la cacería. El tramo que salga del límite aparece en rojo, pero se guarda igual.',
+    'Sem ceva nem rota fixa. O app grava o caminho enquanto você anda.':'Sin comedero ni ruta fija. La app graba el camino mientras caminas.',
+    'Escolha ao menos uma ceva ou rota, ou marque caçada livre':'Elige al menos un comedero o ruta, o marca cacería libre',
+    'Caçada livre':'Cacería libre',
+    'Rota gravada e anexada à caçada ✔':'Ruta grabada y añadida a la cacería ✔',
     'Esta ceva não está ligada a nenhuma propriedade.':'Este comedero no está vinculado a ninguna propiedad.',
     'Esta propriedade está irregular e não pode abrir ciclo de caça.':'Esta propiedad está irregular y no puede abrir ciclo de caza.',
     'O ciclo vai até':'El ciclo va hasta',
@@ -7720,7 +7748,19 @@ VIEWS.rotaGravar=function(){ if(!ROTA_REC.ativo){ STATE.stack=['espreita','rotas
   var map=L.map('recMap',{preferCanvas:true,zoomAnimation:false}).setView([-15.78,-47.93],4);
   addBase(map);
   ROUTEMAP=map;
-  ROTA_REC._poly=L.polyline(ROTA_REC.pontos.map(function(p){return [p.lat,p.lng];}),{color:'#b23b3b',weight:5}).addTo(map);
+  /* Traçado ao vivo em dois tons. O limite chega logo depois e o traçado é
+     repintado — o trecho fora da propriedade fica vermelho enquanto anda. */
+  ROTA_REC._tracado=desenharTracado(map,ROTA_REC.pontos,ROTA_REC._limite||[],null);
+  if(ROTA_REC.propriedadeId && !ROTA_REC._limite){
+    server('apiListarPropriedades').then(function(l){
+      if(ROUTEMAP!==map) return;
+      (l||[]).forEach(function(x){ if(x.id===ROTA_REC.propriedadeId) ROTA_REC._limite=x.limite||[]; });
+      var poly=(ROTA_REC._limite||[]).map(function(c){ return [coord(c.lat),coord(c.lng)]; })
+                                     .filter(function(xy){ return ptOk(xy[0],xy[1]); });
+      if(poly.length>=3) L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12}).addTo(map);
+      desenharTracado(map,ROTA_REC.pontos,ROTA_REC._limite||[],ROTA_REC._tracado);
+    }).catch(function(){});
+  }
   ROTA_REC._me=null; ROTA_REC._markLayer=L.featureGroup().addTo(map);
   if(ROTA_REC.pontos.length) L.marker([ROTA_REC.pontos[0].lat,ROTA_REC.pontos[0].lng],{icon:emojiIcon('🚩')}).addTo(map);
   (ROTA_REC.marcacoes||[]).forEach(function(m){ L.marker([m.lat,m.lng],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_REC._markLayer).bindPopup(marcaPopup(m)); });
@@ -7783,7 +7823,7 @@ function iniciarWatchGravacao(){ if(GEOWATCH!=null) return;
     var last=ROTA_REC.pontos[ROTA_REC.pontos.length-1];
     if(last){ var dd=distMetros(last,p); if(dd<3) { atualizarRecUI(p); return; } ROTA_REC.distancia+=dd; }
     ROTA_REC.pontos.push(p); atualizarEco();
-    if(ROUTEMAP&&ROTA_REC._poly){ ROTA_REC._poly.addLatLng([p.lat,p.lng]); ROUTEMAP.setView([p.lat,p.lng],ROUTEMAP.getZoom()<14?16:ROUTEMAP.getZoom());
+    if(ROUTEMAP&&ROTA_REC._tracado){ desenharTracado(ROUTEMAP,ROTA_REC.pontos,ROTA_REC._limite||[],ROTA_REC._tracado); ROUTEMAP.setView([p.lat,p.lng],ROUTEMAP.getZoom()<14?16:ROUTEMAP.getZoom());
       if(ROTA_REC._me) ROTA_REC._me.setLatLng([p.lat,p.lng]); else ROTA_REC._me=L.marker([p.lat,p.lng],{icon:emojiIcon(iconeTransp(ROTA_REC.tipoTransporte),30)}).addTo(ROUTEMAP); }
     atualizarRecUI(p);
     salvarRecLocal();
@@ -7805,6 +7845,7 @@ window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota 
   server('apiCriarRota',{ origem:'gps', nome:ROTA_REC.nome, propriedadeId:ROTA_REC.propriedadeId, tipoTransporte:ROTA_REC.tipoTransporte,
     modalidade:ROTA_REC.modalidade, pontos:simplificar(ROTA_REC.pontos,800), distancia:Math.round(ROTA_REC.distancia||0) })
   .then(function(rota){
+    ROTA_SALVA=rota;
     /* Rota gravada andando AVISA em vez de recusar — quem andou com sinal
        ruim na divisa não perde o percurso. O servidor conta os pontos fora e
        devolve o número; a recusa fica só para a rota marcada no mapa. */
@@ -7814,8 +7855,20 @@ window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota 
     if(!pend.length) return null;
     return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
   })
-  .then(function(){ limparRecLocal(); ROTA_REC={ativo:false,pontos:[]}; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
-  .catch(function(){ btn.disabled=false; btn.textContent='⏹️ Parar e salvar'; iniciarWatchGravacao(); }); };
+  .then(function(){
+    /* Gravação da caçada livre: a rota entra no ciclo e o ciclo continua
+       aberto. Parar de gravar não encerra a caçada. */
+    var ciclo=ROTA_REC.manejoId||'', rid=(ROTA_SALVA&&ROTA_SALVA.id)||'';
+    limparRecLocal(); ROTA_REC={ativo:false,pontos:[]};
+    if(ciclo && rid){
+      return server('apiAnexarRotaAoCiclo',ciclo,rid).then(function(){
+        toast(trFrase('Rota gravada e anexada à caçada ✔'));
+        STATE.manejoId=ciclo; MANEJO_ATUAL=null; STATE.stack=['manejoHub','manejoDetalhe']; render();
+      }).catch(function(e){ toast(msgErro(e)); STATE.stack=['espreita','rotas']; render(); });
+    }
+    toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render();
+  })
+  .catch(function(e){ toast(msgErro(e)); btn.disabled=false; btn.textContent='⏹️ Parar e salvar'; iniciarWatchGravacao(); }); };
 window.cancelarRota=function(){ if(!confirm('Descartar esta gravação?'))return;
   if(GEOWATCH!=null){ try{navigator.geolocation.clearWatch(GEOWATCH);}catch(e){} GEOWATCH=null; }
   ROTA_REC={ativo:false,pontos:[]}; STATE.stack=['espreita','rotas']; render(); };
@@ -7887,6 +7940,29 @@ function limitesDoGuia(d, rota, ponto){
   (d.limites||[]).forEach(function(p){ if(!ids[p.id] && pontoDentro(ref,p.limite)) base.push(p); });
   return base; }
 
+/* Traçado em dois tons: azul dentro do limite, VERMELHO no trecho que sai
+   dele. Trecho a trecho, não a rota inteira — dá para ver exatamente onde
+   saiu. Sem polígono, tudo azul. Devolve o layer para poder redesenhar. */
+function desenharTracado(map, pontos, limite, layer){
+  var lay = layer || L.featureGroup().addTo(map);
+  lay.clearLayers();
+  var pts=(pontos||[]).map(function(p){ return {lat:coord(p.lat),lng:coord(p.lng)}; })
+                      .filter(function(p){ return ptOk(p.lat,p.lng); });
+  if(pts.length<2){
+    if(pts.length===1) L.circleMarker([pts[0].lat,pts[0].lng],{radius:5,color:'#3b6ea5',fillColor:'#3b6ea5',fillOpacity:1}).addTo(lay);
+    return lay;
+  }
+  var temLim=(limite||[]).length>=3;
+  var dentroDe=function(p){ return !temLim || pontoDentro(p,limite); };
+  for(var i=0;i<pts.length-1;i++){
+    /* O trecho é vermelho se QUALQUER uma das duas pontas estiver fora —
+       assim a saída e a volta aparecem, não só o miolo. */
+    var fora = !dentroDe(pts[i]) || !dentroDe(pts[i+1]);
+    L.polyline([[pts[i].lat,pts[i].lng],[pts[i+1].lat,pts[i+1].lng]],
+      { color: fora?'#b23b3b':'#3b6ea5', weight:5, opacity:.9 }).addTo(lay);
+  }
+  return lay;
+}
 /* ponto dentro do polígono: raycasting simples */
 function pontoDentro(pt, poly){
   if(!pt||!poly||poly.length<3) return false;
@@ -8035,6 +8111,7 @@ window.abrirRota=function(id){ STATE.rota=(CACHE.rota||[]).filter(function(r){re
 /* Desenha o limite da propriedade da rota e monta a ficha com as duas
    autorizações. Reusa o pdAut do detalhe da propriedade — o botão do anexo
    passa pela URL assinada, o bucket `docs` é privado. */
+var RD_TRACO=null;
 function desenharPropDaRota(r,map,pts){
   var pid=String(r.propriedadeId||''); var box=document.getElementById('rdProp');
   if(!pid){ if(box) box.innerHTML='<div class="card"><div class="meta">'+
@@ -8050,6 +8127,9 @@ function desenharPropDaRota(r,map,pts){
                            .filter(function(xy){ return ptOk(xy[0],xy[1]); });
     if(poly.length>=3){
       L.polygon(poly,{color:'#2f7d3a',weight:2,fillColor:'#2f7d3a',fillOpacity:.12}).addTo(map);
+      /* O limite só chega agora, então o traçado é repintado: o que saiu da
+         área vira vermelho. */
+      if(RD_TRACO) desenharTracado(map,r.pontos||[],p.limite||[],RD_TRACO);
       /* Enquadra nos dois juntos: sem isso, rota curta dentro de área grande
          abria com a propriedade fora da tela. */
       if(!pts.length){ try{ map.fitBounds(poly,{padding:[40,40],maxZoom:16}); }catch(e){} }
@@ -8076,7 +8156,7 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
   var map=L.map('rdMap',{preferCanvas:true,zoomAnimation:false,minZoom:3}).setView(pts.length?pts[0]:[-15.78,-47.93],pts.length?15:4);
   addBase(map);
   ROUTEMAP=map;
-  if(pts.length){ L.polyline(pts,{color:'#3b6ea5',weight:5,opacity:.85}).addTo(map);
+  if(pts.length){ RD_TRACO=desenharTracado(map,r.pontos||[],[],null);
     L.marker(pts[0],{icon:emojiIcon('🚩')}).addTo(map).bindPopup('Início');
     L.marker(pts[pts.length-1],{icon:emojiIcon('🏁')}).addTo(map).bindPopup('Chegada'); }
   var mk=L.featureGroup().addTo(map);
@@ -8098,7 +8178,7 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
   fab(''); };
 
 /* ----- Rota desenhada manualmente (clicando no mapa) ----- */
-var DRAW=null;
+var DRAW=null, ROTA_SALVA=null;
 window.comecarDesenho=function(btn){ var p=rotaPropOk(); if(!p) return;
   DRAW={ nome:val('ro_nome'), propriedadeId:p.id, prop:p, tipo:val('ro_transp'), modalidade:modalidadeAtual(), pontos:[] };
   STATE.stack=['espreita','rotas','rotaDesenhar']; render(); };
@@ -8589,20 +8669,18 @@ window.abrirManejo=function(id){ MANEJO_ATUAL=null; STATE.manejoId=id;
   STATE.participacaoId=(da&&da.participacaoId)||''; nav('manejoDetalhe'); };
 
 VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
-  setTitulo(ed?'Editar manejo':'Novo manejo'); setCrumb('Manejo',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
-  Promise.all([ serverOpc('apiListarCevas'), serverOpc('apiListarRotas'), serverOpc('apiListarCanis'), serverOpc('apiListarPropriedades') ])
-  .then(function(r){ MANEJO_OPTS={cevas:r[0]||[],rotas:r[1]||[],canis:r[2]||[],
-      props:(r[3]||[]).filter(function(p){ return p.temLimite; })};
+  setTitulo(ed?'Editar caçada':'Novo ciclo de caça'); setCrumb('Caçar agora',ed?'Editar':'Novo'); loadingBox('Carregando opções…');
+  Promise.all([ serverOpc('apiListarCevas'), serverOpc('apiListarRotas'), serverOpc('apiListarPropriedades') ])
+  .then(function(r){ MANEJO_OPTS={cevas:r[0]||[],rotas:r[1]||[],props:(r[2]||[]).filter(function(p){ return p.temLimite; })};
     var m=MANEJO_EDIT||{};
+    /* Canil saiu do formulário: não é o que define a caçada. O campo continua
+       no modelo, só deixou de ser perguntado aqui. */
     app('<div class="card">'+
-      '<label>Nome do manejo</label><input id="mn_nome" value="'+esc(m.nome||'')+'" placeholder="Ex: Sábado na ceva do brejo">'+
-      '<label>Tipo *</label><select id="mn_tipo" onchange="pintarAvisoTipo()">'+
-        ['ceva','rota','livre'].map(function(t){ return '<option value="'+t+'"'+(String(m.tipo||'ceva')===t?' selected':'')+'>'+rotuloTipoManejo(t)+'</option>'; }).join('')+'</select>'+
-      '<div id="mn_aviso" class="meta" style="margin:-6px 0 10px"></div>'+
-      /* Propriedade saiu do bloco por tipo: agora vale para todos, porque é
-         dela que sai o prazo do ciclo e são dela os documentos que o amigo
-         convidado enxerga. */
-      '<label>Propriedade *</label><select id="mn_propFixa" onchange="avisarPropCiclo()">'+
+      '<label>Nome da Caçada</label><input id="mn_nome" value="'+esc(m.nome||'')+'" placeholder="Ex: Sábado no Sítio São Gabriel">'+
+      /* A propriedade é o segundo campo e manda em tudo: é dela que sai o
+         prazo do ciclo, os documentos que o amigo enxerga e as cevas e rotas
+         que aparecem para escolher. */
+      '<label>Propriedade *</label><select id="mn_propFixa" onchange="avisarPropCiclo();pintarOpcoesDaProp()">'+
         '<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+
         MANEJO_OPTS.props.map(function(p){
           var marca=p.regular?'':' ('+trFrase('irregular')+')';
@@ -8610,13 +8688,57 @@ VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
                  esc(p.nome||'')+esc(marca)+'</option>'; }).join('')+
       '</select><div id="mn_propAviso"></div>'+
       '<div id="mn_ctx"></div>'+
-      '<label style="margin-top:10px;display:block">Canil (opcional)</label>'+
-        listaChecks('mn_canis',MANEJO_OPTS.canis,(m.canis||[]).map(function(c){return c.id;}).join(','),'Nenhum canil cadastrado.')+
       '<label>Observações</label><textarea id="mn_obs">'+esc(m.obs||'')+'</textarea>'+
-      '<div class="meta" style="margin:2px 0 10px">Amigos são convidados depois, dentro do manejo aberto.</div>'+
-      '<button class="btn" id="mn_salvar" onclick="salvarManejo(this)">'+(ed?'Salvar alterações':'Iniciar manejo')+'</button>'+
+      '<div class="meta" style="margin:2px 0 10px">Amigos são convidados depois, dentro do ciclo aberto.</div>'+
+      '<button class="btn" id="mn_salvar" onclick="salvarManejo(this)">'+(ed?'Salvar alterações':'Iniciar caçada')+'</button>'+
       '<button class="btn sec" style="margin-top:8px" onclick="voltar()">Cancelar</button></div>');
-    pintarAvisoTipo(); avisarPropCiclo(); }); };
+    avisarPropCiclo(); pintarOpcoesDaProp(); }); };
+/* Cevas e rotas da propriedade escolhida, mais a opção livre.
+   Livre é EXCLUSIVO: marcar livre desmarca e desabilita as duas listas,
+   porque nele o percurso é gravado na hora. */
+window.pintarOpcoesDaProp=function(){
+  var box=document.getElementById('mn_ctx'); if(!box) return;
+  var p=propCicloSelecionada();
+  if(!p){ box.innerHTML='<div class="meta" style="margin:6px 0">'+
+    trFrase('Escolha a propriedade para ver as cevas e rotas dela.')+'</div>'; travarSalvarCiclo(true); return; }
+  var m=MANEJO_EDIT||{};
+  var cevas=(MANEJO_OPTS.cevas||[]).filter(function(c){ return String(c.propriedadeId||'')===p.id; });
+  var rotas=(MANEJO_OPTS.rotas||[]).filter(function(r){ return String(r.propriedadeId||'')===p.id; });
+  var livreOn=(String(m.tipo||'')==='livre');
+  box.innerHTML=
+    '<label style="margin-top:10px;display:block">'+trFrase('Cevas desta propriedade')+'</label>'+
+      (cevas.length? listaChecks('mn_cevas',cevas,(m.cevas||[]).map(function(c){return c.id;}).join(','),'')
+                   : '<div class="meta">'+trFrase('Nenhuma ceva cadastrada nesta propriedade.')+'</div>')+
+    '<label style="margin-top:10px;display:block">'+trFrase('Rotas desta propriedade')+'</label>'+
+      (rotas.length? listaChecks('mn_rotas',rotas,(m.rotas||[]).map(function(c){return c.id;}).join(','),'')
+                   : '<div class="meta">'+trFrase('Nenhuma rota cadastrada nesta propriedade.')+'</div>')+
+    '<div class="card" style="margin:12px 0 0;border-left:5px solid var(--terra)">'+
+      '<label style="display:flex;align-items:center;gap:8px;margin:0">'+
+        '<input type="checkbox" id="mn_livre" '+(livreOn?'checked':'')+' onchange="pintarAvisoLivre()">'+
+        '<b>'+trFrase('Caçada livre (grava o percurso)')+'</b></label>'+
+      '<div class="meta" id="mn_livreAviso" style="margin-top:6px"></div></div>';
+  traduzirDOM(box); iconizar(box); pintarAvisoLivre();
+};
+function travarSalvarCiclo(travar){
+  var bt=document.getElementById('mn_salvar'); if(!bt) return;
+  bt.disabled=!!travar; bt.style.opacity=travar?'.5':'';
+}
+/* Marcar livre desliga as listas na tela, para a exclusividade ficar visível
+   antes de o servidor recusar. */
+window.pintarAvisoLivre=function(){
+  var ch=document.getElementById('mn_livre'); if(!ch) return;
+  var on=ch.checked, av=document.getElementById('mn_livreAviso');
+  ['mn_cevas','mn_rotas'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.style.opacity=on?'.4':''; el.style.pointerEvents=on?'none':'';
+    if(on) Array.prototype.forEach.call(el.querySelectorAll('input[type=checkbox]'),function(c){ c.checked=false; });
+  });
+  if(av) av.innerHTML = on
+    ? '🔴 '+trFrase('O percurso será gravado por GPS quando a caçada começar. O traçado que sair do limite da propriedade aparece em vermelho, mas é salvo do mesmo jeito.')
+    : trFrase('Sem ceva nem rota fixa. O app grava o caminho enquanto você anda.');
+  if(av) traduzirDOM(av);
+  travarSalvarCiclo(false);
+};
 /* Mostra por que a propriedade não serve e, quando serve, até quando o ciclo
    vai durar. O teto é o vencimento da primeira das duas autorizações. */
 function propCicloSelecionada(){ var id=val('mn_propFixa'); var l=(MANEJO_OPTS&&MANEJO_OPTS.props)||[];
@@ -8644,38 +8766,21 @@ window.avisarPropCiclo=function(){
 
 /* O tipo manda: manejo de ceva só escolhe ceva, de rota só rota, livre só
    propriedade com limite. Sem o item cadastrado, o manejo nem começa. */
-window.pintarAvisoTipo=function(){
-  var t=val('mn_tipo'), av=document.getElementById('mn_aviso'), box=document.getElementById('mn_ctx');
-  if(!av||!box) return;
-  var m=MANEJO_EDIT||{}, falta='', corpo='';
-  if(t==='ceva'){
-    av.innerHTML='Manejo de ceva: escolha ao menos uma ceva.';
-    if(!MANEJO_OPTS.cevas.length) falta='Você não tem ceva cadastrada. Cadastre uma em Espera (ceva) antes de abrir um manejo de ceva.';
-    else corpo='<label>Cevas *</label>'+listaChecks('mn_cevas',MANEJO_OPTS.cevas,(m.cevas||[]).map(function(c){return c.id;}).join(','),'');
-  } else if(t==='rota'){
-    av.innerHTML='Manejo de rota: escolha ao menos uma rota.';
-    if(!MANEJO_OPTS.rotas.length) falta='Você não tem rota cadastrada. Grave ou desenhe uma rota antes de abrir um manejo de rota.';
-    else corpo='<label>Rotas *</label>'+listaChecks('mn_rotas',MANEJO_OPTS.rotas,(m.rotas||[]).map(function(c){return c.id;}).join(','),'');
-  } else {
-    /* A propriedade virou OPCIONAL no manejo livre: sem ela o manejo abre do
-       mesmo jeito, só não desenha limite no guiamento. */
-    av.innerHTML='Manejo livre: sem ceva nem rota fixa. A propriedade é opcional.';
-    if(!MANEJO_OPTS.props.length) corpo='<div class="meta">Nenhuma propriedade com limite desenhado. Você pode abrir o manejo assim mesmo — para ver o limite no mapa, desenhe em Manejo → Propriedades.</div>';
-    else corpo='<label>Propriedade (opcional)</label><select id="mn_prop">'+
-      '<option value="">Nenhuma</option>'+
-      MANEJO_OPTS.props.map(function(p){ return '<option value="'+esc(p.id)+'"'+((m.propriedade&&m.propriedade.id===p.id)?' selected':'')+'>'+esc(p.nome)+'</option>'; }).join('')+'</select>';
-  }
-  box.innerHTML = falta
-    ? '<div class="card" style="border-left:5px solid var(--alerta);margin:8px 0"><div class="meta">🔒 '+esc(falta)+'</div></div>'
-    : corpo;
-  var bt=document.getElementById('mn_salvar'); if(bt){ bt.disabled=!!falta; bt.style.opacity=falta?'.5':''; } };
+/* pintarAvisoTipo saiu: o campo Tipo deixou de existir. Quem manda agora
+   e a propriedade, e o tipo e deduzido do que voce marca. */
 
 window.salvarManejo=function(btn){
-  var tipo=val('mn_tipo');
-  var d={ nome:val('mn_nome'), tipo:tipo, obs:val('mn_obs'), canisIds:idsMarcados('mn_canis'),
-    cevasIds:'', rotasIds:'', propriedadeId:'' };
-  if(tipo==='ceva'){ d.cevasIds=idsMarcados('mn_cevas'); if(!d.cevasIds){ toast('Escolha ao menos uma ceva'); return; } }
-  if(tipo==='rota'){ d.rotasIds=idsMarcados('mn_rotas'); if(!d.rotasIds){ toast('Escolha ao menos uma rota'); return; } }
+  /* O tipo deixou de ser um campo: livre marcado manda; senão, quem tiver
+     ceva escolhida é ceva, quem tiver só rota é rota. As duas seleções são
+     guardadas de qualquer jeito. */
+  var ch=document.getElementById('mn_livre');
+  var livre=!!(ch&&ch.checked);
+  var cev=livre?'':idsMarcados('mn_cevas');
+  var rot=livre?'':idsMarcados('mn_rotas');
+  var tipo = livre ? 'livre' : (cev ? 'ceva' : (rot ? 'rota' : ''));
+  if(!tipo){ toast(trFrase('Escolha ao menos uma ceva ou rota, ou marque caçada livre')); return; }
+  var d={ nome:val('mn_nome'), tipo:tipo, obs:val('mn_obs'), canisIds:'',
+    cevasIds:cev, rotasIds:rot, propriedadeId:'' };
   /* Propriedade agora é de todos os tipos, e barrada antes de ir ao servidor. */
   var pSel=propCicloSelecionada();
   if(!pSel){ toast(trFrase('Escolha a propriedade deste ciclo')); return; }
@@ -8685,8 +8790,19 @@ window.salvarManejo=function(btn){
   btn.disabled=true; btn.textContent=trFrase('Salvando…');
   var p = MANEJO_EDIT ? server('apiAtualizarManejo',MANEJO_EDIT.id,d) : server('apiCriarManejo',d);
   p.then(function(res){ var id=(MANEJO_EDIT&&MANEJO_EDIT.id)||(res&&res.id);
-      toast(MANEJO_EDIT?'Manejo salvo ✔':'Manejo iniciado ✔'); MANEJO_EDIT=null; MANEJO_ABERTO=null;
-      STATE.manejoId=id; MANEJO_ATUAL=null; STATE.stack=['manejoHub','manejoDetalhe']; render(); })
+      var eraEdicao=!!MANEJO_EDIT;
+      toast(eraEdicao?'Caçada salva ✔':'Caçada iniciada ✔'); MANEJO_EDIT=null; MANEJO_ABERTO=null;
+      STATE.manejoId=id; MANEJO_ATUAL=null;
+      /* Caçada livre grava o percurso: entra direto na gravação, já amarrada
+         ao ciclo e à propriedade. Ao parar, a rota é anexada e o ciclo segue
+         aberto — parar de gravar não encerra a caçada. */
+      if(!eraEdicao && livre){
+        ROTA_REC={ ativo:true, nome:(val('mn_nome')||trFrase('Caçada livre')), propriedadeId:pSel.id,
+          tipoTransporte:'', modalidade:'manejo', manejoId:id, pontos:[], distancia:0, inicio:Date.now() };
+        salvarRecLocal();
+        STATE.stack=['manejoHub','manejoDetalhe','rotaGravar']; render(); return;
+      }
+      STATE.stack=['manejoHub','manejoDetalhe']; render(); })
    .catch(function(e){ btn.disabled=false; btn.textContent=MANEJO_EDIT?'Salvar alterações':'Iniciar manejo'; toast((e&&e.message)||'Erro'); }); };
 
 VIEWS.manejoLista=function(){ setTitulo('Manejos'); setCrumb('Manejo','Manejos'); loadingBox();
