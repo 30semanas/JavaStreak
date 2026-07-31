@@ -1092,7 +1092,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1304';
+var APP_VER = 'vJS.310726.1411';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1581,6 +1581,28 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Documentação da propriedade':'Property paperwork',
+    'Autorização de Acesso e IBAMA, com os anexos':'Access and IBAMA permits, with attachments',
+    'Quem está na caçada e convidar mais':'Who is on the hunt, and invite more',
+    'Ver e registrar os abates desta caçada':'See and record the kills of this hunt',
+    'Amigos':'Friends',
+    'vai até':'runs until',
+    'Caçada encerrada — somente leitura.':'Hunt closed — read only.',
+    'Encerrar: depois de encerrada ninguém mais edita esta caçada.':'Closing: once closed, nobody edits this hunt.',
+    'Encerrar ciclo':'Close cycle',
+    'Editar caçada':'Edit hunt',
+    'Você foi convidado para esta caçada. Aqui você registra abate — quem edita e encerra é':'You were invited to this hunt. Here you record kills — editing and closing belong to',
+    'Sair desta caçada':'Leave this hunt',
+    'o dono':'the owner',
+    'Esta caçada não está ligada a nenhuma propriedade.':'This hunt is not linked to any property.',
+    'Propriedade não encontrada.':'Property not found.',
+    'O amigo convidado enxerga a documentação desta propriedade enquanto a caçada estiver aberta, e registra abate dentro dela.':'An invited friend can see this property paperwork while the hunt is open, and records kills inside it.',
+    'O amigo precisa aceitar o convite.':'The friend has to accept the invitation.',
+    'Caçada encerrada — não dá mais para convidar.':'Hunt closed — no more invitations.',
+    'Nenhuma caçada aberta.':'No open hunt.',
+    'Nenhuma caçada encerrada ainda.':'No closed hunt yet.',
+    'NOVO CICLO DE CAÇA':'NEW HUNT CYCLE',
+    'Iniciar guiamento':'Start guidance',
     'Caçada livre não combina com ceva ou rota já cadastrada.':'Free hunt does not combine with an existing feeder or route.',
     'Este item é de outra propriedade':'This item belongs to another property',
     'Escolha a propriedade para ver as cevas e rotas dela.':'Choose the property to see its feeders and routes.',
@@ -2897,6 +2919,28 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Documentação da propriedade':'Documentación de la propiedad',
+    'Autorização de Acesso e IBAMA, com os anexos':'Autorizaciones de acceso e IBAMA, con adjuntos',
+    'Quem está na caçada e convidar mais':'Quién está en la cacería, e invitar',
+    'Ver e registrar os abates desta caçada':'Ver y registrar las capturas de esta cacería',
+    'Amigos':'Amigos',
+    'vai até':'va hasta',
+    'Caçada encerrada — somente leitura.':'Cacería cerrada — solo lectura.',
+    'Encerrar: depois de encerrada ninguém mais edita esta caçada.':'Al cerrar: nadie más edita esta cacería.',
+    'Encerrar ciclo':'Cerrar ciclo',
+    'Editar caçada':'Editar cacería',
+    'Você foi convidado para esta caçada. Aqui você registra abate — quem edita e encerra é':'Fuiste invitado a esta cacería. Aquí registras capturas — editar y cerrar corresponde a',
+    'Sair desta caçada':'Salir de esta cacería',
+    'o dono':'el dueño',
+    'Esta caçada não está ligada a nenhuma propriedade.':'Esta cacería no está vinculada a ninguna propiedad.',
+    'Propriedade não encontrada.':'Propiedad no encontrada.',
+    'O amigo convidado enxerga a documentação desta propriedade enquanto a caçada estiver aberta, e registra abate dentro dela.':'El amigo invitado ve la documentación de esta propiedad mientras la cacería esté abierta, y registra capturas en ella.',
+    'O amigo precisa aceitar o convite.':'El amigo debe aceptar la invitación.',
+    'Caçada encerrada — não dá mais para convidar.':'Cacería cerrada — ya no se puede invitar.',
+    'Nenhuma caçada aberta.':'Ninguna cacería abierta.',
+    'Nenhuma caçada encerrada ainda.':'Ninguna cacería cerrada todavía.',
+    'NOVO CICLO DE CAÇA':'NUEVO CICLO DE CAZA',
+    'Iniciar guiamento':'Iniciar guía',
     'Caçada livre não combina com ceva ou rota já cadastrada.':'La cacería libre no se combina con comedero o ruta ya registrados.',
     'Este item é de outra propriedade':'Este elemento es de otra propiedad',
     'Escolha a propriedade para ver as cevas e rotas dela.':'Elige la propiedad para ver sus comederos y rutas.',
@@ -8817,7 +8861,7 @@ window.salvarManejo=function(btn){
       STATE.stack=['manejoHub','manejoDetalhe']; render(); })
    .catch(function(e){ btn.disabled=false; btn.textContent=MANEJO_EDIT?'Salvar alterações':'Iniciar manejo'; toast((e&&e.message)||'Erro'); }); };
 
-VIEWS.manejoLista=function(){ setTitulo('Manejos'); setCrumb('Manejo','Manejos'); loadingBox();
+VIEWS.manejoLista=function(){ setTitulo('Caçar agora'); setCrumb('Caçar agora'); loadingBox();
   server('apiListarManejos').then(function(l){ CACHE.manejo=l||[];
     var abertos=CACHE.manejo.filter(function(m){return m.status==='aberto';});
     var fechados=CACHE.manejo.filter(function(m){return m.status!=='aberto';});
@@ -8827,13 +8871,19 @@ VIEWS.manejoLista=function(){ setTitulo('Manejos'); setCrumb('Manejo','Manejos')
       '<div class="sn-item'+(MANEJO_ABA==='aberto'?' active':'')+'" onclick="mudarAbaManejo(\'aberto\')"><span class="lbl">Abertos</span>'+(abertos.length?'<span class="sn-num">'+abertos.length+'</span>':'')+'</div>'+
       '<div class="sn-item'+(MANEJO_ABA==='encerrado'?' active':'')+'" onclick="mudarAbaManejo(\'encerrado\')"><span class="lbl">Encerrados</span>'+(fechados.length?'<span class="sn-num">'+fechados.length+'</span>':'')+'</div></nav>';
     var corpo = lista.length ? lista.map(cardManejo).join('')
-      : '<div class="empty"><div class="big">🎯</div>'+(MANEJO_ABA==='aberto'?'Nenhum manejo aberto.':'Nenhum manejo encerrado ainda.')+'</div>';
+      : '<div class="empty"><div class="big">🎯</div>'+trFrase(MANEJO_ABA==='aberto'?'Nenhuma caçada aberta.':'Nenhuma caçada encerrada ainda.')+'</div>';
     app(abas+corpo);
-    if(MANEJO_ABA==='aberto' && !abertos.length) fab('<button class="btn" onclick="novoManejo()">＋ NOVO CICLO DE CAÇA</button>'); }).catch(erroTela); };
+    /* O botão de abrir ciclo fica SEMPRE visível na aba dos abertos. Antes ele
+       só aparecia com a lista vazia, então quem já tinha uma caçada não via
+       como começar outra — e a recusa, quando vem, explica o motivo. */
+    if(MANEJO_ABA==='aberto') fab('<button class="btn" onclick="novoManejo()">＋ '+trFrase('NOVO CICLO DE CAÇA')+'</button>'); }).catch(erroTela); };
 
 window.mudarAbaManejo=function(a){ MANEJO_ABA=a; render(); };
 function cardManejo(m){
   var pill = m.status==='aberto' ? '<span class="pill" style="background:var(--danger)">aberto</span>' : '<span class="pill gray">encerrado</span>';
+  /* Prazo no card: é o que diz quando a caçada fecha sozinha. */
+  var prazo = (m.status==='aberto' && m.fimPrevisto)
+    ? '<div class="meta">⏳ '+trFrase('vai até')+' '+fmtData(m.fimPrevisto)+' '+statusVenc(m.fimPrevisto)+'</div>' : '';
   var partes=[]; if((m.cevas||[]).length) partes.push(m.cevas.length+' ceva(s)');
   if((m.rotas||[]).length) partes.push(m.rotas.length+' rota(s)'); if((m.canis||[]).length) partes.push(m.canis.length+' canil(is)');
   var deQuem = (m.souDono===false) ? '<span class="pill gray">'+trFrase('Convidado por')+' '+esc(m.donoNome||'—')+'</span> ' : '';
@@ -8841,7 +8891,7 @@ function cardManejo(m){
     '<h3>'+pill+' '+deQuem+esc(m.nome||'Manejo')+'</h3><div class="meta">'+rotuloTipoManejo(m.tipo)+' · '+fmtDataHora(m.criadoEm)+
     (partes.length?'<br>'+esc(partes.join(' · ')):'')+
     (m.status!=='aberto'?'<br>'+trFrase('Avistados')+': '+(m.avistamentos==null?0:m.avistamentos):'')+
-    '</div></div><div class="chev">›</div></div></div>';
+    '</div>'+prazo+'</div><div class="chev">›</div></div></div>';
 }
 
 VIEWS.manejoDetalhe=function(){ var id=STATE.manejoId; if(!id){ voltar(); return; }
@@ -8853,37 +8903,87 @@ VIEWS.manejoDetalhe=function(){ var id=STATE.manejoId; if(!id){ voltar(); return
   } else pintarManejo(); };
 function linhaItens(rot,itens){ return (itens&&itens.length)? '<div class="meta">'+trFrase(rot)+': '+itens.map(function(i){return esc(i.nome);}).join(', ')+'</div>' : ''; }
 function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status==='aberto');
+  var souDono = (m.souDono !== false);
   var ficha='<div class="card rustic-hero"><h2 style="margin:0 0 4px;font-size:19px">'+
-    (aberto?'<span class="pill" style="background:var(--danger)">aberto</span>':'<span class="pill gray">encerrado</span>')+' '+esc(m.nome||'Manejo')+'</h2>'+
+    (aberto?'<span class="pill" style="background:var(--danger)">'+trFrase('aberto')+'</span>':'<span class="pill gray">'+trFrase('encerrado')+'</span>')+' '+esc(m.nome||'Caçada')+'</h2>'+
     '<div class="meta">'+rotuloTipoManejo(m.tipo)+' · '+trFrase('iniciado em')+' '+fmtDataHora(m.criadoEm)+
     (aberto?'':'<br>'+trFrase('encerrado em')+' '+fmtDataHora(m.encerradoEm))+'</div>'+
-    linhaItens('Cevas',m.cevas)+linhaItens('Rotas',m.rotas)+linhaItens('Canil',m.canis)+
-    (m.propriedade?'<div class="meta">'+trFrase('Propriedade')+': '+esc(m.propriedade.nome)+'</div>':'')+
+    (m.propriedade?'<div class="meta">'+trFrase('Propriedade')+': <b>'+esc(m.propriedade.nome)+'</b></div>':'')+
+    /* O prazo é a informação que mais falta quando se está em campo: é ele
+       que diz quando o ciclo fecha sozinho. */
+    (m.fimPrevisto?'<div class="meta">⏳ '+trFrase('vai até')+' <b>'+fmtData(m.fimPrevisto)+'</b> '+
+      '<span class="no-i18n">'+statusVenc(m.fimPrevisto)+'</span></div>':'')+
+    linhaItens('Cevas',m.cevas)+linhaItens('Rotas',m.rotas)+
     (m.obs?'<div class="meta" style="margin-top:6px">'+esc(m.obs)+'</div>':'')+
     (aberto?'':'<div class="meta" style="margin-top:6px">'+trFrase('Animais avistados')+': <b>'+(m.avistamentos==null?0:m.avistamentos)+'</b></div>')+'</div>';
-  var souDono = (m.souDono !== false);
+
+  /* ---- Etapas ----
+     Antes era uma tela só, com ficha, abates, amigos e o encerramento
+     empilhados. Agora cada assunto é um passo com a própria tela, e o que
+     sobra aqui são as duas ações do ciclo. */
+  function etapa(icone,titulo,sub,acao,extra){
+    return '<div class="card menu-card click" onclick="'+acao+'" style="margin-bottom:8px">'+
+      '<div class="ic">'+icone+'</div><div class="txt"><h3>'+trFrase(titulo)+'</h3><p>'+trFrase(sub)+'</p></div>'+
+      (extra?'<span class="selo-aberto">'+extra+'</span>':'')+'<div class="chev">›</div></div>'; }
+
+  var etapas=
+    etapa('📄','Documentação da propriedade','Autorização de Acesso e IBAMA, com os anexos',"nav('cicloDocs')")+
+    (souDono? etapa('🤝','Amigos','Quem está na caçada e convidar mais',"nav('cicloAmigos')") : '')+
+    etapa('🐗','Abates','Ver e registrar os abates desta caçada',"nav('cicloAbates')");
+
   var acoes = !aberto
-    ? '<div class="card"><div class="meta">Manejo encerrado — somente leitura.</div></div>'
+    ? '<div class="card"><div class="meta">'+trFrase('Caçada encerrada — somente leitura.')+'</div></div>'
     : souDono
-      ? '<div class="card"><button class="btn sec" onclick="editarManejo()">✏️ Editar manejo</button>'+
-        '<div class="meta" style="margin:10px 0 6px">Encerrar: depois de encerrado ninguém mais edita este manejo.</div>'+
-        '<label>Animais avistados *</label><input id="mn_avist" inputmode="numeric" value="0">'+
-        '<button class="btn" style="background:linear-gradient(#7a2e2e,#5d2222)" onclick="encerrarManejo(this)">🔒 Encerrar manejo</button></div>'
-      : '<div class="card"><div class="meta">Você foi convidado para este manejo. Aqui você só registra abate — quem edita e encerra é '+esc(m.donoNome||'o dono')+'.</div>'+
-        '<button class="btn sec" style="margin-top:8px" onclick="sairDoManejo()">Sair deste manejo</button></div>';
-  var amigos = (aberto && souDono)
-    ? '<h3 style="margin:14px 4px 6px">🤝 '+trFrase('Amigos no manejo')+'</h3>'+
-      '<div class="card"><label>Login do amigo</label><input id="mn_amigo" placeholder="e-mail de acesso dele">'+
-      '<button class="btn sm" style="width:auto" onclick="convidarAmigo(this)">Convidar</button>'+
-      '<div class="meta" style="margin-top:6px">O amigo precisa aceitar. Dentro do manejo ele só registra abate.</div>'+
-      '<div id="mnAmigos"></div></div>'
-    : '';
-  app(ficha+'<h3 style="margin:14px 4px 6px">🐗 '+trFrase('Abates deste manejo')+'</h3><div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>'+amigos+acoes);
-  if(aberto) fab('<button class="btn" onclick="iniciarGuiamento()" style="background:linear-gradient(#3a5a34,#2e4d2e)">🧭 Iniciar guiamento</button>'+
-    '<button class="btn" onclick="registrarAbateNoManejo()" style="margin-top:6px">＋ Registrar abate</button>');
-  carregarAbatesDoManejo(m.id);
-  if(aberto && souDono) carregarAmigosDoManejo(m.id);
+      ? '<div class="card">'+
+        '<button class="btn" onclick="iniciarGuiamento()" style="background:linear-gradient(#3a5a34,#2e4d2e)">🧭 '+trFrase('Iniciar guiamento')+'</button>'+
+        '<button class="btn sec" style="margin-top:8px" onclick="editarManejo()">✏️ '+trFrase('Editar caçada')+'</button>'+
+        '<div class="meta" style="margin:12px 0 6px">'+trFrase('Encerrar: depois de encerrada ninguém mais edita esta caçada.')+'</div>'+
+        '<label>'+trFrase('Animais avistados')+' *</label><input id="mn_avist" inputmode="numeric" value="0">'+
+        '<button class="btn" style="background:linear-gradient(#7a2e2e,#5d2222)" onclick="encerrarManejo(this)">🔒 '+trFrase('Encerrar ciclo')+'</button></div>'
+      : '<div class="card">'+
+        '<button class="btn" onclick="iniciarGuiamento()" style="background:linear-gradient(#3a5a34,#2e4d2e)">🧭 '+trFrase('Iniciar guiamento')+'</button>'+
+        '<div class="meta" style="margin-top:10px">'+trFrase('Você foi convidado para esta caçada. Aqui você registra abate — quem edita e encerra é')+' '+esc(m.donoNome||trFrase('o dono'))+'.</div>'+
+        '<button class="btn sec" style="margin-top:8px" onclick="sairDoManejo()">'+trFrase('Sair desta caçada')+'</button></div>';
+
+  app(ficha+etapas+acoes);
 }
+/* ---- Etapa: documentação da propriedade do ciclo ---- */
+VIEWS.cicloDocs=function(){ var m=MANEJO_ATUAL; if(!m){ voltar(); return; }
+  setTitulo('Documentação'); setCrumb('Caçar agora',esc(m.nome||''),'Documentação');
+  var pid=String((m.propriedade&&m.propriedade.id)||m.propriedadeId||'');
+  if(!pid){ app('<div class="card"><div class="meta">'+trFrase('Esta caçada não está ligada a nenhuma propriedade.')+'</div></div>'); return; }
+  loadingBox();
+  server('apiListarPropriedades').then(function(l){
+    PROPS=l||[]; var p=null; (l||[]).forEach(function(x){ if(x.id===pid) p=x; });
+    if(!p){ app('<div class="card"><div class="meta">'+trFrase('Propriedade não encontrada.')+'</div></div>'); return; }
+    app('<div class="card"><h3 style="margin:0 0 6px">🏞️ '+esc(p.nome||'')+'</h3>'+
+      '<div class="meta">'+(p.dono?trFrase('Proprietário')+': '+esc(p.dono):trFrase('sem proprietário'))+'</div>'+
+      (p.car?'<div class="meta">CAR: <span class="no-i18n">'+esc(p.car)+'</span></div>':'')+
+      pdAut('Autorização de Acesso',p.autManejo)+
+      pdAut('Autorização IBAMA',p.autIbama)+
+      '<button class="btn sec" style="margin-top:10px" onclick="verProp(\''+escJs(p.id)+'\')">🗺️ '+trFrase('Ver propriedade no mapa')+'</button></div>');
+  }).catch(erroTela); };
+/* ---- Etapa: amigos do ciclo ---- */
+VIEWS.cicloAmigos=function(){ var m=MANEJO_ATUAL; if(!m){ voltar(); return; }
+  setTitulo('Amigos'); setCrumb('Caçar agora',esc(m.nome||''),'Amigos');
+  var aberto=(m.status==='aberto');
+  app('<div class="card"><div class="meta">'+
+      trFrase('O amigo convidado enxerga a documentação desta propriedade enquanto a caçada estiver aberta, e registra abate dentro dela.')+'</div></div>'+
+    (aberto?'<div class="card"><label>'+trFrase('Login do amigo')+'</label>'+
+      '<input id="mn_amigo" placeholder="'+trFrase('e-mail de acesso dele')+'">'+
+      '<button class="btn sm" style="width:auto" onclick="convidarAmigo(this)">'+trFrase('Convidar')+'</button>'+
+      '<div class="meta" style="margin-top:6px">'+trFrase('O amigo precisa aceitar o convite.')+'</div></div>'
+     :'<div class="card"><div class="meta">'+trFrase('Caçada encerrada — não dá mais para convidar.')+'</div></div>')+
+    '<div id="mnAmigos"><div class="loading"><div class="spin"></div></div></div>');
+  carregarAmigosDoManejo(m.id); };
+/* ---- Etapa: abates do ciclo ---- */
+VIEWS.cicloAbates=function(){ var m=MANEJO_ATUAL; if(!m){ voltar(); return; }
+  setTitulo('Abates'); setCrumb('Caçar agora',esc(m.nome||''),'Abates');
+  var aberto=(m.status==='aberto');
+  app('<div id="mnAbates"><div class="loading"><div class="spin"></div></div></div>');
+  if(aberto) fab('<button class="btn" onclick="registrarAbateNoManejo()">＋ '+trFrase('Registrar abate')+'</button>');
+  carregarAbatesDoManejo(m.id); };
+
 function carregarAmigosDoManejo(id){
   server('apiAmigosDoManejo',id).then(function(l){ var el=document.getElementById('mnAmigos'); if(!el) return;
     el.innerHTML = (l&&l.length) ? l.map(function(p){
