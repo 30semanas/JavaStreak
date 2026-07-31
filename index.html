@@ -179,6 +179,7 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+.ind-guard{font-size:10px;opacity:.8;font-weight:600}
 /* Ação com rótulo: o ícone sozinho obrigava a adivinhar o que o botão fazia. */
 .ib-rot{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   min-width:56px;min-height:52px;padding:6px 8px;margin-left:6px;cursor:pointer;
@@ -1148,7 +1149,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1530';
+var APP_VER = 'vJS.310726.1541';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1644,6 +1645,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'guardados':'banked',
+    'de saldo':'balance',
     'sem CTF':'no CTF',
     'vencido':'expired',
     'validado':'verified',
@@ -3053,6 +3056,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'guardados':'guardados',
+    'de saldo':'de saldo',
     'sem CTF':'sin CTF',
     'vencido':'vencido',
     'validado':'validado',
@@ -4538,8 +4543,12 @@ function pintarTopStrip(){
      '<span><span class="rot">'+trFrase('Cortesia')+'</span><br><b>'+(c.cortesiaDias||0)+' '+
      trFrase((c.cortesiaDias===1)?'dia':'dias')+'</b></span></div>';
   h+='<div class="ts-card" title="'+trFrase('Dias ganhos indicando amigos')+'">'+ico('usuario',16)+
+     /* Saldo que resta, não o total já ganho: o número tem que baixar
+        sozinho, senão a faixa mente. O guardado aparece entre parênteses. */
      '<span><span class="rot">'+trFrase('Indicações')+'</span><br><b>'+(c.indicacaoDias||0)+' '+
-     trFrase((c.indicacaoDias===1)?'dia':'dias')+'</b></span></div>';
+     trFrase((c.indicacaoDias===1)?'dia':'dias')+'</b>'+
+     (c.indicacaoGuardado>0?'<br><small class="ind-guard">'+c.indicacaoGuardado+' '+
+        trFrase('guardados')+'</small>':'')+'</span></div>';
   /* Estes dois botões são o ÚNICO lugar onde a visibilidade se configura —
      por isso alternam aqui mesmo, em vez de levar para outra tela. */
   var m=STATE.manejador||AUTH.manejador||{};
@@ -4576,7 +4585,8 @@ function pintarChaveInicio(){
     '<div class="meta">'+trFrase('Não há limite de amigos. Os dias somam no seu plano atual.')+'</div>'+
     (c.indicacaoQtd ? '<div class="meta" style="margin-top:6px"><b>'+c.indicacaoQtd+'</b> '+
       trFrase(c.indicacaoQtd===1?'amigo já entrou por você':'amigos já entraram por você')+
-      ' · <b>'+(c.indicacaoDias||0)+'</b> '+trFrase('dias ganhos')+'</div>' : '')+
+      ' · <b>'+(c.indicacaoGanhos||0)+'</b> '+trFrase('dias ganhos')+
+      ((c.indicacaoDias!=null)?' · <b>'+c.indicacaoDias+'</b> '+trFrase('de saldo'):'')+'</div>' : '')+
     '</div>';
   traduzirDOM(el); iconizar(el);
 }
