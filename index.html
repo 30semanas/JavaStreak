@@ -1161,7 +1161,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1635';
+var APP_VER = 'vJS.310726.1656';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1657,6 +1657,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Não foi possível carregar os abates desta ceva':'Could not load the kills of this feeder',
+    'Nenhum abate registrado nesta ceva ainda.':'No kill recorded on this feeder yet.',
     'guardados':'banked',
     'de saldo':'balance',
     'sem CTF':'no CTF',
@@ -3068,6 +3070,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Não foi possível carregar os abates desta ceva':'No se pudieron cargar las capturas de este comedero',
+    'Nenhum abate registrado nesta ceva ainda.':'Ninguna captura registrada en este comedero todavía.',
     'guardados':'guardados',
     'de saldo':'de saldo',
     'sem CTF':'sin CTF',
@@ -10229,8 +10233,20 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
 }
 
 /* ===== Painel: Linha do tempo / Resumo da ceva ===== */
-var CEVATL={ cevaId:null, tab:'tl', dim:'Atrativo' };
-window.abrirCevaTimeline=function(cevaId){ if(CURRENTMAP) CURRENTMAP.closePopup(); CEVATL.cevaId=cevaId; CEVATL.tab='tl'; CEVATL.dim='Atrativo'; renderCevaPanel(); document.getElementById('cevaPanel').classList.add('open'); };
+var CEVATL={ cevaId:null, tab:'tl', dim:'Atrativo', dados:null, carregando:false };
+window.abrirCevaTimeline=function(cevaId){ if(CURRENTMAP) CURRENTMAP.closePopup();
+  CEVATL.cevaId=cevaId; CEVATL.tab='tl'; CEVATL.dim='Atrativo';
+  CEVATL.dados=null; CEVATL.carregando=true;
+  renderCevaPanel(); document.getElementById('cevaPanel').classList.add('open');
+  /* Busca na hora, em vez de reaproveitar a foto do mapa. */
+  server('apiAbatesDaCeva',cevaId).then(function(r){
+    if(CEVATL.cevaId!==cevaId) return;            /* já abriu outra ceva */
+    CEVATL.dados=r; CEVATL.carregando=false; renderCevaPanel();
+  }).catch(function(e){
+    if(CEVATL.cevaId!==cevaId) return;
+    CEVATL.dados=null; CEVATL.carregando=false; CEVATL.erro=(e&&e.message)||'Erro'; renderCevaPanel();
+  });
+};
 window.fecharCevaPanel=function(){ document.getElementById('cevaPanel').classList.remove('open'); };
 window.cevaTab=function(t){ CEVATL.tab=t; renderCevaPanel(); };
 window.cevaDim=function(d){ CEVATL.dim=d; renderCevaPanel(); };
@@ -10276,12 +10292,22 @@ function resumoCevaHtml(abs,d){
     barChart(pairs,{w:330,h:130,color:TIPO_COR.Espera});
 }
 function renderCevaPanel(){
-  var d=MAPDATA; if(!d) return; var ceva=(d.cevas||[]).filter(function(c){return c.id===CEVATL.cevaId;})[0]; if(!ceva) return;
-  var abs=d.abates.filter(function(a){return a.cevaId===ceva.id;}).sort(function(a,b){return String(b.dataHora).localeCompare(String(a.dataHora));});
+  var r=CEVATL.dados;
+  /* Nome vem do mapa enquanto a busca não volta, só para o painel não abrir
+     sem título. Os abates NUNCA vêm de lá: é isso que fazia a linha do tempo
+     divergir da lista do ciclo. */
+  var doMapa=(MAPDATA&&MAPDATA.cevas||[]).filter(function(c){return c.id===CEVATL.cevaId;})[0];
+  var ceva=(r&&r.ceva)||doMapa; if(!ceva) return;
+  var d={ alimentoTipo:(r&&r.alimentoTipo)||{} };
+  var abs=(r&&r.abates)||[];
   var head='<div class="row"><h3 class="grow" style="margin:0">🌽 '+esc(ceva.nome||'Ceva')+'</h3><button class="ib" onclick="fecharCevaPanel()">✕</button></div>'+
     '<div class="tabs" style="margin:10px 0"><div class="tab'+(CEVATL.tab==='tl'?' on':'')+'" onclick="cevaTab(\'tl\')">📈 Linha do tempo</div><div class="tab'+(CEVATL.tab==='res'?' on':'')+'" onclick="cevaTab(\'res\')">📊 Resumo</div></div>';
-  var body = !abs.length ? '<div class="empty">Nenhum abate registrado nesta ceva ainda.</div>'
-    : (CEVATL.tab==='tl' ? timelineCevaHtml(abs,d) : resumoCevaHtml(abs,d));
+  var body;
+  if(CEVATL.carregando) body='<div class="loading"><div class="spin"></div></div>';
+  else if(!r && CEVATL.erro) body='<div class="empty">'+trFrase('Não foi possível carregar os abates desta ceva')+
+    '<br><span class="no-i18n">'+esc(CEVATL.erro)+'</span></div>';
+  else if(!abs.length) body='<div class="empty">'+trFrase('Nenhum abate registrado nesta ceva ainda.')+'</div>';
+  else body=(CEVATL.tab==='tl' ? timelineCevaHtml(abs,d) : resumoCevaHtml(abs,d));
   document.getElementById('cevaPanel').innerHTML=head+body;
 }
 
