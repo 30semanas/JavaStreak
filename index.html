@@ -1092,7 +1092,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.300726.1738';
+var APP_VER = 'vJS.310726.1304';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -5193,12 +5193,24 @@ function corpoDocumentos(cat, excluirTipos){
   return '<div class="card">'+aviso+linhas+
     '<button class="btn" style="margin-top:12px" onclick="novoDoc()">＋ Adicionar documento</button></div>';
 }
+/* Uma autorização na listagem: selo de vencimento MAIS a data, porque
+   "válido" sozinho não diz até quando — foi o que confundiu na tela. */
+function linhaAutProp(rotulo,aut){
+  if(!aut) return trFrase(rotulo)+': <span class="doc-tag venc">'+trFrase('falta')+'</span>';
+  return trFrase(rotulo)+': '+statusVenc(aut.vencimento)+
+    (aut.vencimento?' <span class="no-i18n">'+fmtData(aut.vencimento)+'</span>':'');
+}
 function corpoPropriedades(){
   var linhas = PROPS.length ? PROPS.map(function(p){
-    return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(p.autorizacaoValidade)+
+    /* O selo do nome saía de `autorizacaoValidade`, coluna de antes de as
+       autorizações virarem documentos. Nada mais escreve nela, então ele
+       mostrava uma data que não existia em lugar nenhum da tela — apareceu
+       "vence em 8d" com as duas autorizações válidas. Agora sai da que
+       vence primeiro, que é o que decide se a área serve. */
+    return '<div class="doc-linha"><div class="grow"><b>🏞️ '+esc(p.nome)+'</b> '+statusVenc(tetoDaProp(p))+
       '<div class="meta">'+(p.dono?'Proprietário: '+esc(p.dono):'sem proprietário')+(p.documentoDono?' · '+esc(p.documentoDono):'')+'</div>'+
-      '<div class="meta">'+trFrase('Manejo')+': '+(p.autManejo?statusVenc(p.autManejo.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
-      ' · '+trFrase('IBAMA')+': '+(p.autIbama?statusVenc(p.autIbama.vencimento):'<span class="doc-tag venc">'+trFrase('falta')+'</span>')+
+      '<div class="meta">'+linhaAutProp('Autorização de Acesso',p.autManejo)+'</div>'+
+      '<div class="meta">'+linhaAutProp('Autorização IBAMA',p.autIbama)+
       (p.autIbama&&p.autIbama.numero?' <span class="no-i18n">nº '+esc(p.autIbama.numero)+'</span>':'')+'</div>'+
       '<div class="meta">'+(p.temLimite?'<span class="pill ok">'+trFrase('limite desenhado')+'</span>':'<span class="pill gray">'+trFrase('sem limite')+'</span>')+'</div>'+
       (p.lat&&p.lng?'<div class="meta">'+mapaLink(p.lat,p.lng)+'</div>':'')+'</div>'+
