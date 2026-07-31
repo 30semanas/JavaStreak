@@ -174,6 +174,32 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+/* Tabela do relatório: rola no eixo X no celular em vez de espremer 14
+   colunas. Na impressão, cabe inteira e sem os cartões de ação. */
+.rel-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0;
+  border:1px solid var(--linha);border-radius:12px;background:#fff}
+.rel-tab{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
+.rel-tab th,.rel-tab td{padding:7px 10px;border-bottom:1px solid var(--linha);text-align:left}
+.rel-tab thead th{background:var(--areia2,#f2ece1);font-weight:700;position:sticky;top:0}
+.rel-tab tbody tr:nth-child(even){background:#fafafa}
+@media print{
+  body *{visibility:hidden}
+  #relImpressao,#relImpressao *{visibility:visible}
+  #relImpressao{position:absolute;left:0;top:0;width:100%}
+  .rel-scroll{overflow:visible;border:0}
+  .rel-tab{white-space:normal;font-size:10px}
+}
+/* Anexo já enviado: faixa com nome que trunca e ação na ponta, no lugar do
+   botão solto no meio do parágrafo. */
+.anexo-atual{display:flex;align-items:center;gap:8px;margin:2px 0 2px;padding:8px 10px;
+  background:var(--areia2,#f2ece1);border:1px solid var(--linha);border-radius:10px}
+.anexo-atual .ax-ico{flex:0 0 auto;font-size:15px;line-height:1}
+.anexo-atual .ax-nome{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font-size:13px;font-weight:600;color:var(--txt)}
+.anexo-atual .ax-btn{flex:0 0 auto;appearance:none;cursor:pointer;font:inherit;font-size:12px;
+  font-weight:700;padding:6px 14px;min-height:34px;border-radius:8px;
+  border:1px solid var(--verde);background:transparent;color:var(--verde);transition:background .15s,color .15s}
+.anexo-atual .ax-btn:hover{background:var(--verde);color:#fff}
 /* Seletor de camada do mapa: dois botões grandes no lugar do radio do Leaflet. */
 .js-camadas{display:flex;gap:0;border-radius:12px;overflow:hidden;
   box-shadow:0 2px 10px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25)}
@@ -1092,7 +1118,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1425';
+var APP_VER = 'vJS.310726.1435';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1582,6 +1608,41 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Relatório Fechamento IBAMA':'IBAMA Closing Report',
+    'Abates por autorização, para prestar contas':'Kills per permit, for reporting',
+    'Cada autorização cobre um período numa propriedade. O relatório junta os abates desse período para prestar contas.':'Each permit covers a period on one property. The report gathers the kills of that period for reporting.',
+    'Nenhuma autorização do IBAMA cadastrada. Elas entram no cadastro da propriedade.':'No IBAMA permit registered. They are added on the property record.',
+    'Autorização':'Permit',
+    'abate no período':'kill in the period',
+    'abates no período':'kills in the period',
+    'fechada':'closed',
+    'fechada em':'closed on',
+    'Relatório de fechamento':'Closing report',
+    'Total de abates':'Total kills',
+    'Autorização fechada em':'Permit closed on',
+    'Nenhum abate registrado no período desta autorização.':'No kill recorded in the period of this permit.',
+    'O que acontece ao fechar':'What happens when you close',
+    'A autorização passa a valer como encerrada, mesmo dentro do prazo.':'The permit becomes closed, even within its term.',
+    'A propriedade':'The property',
+    'fica bloqueada, esperando a nova autorização.':'is blocked, waiting for the new permit.',
+    'Sem ela não dá para abrir ciclo de caça, nem cadastrar ceva ou rota nessa área.':'Without it you cannot open a hunt cycle, nor add a feeder or route on that area.',
+    'Não há como desfazer pelo aplicativo.':'There is no undo in the app.',
+    'Gerar relatório e fechar autorização':'Generate report and close permit',
+    'Esta autorização já foi fechada. A propriedade fica parada até você cadastrar a autorização nova.':'This permit is already closed. The property stays on hold until you register the new permit.',
+    'Imprimir ou salvar em PDF':'Print or save as PDF',
+    'Baixar planilha (CSV)':'Download spreadsheet (CSV)',
+    'Fechar esta autorização?':'Close this permit?',
+    'Fechando…':'Closing…',
+    'Autorização fechada ✔':'Permit closed ✔',
+    'Data e hora':'Date and time',
+    'Qtd':'Qty',
+    'Método':'Method',
+    'Peso (kg)':'Weight (kg)',
+    'Compr. (cm)':'Length (cm)',
+    'Amostra':'Sample',
+    'Frasco':'Vial',
+    'Origem':'Source',
+    'Coordenada':'Coordinates',
     'Método de abate':'Kill method',
     'Desenvolvimento':'Development',
     'Comprimento (cm)':'Length (cm)',
@@ -2935,6 +2996,41 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Relatório Fechamento IBAMA':'Informe de cierre IBAMA',
+    'Abates por autorização, para prestar contas':'Capturas por autorización, para rendir cuentas',
+    'Cada autorização cobre um período numa propriedade. O relatório junta os abates desse período para prestar contas.':'Cada autorización cubre un período en una propiedad. El informe reúne las capturas de ese período para rendir cuentas.',
+    'Nenhuma autorização do IBAMA cadastrada. Elas entram no cadastro da propriedade.':'Ninguna autorización del IBAMA registrada. Se agregan en el registro de la propiedad.',
+    'Autorização':'Autorización',
+    'abate no período':'captura en el período',
+    'abates no período':'capturas en el período',
+    'fechada':'cerrada',
+    'fechada em':'cerrada el',
+    'Relatório de fechamento':'Informe de cierre',
+    'Total de abates':'Total de capturas',
+    'Autorização fechada em':'Autorización cerrada el',
+    'Nenhum abate registrado no período desta autorização.':'Ninguna captura registrada en el período de esta autorización.',
+    'O que acontece ao fechar':'Qué pasa al cerrar',
+    'A autorização passa a valer como encerrada, mesmo dentro do prazo.':'La autorización pasa a estar cerrada, aun dentro del plazo.',
+    'A propriedade':'La propiedad',
+    'fica bloqueada, esperando a nova autorização.':'queda bloqueada, esperando la nueva autorización.',
+    'Sem ela não dá para abrir ciclo de caça, nem cadastrar ceva ou rota nessa área.':'Sin ella no se puede abrir ciclo de caza, ni registrar comedero o ruta en esa área.',
+    'Não há como desfazer pelo aplicativo.':'No hay forma de deshacer en la aplicación.',
+    'Gerar relatório e fechar autorização':'Generar informe y cerrar autorización',
+    'Esta autorização já foi fechada. A propriedade fica parada até você cadastrar a autorização nova.':'Esta autorización ya fue cerrada. La propiedad queda detenida hasta registrar la nueva.',
+    'Imprimir ou salvar em PDF':'Imprimir o guardar en PDF',
+    'Baixar planilha (CSV)':'Descargar planilla (CSV)',
+    'Fechar esta autorização?':'Cerrar esta autorización?',
+    'Fechando…':'Cerrando…',
+    'Autorização fechada ✔':'Autorización cerrada ✔',
+    'Data e hora':'Fecha y hora',
+    'Qtd':'Cant',
+    'Método':'Método',
+    'Peso (kg)':'Peso (kg)',
+    'Compr. (cm)':'Long. (cm)',
+    'Amostra':'Muestra',
+    'Frasco':'Frasco',
+    'Origem':'Origen',
+    'Coordenada':'Coordenada',
     'Método de abate':'Método de captura',
     'Desenvolvimento':'Desarrollo',
     'Comprimento (cm)':'Longitud (cm)',
@@ -4705,13 +4801,19 @@ function blocoAutProp(chave,titulo,doc,comNumero){
     campoData(pref+'_val','Validade',(doc.vencimento||'').slice(0,10))+
     '<label>'+trFrase('Arquivo (PDF ou imagem)')+'</label>'+
     '<input id="'+pref+'_arq" type="file" accept="application/pdf,image/*">'+
-    '<div class="meta" style="margin:-4px 0 4px">'+
-      (doc.temArquivo
-        ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(doc.arquivoNome||'arquivo')+'</span> · '+
-          '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(doc.id)+'\')">'+trFrase('Abrir')+'</button>'+
-          '<br>'+trFrase('Escolher outro arquivo substitui este.')
-        : trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.'))+
-    '</div></div>';
+    /* O anexo atual virava uma linha de texto com um botão avulso no meio,
+       que quebrava feio quando o nome do arquivo era longo. Virou uma faixa
+       própria: ícone, nome que trunca, e a ação na ponta. */
+    (doc.temArquivo
+      ? '<div class="anexo-atual">'+
+          '<span class="ax-ico">📎</span>'+
+          '<span class="ax-nome no-i18n" title="'+esc(doc.arquivoNome||'')+'">'+esc(doc.arquivoNome||'arquivo')+'</span>'+
+          '<button type="button" class="ax-btn" onclick="abrirDoc(\''+esc(doc.id)+'\')">'+trFrase('Abrir')+'</button>'+
+        '</div>'+
+        '<div class="meta" style="margin:2px 0 4px">'+trFrase('Escolher outro arquivo substitui este.')+'</div>'
+      : '<div class="meta" style="margin:-4px 0 4px">'+
+          trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.')+'</div>')+
+    '</div>';
 }
 function campoData(id,label,valor,obrig){
   var iso=String(valor||'').substring(0,10);
@@ -8691,7 +8793,10 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
       moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
       moduloCard('ceva','Espera (ceva)','Cevas, alimento e nível',true,"nav('espera')")+
       moduloCard('rotas','Rotas','Trajetos dentro da propriedade',true,"abrirRotas('manejo')")+
-    '</div><div class="hub-largo" id="mnManejos"></div>';
+    '</div><div class="hub-largo" id="mnManejos"></div>'+
+    '<div class="hub-largo">'+
+      moduloCard('documentacao','Relatório Fechamento IBAMA','Abates por autorização, para prestar contas',true,"nav('ibamaLista')")+
+    '</div>';
   app('<div id="mnConvites"></div>'+cards);
   pintarCardManejos([]);
   /* O botão flutuante saiu daqui: quem abre manejo é o card "Manejos" (ou o
@@ -9009,6 +9114,145 @@ function pintarManejo(){ var m=MANEJO_ATUAL; if(!m) return; var aberto=(m.status
 
   app(ficha+etapas+acoes);
 }
+
+/* ============================================================
+   RELATÓRIO DE FECHAMENTO DO IBAMA
+
+   Uma autorização do IBAMA cobre um período numa propriedade. Aqui
+   se junta os abates daquele período e se fecha a autorização — que
+   é a prestação de contas. Depois de fechada, ela não vale mais nem
+   dentro do prazo, e a propriedade fica parada até entrar a nova.
+
+   O fechamento não tem botão de desfazer de propósito. Se for engano,
+   o conserto é no banco, e o SQL da entrega traz a linha pronta.
+   ============================================================ */
+var IBAMA_DOC=null, IBAMA_REL=null;
+
+VIEWS.ibamaLista=function(){
+  setTitulo('Relatório Fechamento IBAMA'); setCrumb('CAÇAR','Fechamento IBAMA'); loadingBox();
+  server('apiAutorizacoesIbama').then(function(l){
+    var lista=l||[];
+    var corpo = lista.length ? lista.map(function(d){
+      var selo = d.encerradoEm
+        ? '<span class="pill gray">'+trFrase('fechada')+'</span>'
+        : statusVenc(d.vencimento);
+      return '<div class="card"><div class="row"><div class="grow click" onclick="abrirRelIbama(\''+escJs(d.id)+'\')">'+
+        '<h3>📋 '+esc(d.propriedadeNome)+' '+selo+'</h3>'+
+        '<div class="meta">'+trFrase('Autorização')+' <span class="no-i18n">'+esc(d.numero||'—')+'</span></div>'+
+        '<div class="meta">'+(d.emissao?fmtData(d.emissao)+' → ':'')+(d.vencimento?fmtData(d.vencimento):'—')+'</div>'+
+        '<div class="meta"><b>'+d.abates+'</b> '+trFrase(d.abates===1?'abate no período':'abates no período')+'</div>'+
+        (d.encerradoEm?'<div class="meta">🔒 '+trFrase('fechada em')+' '+fmtDataHora(d.encerradoEm)+'</div>':'')+
+        '</div><div class="chev">›</div></div></div>';
+    }).join('') : '<div class="empty"><div class="big">📋</div>'+
+        trFrase('Nenhuma autorização do IBAMA cadastrada. Elas entram no cadastro da propriedade.')+'</div>';
+    app('<div class="card"><div class="meta">'+
+        trFrase('Cada autorização cobre um período numa propriedade. O relatório junta os abates desse período para prestar contas.')+
+        '</div></div>'+corpo);
+  }).catch(erroTela);
+};
+
+window.abrirRelIbama=function(id){ IBAMA_DOC=id; IBAMA_REL=null; nav('ibamaRelatorio'); };
+
+VIEWS.ibamaRelatorio=function(){
+  if(!IBAMA_DOC){ voltar(); return; }
+  setTitulo('Relatório'); setCrumb('CAÇAR','Fechamento IBAMA','Relatório'); loadingBox();
+  server('apiRelatorioIbama',IBAMA_DOC).then(function(r){ IBAMA_REL=r; pintarRelIbama(); }).catch(erroTela);
+};
+
+function celRel(v){ return '<td>'+(v===''||v==null?'—':esc(String(v)))+'</td>'; }
+
+function pintarRelIbama(){
+  var r=IBAMA_REL; if(!r) return;
+  var fechada=!!r.autorizacao.encerradoEm;
+  var linhas=(r.abates||[]).map(function(a,i){
+    return '<tr>'+celRel(i+1)+celRel(fmtDataHora(a.dataHora))+celRel(a.quantidade)+
+      celRel(a.sexo)+celRel(a.desenvolvimento)+celRel(a.metodoAbate)+
+      celRel(a.pesoAprox)+celRel(a.comprimento)+
+      celRel(a.amostraColetada)+celRel(a.codigoFrasco)+
+      celRel(a.origem)+celRel(a.abatidoPor)+
+      celRel((a.lat&&a.lng)?(a.lat+', '+a.lng):'')+celRel(a.obs)+'</tr>';
+  }).join('');
+
+  var tabela = (r.abates||[]).length
+    ? '<div class="rel-scroll"><table class="rel-tab"><thead><tr>'+
+        ['#','Data e hora','Qtd','Sexo','Desenvolvimento','Método','Peso (kg)','Compr. (cm)',
+         'Amostra','Frasco','Origem','Abatido por','Coordenada','Observações']
+          .map(function(h){ return '<th>'+trFrase(h)+'</th>'; }).join('')+
+      '</tr></thead><tbody>'+linhas+'</tbody></table></div>'
+    : '<div class="card"><div class="meta">'+trFrase('Nenhum abate registrado no período desta autorização.')+'</div></div>';
+
+  app('<div id="relImpressao">'+
+      '<div class="card"><h2 style="margin:0 0 6px;font-size:19px">📋 '+trFrase('Relatório de fechamento')+'</h2>'+
+        '<div class="meta">'+trFrase('Autorização IBAMA')+' <b class="no-i18n">'+esc(r.autorizacao.numero||'—')+'</b></div>'+
+        '<div class="meta">'+trFrase('Período')+': '+(r.autorizacao.emissao?fmtData(r.autorizacao.emissao):'—')+
+          ' → '+(r.autorizacao.vencimento?fmtData(r.autorizacao.vencimento):'—')+'</div>'+
+        '<div class="meta">'+trFrase('Propriedade')+': <b>'+esc(r.propriedade.nome)+'</b>'+
+          (r.propriedade.car?' · CAR <span class="no-i18n">'+esc(r.propriedade.car)+'</span>':'')+'</div>'+
+        (r.propriedade.dono?'<div class="meta">'+trFrase('Proprietário')+': '+esc(r.propriedade.dono)+
+          (r.propriedade.documentoDono?' · <span class="no-i18n">'+esc(r.propriedade.documentoDono)+'</span>':'')+'</div>':'')+
+        '<div class="meta">'+trFrase('Manejador')+': '+esc(r.manejador.nome||'—')+
+          (r.manejador.cpf?' · <span class="no-i18n">'+esc(r.manejador.cpf)+'</span>':'')+'</div>'+
+        '<div class="meta">'+trFrase('Total de abates')+': <b>'+(r.abates||[]).length+'</b></div>'+
+        (fechada?'<div class="meta">🔒 '+trFrase('Autorização fechada em')+' '+fmtDataHora(r.autorizacao.encerradoEm)+'</div>':'')+
+      '</div>'+tabela+'</div>'+
+
+    /* O aviso vem ANTES do botão, não depois: fechar não tem desfazer no app. */
+    (fechada
+      ? '<div class="card"><div class="meta">🔒 '+
+          trFrase('Esta autorização já foi fechada. A propriedade fica parada até você cadastrar a autorização nova.')+'</div></div>'
+      : '<div class="card" style="border-left:5px solid var(--danger)">'+
+          '<h3 style="margin:0 0 6px">⚠️ '+trFrase('O que acontece ao fechar')+'</h3>'+
+          '<div class="meta">• '+trFrase('A autorização passa a valer como encerrada, mesmo dentro do prazo.')+'</div>'+
+          '<div class="meta">• '+trFrase('A propriedade')+' <b>'+esc(r.propriedade.nome)+'</b> '+
+            trFrase('fica bloqueada, esperando a nova autorização.')+'</div>'+
+          '<div class="meta">• '+trFrase('Sem ela não dá para abrir ciclo de caça, nem cadastrar ceva ou rota nessa área.')+'</div>'+
+          '<div class="meta">• '+trFrase('Não há como desfazer pelo aplicativo.')+'</div>'+
+          '<button class="btn" style="margin-top:10px;background:linear-gradient(#7a2e2e,#5d2222)" '+
+            'onclick="fecharAutorizacaoIbama(this)">🔒 '+trFrase('Gerar relatório e fechar autorização')+'</button>'+
+        '</div>')+
+    '<div class="card"><button class="btn sec" onclick="imprimirRelIbama()">🖨️ '+
+       trFrase('Imprimir ou salvar em PDF')+'</button>'+
+     '<button class="btn sec" style="margin-top:8px" onclick="baixarRelIbamaCsv()">⬇️ '+
+       trFrase('Baixar planilha (CSV)')+'</button></div>');
+}
+
+window.imprimirRelIbama=function(){ window.print(); };
+
+/* CSV com o mesmo conteúdo da tabela. Ponto e vírgula e BOM porque o destino
+   provável é o Excel em português, que abre errado sem os dois. */
+window.baixarRelIbamaCsv=function(){
+  var r=IBAMA_REL; if(!r) return;
+  var cab=['#','Data e hora','Quantidade','Sexo','Desenvolvimento','Metodo','Peso (kg)','Comprimento (cm)',
+           'Amostra coletada','Codigo do frasco','Origem','Abatido por','Latitude','Longitude','Observacoes'];
+  function q(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }
+  var linhas=[cab.map(q).join(';')];
+  (r.abates||[]).forEach(function(a,i){
+    linhas.push([i+1,a.dataHora,a.quantidade,a.sexo,a.desenvolvimento,a.metodoAbate,
+      a.pesoAprox,a.comprimento,a.amostraColetada,a.codigoFrasco,a.origem,a.abatidoPor,
+      a.lat,a.lng,a.obs].map(q).join(';'));
+  });
+  var nome='fechamento-ibama-'+String(r.autorizacao.numero||'sem-numero').replace(/[^A-Za-z0-9-]/g,'')+'.csv';
+  var blob=new Blob(['\ufeff'+linhas.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=nome;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+};
+
+window.fecharAutorizacaoIbama=function(btn){
+  var r=IBAMA_REL; if(!r) return;
+  if(!confirm(trFrase('Fechar esta autorização?')+'\n\n'+
+      trFrase('A propriedade')+' '+(r.propriedade.nome||'')+' '+trFrase('fica bloqueada, esperando a nova autorização.')+'\n'+
+      trFrase('Não há como desfazer pelo aplicativo.'))) return;
+  if(!confirm(trFrase('Tem certeza? Esta ação não tem volta.'))) return;
+  btn.disabled=true; btn.textContent=trFrase('Fechando…');
+  server('apiEncerrarAutorizacaoIbama',IBAMA_DOC).then(function(){
+    toast(trFrase('Autorização fechada ✔'));
+    IBAMA_REL=null; render();
+  }).catch(function(e){ toast(msgErro(e)); btn.disabled=false;
+    btn.textContent='🔒 '+trFrase('Gerar relatório e fechar autorização'); });
+};
+
 /* ---- Etapa: documentação da propriedade do ciclo ---- */
 VIEWS.cicloDocs=function(){ var m=MANEJO_ATUAL; if(!m){ voltar(); return; }
   setTitulo('Documentação'); setCrumb('Caçar agora',esc(m.nome||''),'Documentação');
