@@ -56,7 +56,12 @@
      ocupando a largura dos três. No celular vira uma coluna só. */
   .hub-quatro{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
   .hub-quatro .menu-card{flex-direction:column;align-items:flex-start;gap:8px;height:100%;margin:0}
-  .hub-quatro .menu-card .chev,.hub-quatro .menu-card .ir-btn{display:none}
+  .hub-quatro .menu-card .chev{display:none}
+  /* Em coluna estreita o "Abrir" não cabe ao lado do texto: vira faixa no
+     rodapé do card, colada embaixo para os quatro ficarem alinhados. */
+  .hub-quatro .menu-card{justify-content:flex-start}
+  .hub-quatro .menu-card .txt{flex:1 1 auto}
+  .hub-quatro .ir-btn{width:100%;margin:8px 0 0;text-align:center;padding:8px 0}
   .hub-quatro .menu-card .txt h3{font-size:14px}
   .hub-quatro .menu-card .txt p{font-size:11px;line-height:1.35}
   .hub-quatro .pill{align-self:flex-start;font-size:10px}
@@ -1156,7 +1161,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1544';
+var APP_VER = 'vJS.310726.1635';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -4469,6 +4474,15 @@ window.alternarSalaVisivel=function(){
     .catch(function(e){ m.salaVisivel = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip();
       console.warn('alternarSalaVisivel', e); toast(msgErro(e)); });
 };
+/* Busca a rede de novo e repinta, se o mapa estiver aberto. Fora do mapa
+   basta zerar: a próxima abertura já busca do zero. */
+function recarregarRedeNoMapa(){
+  NETDATA=null;
+  if(!CURRENTMAP || !document.body.classList.contains('map-mode')) return;
+  server('apiNetworkMapa')
+    .then(function(n){ NETDATA=n; desenharMapa(); })
+    .catch(function(){ NETDATA=null; desenharMapa(); });
+}
 window.alternarPerfilRede=function(){
   if(!perfilPronto()) return;
   var m=fichaManejador(); var novo=(m.visivelNetwork!=='Sim');
@@ -4479,11 +4493,16 @@ window.alternarPerfilRede=function(){
        palpite otimista. */
     .then(function(r){
       m.visivelNetwork = (r && r.visivel) ? 'Sim' : 'Não';
-      pintarStatusUsuario(); pintarTopStrip(); NETDATA=null;
+      pintarStatusUsuario(); pintarTopStrip();
+      /* A rede é recíproca: quem se oculta deixa de ver os outros. Zerar o
+         NETDATA não bastava — sem redesenhar, os pinos da rede continuavam
+         no mapa até a pessoa sair da tela ou recarregar a página. */
+      recarregarRedeNoMapa();
       if(r && r.visivel===false && novo){ toast(r.motivo||'Não foi possível aparecer na rede'); return; }
       toast(novo?'Seu perfil aparece na rede ✔':'Seu perfil saiu da rede');
     })
     .catch(function(e){ m.visivelNetwork = novo?'Não':'Sim'; pintarStatusUsuario(); pintarTopStrip();
+      recarregarRedeNoMapa();
       console.warn('alternarPerfilRede', e); toast(msgErro(e)); });
 };
 var SALAS_COMPART_QTD=0;
@@ -8969,7 +8988,8 @@ function pintarCardManejos(abertos){
         : lista.slice(0,3).map(function(x){ return esc(x.nome||''); }).join(' · ')+(n>3?' …':''));
   el.innerHTML='<div class="card menu-card click'+(aberto?' manejo-aberto':'')+'" onclick="nav(\'manejoLista\')">'+
     '<div class="ic">'+ico('painel')+'</div><div class="txt"><h3>'+trFrase('Caçar agora')+'</h3><p>'+sub+'</p></div>'+
-    (aberto?'<span class="selo-aberto">'+n+' '+trFrase(n>1?'abertas':'aberta')+'</span>':'')+'<div class="chev">›</div></div>'; }
+    (aberto?'<span class="selo-aberto">'+n+' '+trFrase(n>1?'abertas':'aberta')+'</span>':'')+
+    '<span class="ir-btn">'+trFrase('Abrir')+'</span><div class="chev">›</div></div>'; }
 /* Não barra mais: caçadas abertas podem ser várias. O que sustentava a
    restrição era a dúvida sobre em qual ciclo o abate entrava, e ela acabou —
    o abate é registrado de dentro da caçada, que manda o próprio id. */
@@ -9423,7 +9443,7 @@ function pintarCardCtf(c){
   el.innerHTML='<div class="card menu-card click'+(ok?'':' ctf-pendente')+'" onclick="nav(\'ctf\')">'+
     '<div class="ic">'+ico('documentos')+'</div>'+
     '<div class="txt"><h3>CTF</h3><p>'+esc(sub)+'</p></div>'+
-    seloCtf(c)+'<div class="chev">›</div></div>';
+    seloCtf(c)+'<span class="ir-btn">'+trFrase('Abrir')+'</span><div class="chev">›</div></div>';
   traduzirDOM(el);
 }
 function carregarCtf(){
