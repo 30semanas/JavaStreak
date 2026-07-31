@@ -94,7 +94,14 @@
   .data-btn{position:relative;flex:0 0 48px;display:flex;align-items:center;justify-content:center;
     border:1px solid var(--linha);border-radius:12px;background:var(--areia);cursor:pointer}
   .data-btn .ic-svg{margin:0;pointer-events:none}
-  .data-iso{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;cursor:pointer}
+  /* O input fica invisível atrás do botão só para guardar o valor ISO. Ele
+     NÃO recebe o clique: clicar no corpo de um <input type=date> não abre o
+     seletor no Chrome, Edge nem Firefox — só o indicador nativo, minúsculo,
+     abre. Quem trata o toque é o .data-btn, chamando showPicker(). */
+  .data-iso{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;
+    pointer-events:none}
+  .data-btn:active{filter:brightness(.95)}
+  .data-btn:focus-visible{outline:2px solid var(--verde);outline-offset:2px}
   .two{display:flex;gap:10px} .two>div{flex:1} .two>button{flex:1;margin-top:0}
   .mk-svgwrap{background:none;border:0}
   .mk-svg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
@@ -1149,7 +1156,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1541';
+var APP_VER = 'vJS.310726.1544';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -4909,13 +4916,24 @@ function blocoAutProp(chave,titulo,doc,comNumero){
           trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.')+'</div>')+
     '</div>';
 }
+/* Abre o seletor nativo de verdade. showPicker() existe em Chrome 99+, Edge,
+   Firefox 101+ e Safari 16+; onde não existir, o focus/click resolve (é o
+   caso do iOS, que abre a roda ao focar). Precisa sair de um gesto do
+   usuário, e sai — vem do onclick. */
+window.abrirCalendario=function(botao){
+  var inp=botao&&botao.querySelector('.data-iso'); if(!inp) return;
+  try{ if(typeof inp.showPicker==='function'){ inp.showPicker(); return; } }catch(e){}
+  try{ inp.focus(); inp.click(); }catch(e){}
+};
 function campoData(id,label,valor,obrig){
   var iso=String(valor||'').substring(0,10);
   return '<label>'+label+(obrig?' *':'')+'</label>'+
     '<div class="data-wrap">'+
       '<input id="'+id+'_txt" class="data-txt" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" '+
         'value="'+dataBR(iso)+'" oninput="dataDigitada(this)">'+
-      '<span class="data-btn" title="'+trFrase('Escolher no calendário')+'">'+ico('calendario',18)+
+      '<span class="data-btn" role="button" tabindex="0" onclick="abrirCalendario(this)" '+
+        'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();abrirCalendario(this);}" '+
+        'title="'+trFrase('Escolher no calendário')+'">'+ico('calendario',18)+
         '<input type="date" id="'+id+'" class="data-iso" value="'+esc(iso)+'" onchange="dataEscolhida(this)"></span>'+
     '</div>';
 }
