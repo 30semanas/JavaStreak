@@ -54,13 +54,18 @@
   .menu-card.disabled{opacity:.5}
   /* Hub do CAÇAR: os três módulos lado a lado e o ciclo de caça embaixo,
      ocupando a largura dos três. No celular vira uma coluna só. */
-  .hub-tres{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
-  .hub-tres .menu-card{flex-direction:column;align-items:flex-start;gap:8px;height:100%;margin:0}
-  .hub-tres .menu-card .chev{display:none}
-  .hub-tres .menu-card .txt h3{font-size:14px}
-  .hub-tres .menu-card .txt p{font-size:11px;line-height:1.35}
+  .hub-quatro{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+  .hub-quatro .menu-card{flex-direction:column;align-items:flex-start;gap:8px;height:100%;margin:0}
+  .hub-quatro .menu-card .chev,.hub-quatro .menu-card .ir-btn{display:none}
+  .hub-quatro .menu-card .txt h3{font-size:14px}
+  .hub-quatro .menu-card .txt p{font-size:11px;line-height:1.35}
+  .hub-quatro .pill{align-self:flex-start;font-size:10px}
+  /* CTF pendente é o único cartão que grita: sem ele nada funciona. */
+  .hub-quatro .ctf-pendente{border-color:var(--danger);box-shadow:0 0 0 2px rgba(178,59,59,.18)}
+  @media (max-width:900px){ .hub-quatro{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:520px){ .hub-quatro{grid-template-columns:1fr} }
   .hub-largo .menu-card{margin:0}
-  @media (max-width:620px){ .hub-tres{grid-template-columns:1fr} }
+
 
   label{display:block;font-size:13px;font-weight:600;color:var(--txt2);margin:12px 0 5px}
   input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--linha);
@@ -1143,7 +1148,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1449';
+var APP_VER = 'vJS.310726.1530';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1226,6 +1231,12 @@ function msgErro(e){
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
   if(cod==='PROP_SEM_PRAZO') return trFrase('Faltam as autorizações desta propriedade.');
+  if(m==='CTF_VENCIDO') return trFrase('Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para caçar, registrar abate ou entrar na caçada de alguém.');
+  if(m==='CTF_SEM_NUMERO') return trFrase('Informe o número do registro');
+  if(m==='CTF_SEM_EMISSAO') return trFrase('Informe a data de emissão');
+  if(m==='CTF_SEM_VALIDADE') return trFrase('Informe a validade');
+  if(m==='CTF_SEM_ANEXO') return trFrase('O anexo é obrigatório: é ele que comprova o registro.');
+  if(cod==='AMIGO_SEM_CTF') return trFrase('Este amigo está com o CTF vencido ou não cadastrado e não pode entrar na caçada')+': '+nome+'.';
   if(m==='PROP_IMUTAVEL') return trFrase('A propriedade não muda depois que a caçada começa — pode haver abate registrado nela.');
   if(cod==='LIVRE_EXCLUSIVO') return trFrase('Caçada livre não combina com ceva ou rota já cadastrada.');
   if(cod==='ITEM_DE_OUTRA_PROP') return trFrase('Este item é de outra propriedade')+': '+nome;
@@ -1633,6 +1644,27 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'sem CTF':'no CTF',
+    'vencido':'expired',
+    'validado':'verified',
+    'válido até':'valid until',
+    'sem validade preenchida':'no expiry set',
+    'Envie o documento para liberar':'Upload the document to unlock',
+    'Cadastro Técnico Federal':'Federal Technical Registry',
+    'Inscrição no CTF do IBAMA, categoria manejo de fauna exótica invasora (código 21-58). O certificado de regularidade vale 3 meses.':'IBAMA CTF registration, invasive exotic fauna management category (code 21-58). The compliance certificate lasts 3 months.',
+    'Enquanto estiver vencido você não abre caçada, não registra abate e não pode ser convidado.':'While expired you cannot open a hunt, record kills or be invited.',
+    'Número do registro':'Registry number',
+    'O anexo é obrigatório: é ele que comprova o registro.':'The attachment is required: it is what proves the registration.',
+    'Salvar CTF':'Save CTF',
+    'Informe o número do registro':'Enter the registry number',
+    'Informe a data de emissão':'Enter the issue date',
+    'Informe a validade':'Enter the expiry date',
+    'A validade não pode ser anterior à emissão':'Expiry cannot be earlier than issue',
+    'CTF salvo ✔':'CTF saved ✔',
+    'Não consegui ler o arquivo':'Could not read the file',
+    'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para caçar, registrar abate ou entrar na caçada de alguém.':'Your CTF is expired or missing. Without it you cannot hunt, record kills or join anyone else hunt.',
+    'Cadastrar CTF':'Register CTF',
+    'Este amigo está com o CTF vencido ou não cadastrado e não pode entrar na caçada':'This friend has an expired or missing CTF and cannot join the hunt',
     'Relatório Fechamento IBAMA':'IBAMA Closing Report',
     'Abates por autorização, para prestar contas':'Kills per permit, for reporting',
     'Cada autorização cobre um período numa propriedade. O relatório junta os abates desse período para prestar contas.':'Each permit covers a period on one property. The report gathers the kills of that period for reporting.',
@@ -3021,6 +3053,27 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'sem CTF':'sin CTF',
+    'vencido':'vencido',
+    'validado':'validado',
+    'válido até':'válido hasta',
+    'sem validade preenchida':'sin validez definida',
+    'Envie o documento para liberar':'Sube el documento para desbloquear',
+    'Cadastro Técnico Federal':'Registro Técnico Federal',
+    'Inscrição no CTF do IBAMA, categoria manejo de fauna exótica invasora (código 21-58). O certificado de regularidade vale 3 meses.':'Registro CTF del IBAMA, categoría manejo de fauna exótica invasora (código 21-58). El certificado de regularidad dura 3 meses.',
+    'Enquanto estiver vencido você não abre caçada, não registra abate e não pode ser convidado.':'Mientras esté vencido no abres cacería, no registras capturas ni puedes ser invitado.',
+    'Número do registro':'Número de registro',
+    'O anexo é obrigatório: é ele que comprova o registro.':'El adjunto es obligatorio: es lo que comprueba el registro.',
+    'Salvar CTF':'Guardar CTF',
+    'Informe o número do registro':'Indica el número de registro',
+    'Informe a data de emissão':'Indica la fecha de emisión',
+    'Informe a validade':'Indica la validez',
+    'A validade não pode ser anterior à emissão':'La validez no puede ser anterior a la emisión',
+    'CTF salvo ✔':'CTF guardado ✔',
+    'Não consegui ler o arquivo':'No pude leer el archivo',
+    'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para caçar, registrar abate ou entrar na caçada de alguém.':'Tu CTF está vencido o no registrado. Sin él no puedes cazar, registrar capturas ni entrar en la cacería de otro.',
+    'Cadastrar CTF':'Registrar CTF',
+    'Este amigo está com o CTF vencido ou não cadastrado e não pode entrar na caçada':'Este amigo tiene el CTF vencido o no registrado y no puede entrar en la cacería',
     'Relatório Fechamento IBAMA':'Informe de cierre IBAMA',
     'Abates por autorização, para prestar contas':'Capturas por autorización, para rendir cuentas',
     'Cada autorização cobre um período numa propriedade. O relatório junta os abates desse período para prestar contas.':'Cada autorización cubre un período en una propiedad. El informe reúne las capturas de ese período para rendir cuentas.',
@@ -4434,6 +4487,12 @@ var CREDITOS=null;
    render, então isto não custa nenhuma chamada nova. */
 function bloqueioCriar(chave,qtdAtual){
   if(!CREDITOS) return null;                       /* ainda carregando: não trava à toa */
+  /* CTF antes de tudo: sem ele em dia o servidor recusa qualquer ação de
+     caça, então o botão nem deve abrir. */
+  if(CREDITOS.ctfEmDia===false){
+    return { motivo:trFrase('Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para caçar, registrar abate ou entrar na caçada de alguém.'),
+             rotuloAcao:trFrase('Cadastrar CTF'), acao:"nav('ctf')" };
+  }
   if(CREDITOS.perfilCompleto===false){
     return { motivo:trFrase('Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.'),
              rotuloAcao:trFrase('Criar meu perfil'), acao:"go('perfilManejador')" };
@@ -8841,7 +8900,9 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
   /* Os três módulos numa linha; o ciclo de caça embaixo, na largura dos três.
      "Criar rota manual" saiu daqui: Rotas passou a ser manual por definição,
      então eram dois caminhos para a mesma tela. */
-  var cards='<div class="hub-tres">'+
+  /* CTF primeiro: é ele que libera todo o resto. */
+  var cards='<div class="hub-quatro">'+
+      '<div id="hubCtf"></div>'+
       moduloCard('propriedade','Propriedades','Áreas de manejo e autorizações',true,"nav('propriedades')")+
       moduloCard('ceva','Espera (ceva)','Cevas, alimento e nível',true,"nav('espera')")+
       moduloCard('rotas','Rotas','Trajetos dentro da propriedade',true,"abrirRotas('manejo')")+
@@ -8850,7 +8911,7 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
       moduloCard('grafico','Relatório Fechamento IBAMA','Abates por autorização, para prestar contas',true,"nav('ibamaLista')")+
     '</div>';
   app('<div id="mnConvites"></div>'+cards);
-  pintarCardManejos([]);
+  pintarCardManejos([]); carregarCtf();
   /* O botão flutuante saiu daqui: quem abre manejo é o card "Manejos" (ou o
      botão MANEJO do menu, que fica pulsando). Evita dois caminhos para a
      mesma coisa na mesma tela. */
@@ -9304,6 +9365,97 @@ window.fecharAutorizacaoIbama=function(btn){
     IBAMA_REL=null; render();
   }).catch(function(e){ toast(msgErro(e)); btn.disabled=false;
     btn.textContent='🔒 '+trFrase('Gerar relatório e fechar autorização'); });
+};
+
+
+/* ============================================================
+   CTF — Cadastro Técnico Federal
+   É a porta de tudo: sem ele em dia não se abre ciclo, não se
+   registra abate, não se cadastra ceva nem rota, e não se entra
+   na caçada de ninguém. O IBAMA exige o certificado de cada
+   participante, e ele vale 3 meses — então isto vence rápido.
+   ============================================================ */
+var MEUCTF=null;
+
+function seloCtf(c){
+  if(!c||!c.existe) return '<span class="pill" style="background:var(--danger)">'+trFrase('sem CTF')+'</span>';
+  if(!c.emDia)      return '<span class="pill" style="background:var(--danger)">'+trFrase('vencido')+'</span>';
+  if(c.diasRestantes!=null && c.diasRestantes<=15)
+    return '<span class="pill warn">'+trFrase('vence em')+' '+c.diasRestantes+'d</span>';
+  return '<span class="pill ok">✔ '+trFrase('validado')+'</span>';
+}
+
+/* Card do hub. Pinta depois, como o de caçadas, para não segurar a tela. */
+function pintarCardCtf(c){
+  var el=document.getElementById('hubCtf'); if(!el) return;
+  var ok=!!(c&&c.emDia);
+  var sub = (c&&c.existe)
+    ? (c.vencimento? trFrase('válido até')+' '+fmtData(c.vencimento) : trFrase('sem validade preenchida'))
+    : trFrase('Envie o documento para liberar');
+  el.innerHTML='<div class="card menu-card click'+(ok?'':' ctf-pendente')+'" onclick="nav(\'ctf\')">'+
+    '<div class="ic">'+ico('documentos')+'</div>'+
+    '<div class="txt"><h3>CTF</h3><p>'+esc(sub)+'</p></div>'+
+    seloCtf(c)+'<div class="chev">›</div></div>';
+  traduzirDOM(el);
+}
+function carregarCtf(){
+  pintarCardCtf(MEUCTF);
+  server('apiMeuCtf').then(function(c){ MEUCTF=c; pintarCardCtf(c); }).catch(function(){});
+}
+
+VIEWS.ctf=function(){
+  setTitulo('CTF'); setCrumb('CAÇAR','CTF'); loadingBox();
+  server('apiMeuCtf').then(function(c){ MEUCTF=c; pintarTelaCtf(); }).catch(erroTela);
+};
+
+function pintarTelaCtf(){
+  var c=MEUCTF||{};
+  app('<div class="card"><h3 style="margin:0 0 6px">📄 '+trFrase('Cadastro Técnico Federal')+' '+seloCtf(c)+'</h3>'+
+      '<div class="meta">'+trFrase('Inscrição no CTF do IBAMA, categoria manejo de fauna exótica invasora (código 21-58). O certificado de regularidade vale 3 meses.')+'</div>'+
+      (c.existe&&!c.emDia?'<div class="meta" style="color:var(--danger);margin-top:6px">⚠️ '+
+        trFrase('Enquanto estiver vencido você não abre caçada, não registra abate e não pode ser convidado.')+'</div>':'')+
+    '</div>'+
+    '<div class="card">'+
+      '<label>'+trFrase('Número do registro')+' *</label>'+
+      '<input id="ctf_num" class="no-i18n" value="'+esc(c.numero||'')+'" placeholder="21-58 / ...">'+
+      '<div class="two"><div>'+campoData('ctf_emi','Emissão',(c.emissao||'').slice(0,10),true)+'</div>'+
+      '<div>'+campoData('ctf_val','Validade',(c.vencimento||'').slice(0,10),true)+'</div></div>'+
+      '<label>'+trFrase('Arquivo (PDF ou imagem)')+' '+(c.temArquivo?'':'*')+'</label>'+
+      '<input id="ctf_arq" type="file" accept="application/pdf,image/*">'+
+      (c.temArquivo
+        ? '<div class="anexo-atual"><span class="ax-ico">📎</span>'+
+            '<span class="ax-nome no-i18n" title="'+esc(c.arquivoNome||'')+'">'+esc(c.arquivoNome||'arquivo')+'</span>'+
+            '<button type="button" class="ax-btn" onclick="abrirDoc(\''+escJs(c.id)+'\')">'+trFrase('Abrir')+'</button></div>'+
+          '<div class="meta" style="margin:2px 0 6px">'+trFrase('Escolher outro arquivo substitui este.')+'</div>'
+        : '<div class="meta" style="margin:-4px 0 6px">'+trFrase('O anexo é obrigatório: é ele que comprova o registro.')+'</div>')+
+      '<button class="btn" id="ctf_salvar" onclick="salvarCtf(this)">'+trFrase('Salvar CTF')+'</button>'+
+    '</div>');
+}
+
+window.salvarCtf=function(btn){
+  var num=val('ctf_num'), emi=val('ctf_emi'), venc=val('ctf_val');
+  if(!num){ toast(trFrase('Informe o número do registro')); return; }
+  if(!emi){ toast(trFrase('Informe a data de emissão')); return; }
+  if(!venc){ toast(trFrase('Informe a validade')); return; }
+  if(venc<emi){ toast(trFrase('A validade não pode ser anterior à emissão')); return; }
+  var inp=document.getElementById('ctf_arq');
+  var arq=(inp&&inp.files&&inp.files[0])||null;
+  if(!arq && !(MEUCTF&&MEUCTF.temArquivo)){ toast(trFrase('O anexo é obrigatório: é ele que comprova o registro.')); return; }
+  btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  var seguir=function(dataUrl,nomeArq){
+    server('apiSalvarCtf',{ numero:num, emissao:emi, vencimento:venc,
+      arquivo:dataUrl||'', arquivoNome:nomeArq||'' })
+      .then(function(){ toast(trFrase('CTF salvo ✔')); MEUCTF=null;
+        server('apiMeusCreditos').then(function(cr){ CREDITOS=cr; }).catch(function(){});
+        render(); })
+      .catch(function(e){ toast(msgErro(e)); btn.disabled=false; btn.textContent=trFrase('Salvar CTF'); });
+  };
+  if(!arq) return seguir('','');
+  var fr=new FileReader();
+  fr.onload=function(){ seguir(String(fr.result||''), arq.name||''); };
+  fr.onerror=function(){ toast(trFrase('Não consegui ler o arquivo')); btn.disabled=false;
+    btn.textContent=trFrase('Salvar CTF'); };
+  fr.readAsDataURL(arq);
 };
 
 /* ---- Etapa: documentação da propriedade do ciclo ---- */
