@@ -1092,7 +1092,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1418';
+var APP_VER = 'vJS.310726.1425';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1175,6 +1175,7 @@ function msgErro(e){
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
   if(cod==='PROP_SEM_PRAZO') return trFrase('Faltam as autorizações desta propriedade.');
+  if(m==='PROP_IMUTAVEL') return trFrase('A propriedade não muda depois que a caçada começa — pode haver abate registrado nela.');
   if(cod==='LIVRE_EXCLUSIVO') return trFrase('Caçada livre não combina com ceva ou rota já cadastrada.');
   if(cod==='ITEM_DE_OUTRA_PROP') return trFrase('Este item é de outra propriedade')+': '+nome;
   if(cod==='PROP_VENCIDA') return trFrase('A autorização desta propriedade venceu em')+' '+fmtData(nome);
@@ -1581,6 +1582,16 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Método de abate':'Kill method',
+    'Desenvolvimento':'Development',
+    'Comprimento (cm)':'Length (cm)',
+    'Amostra coletada':'Sample collected',
+    'Código do frasco':'Vial code',
+    'Arma branca':'Blade',
+    'Arma de fogo':'Firearm',
+    'Juvenil':'Juvenile',
+    'Adulto':'Adult',
+    'A propriedade não muda depois que a caçada começa — pode haver abate registrado nela.':'The property cannot change once the hunt starts — kills may already be recorded on it.',
     'aberta':'open',
     'abertas':'open',
     'Abertas e encerradas · abates de cada uma':'Open and closed · kills of each',
@@ -2924,6 +2935,16 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Método de abate':'Método de captura',
+    'Desenvolvimento':'Desarrollo',
+    'Comprimento (cm)':'Longitud (cm)',
+    'Amostra coletada':'Muestra recolectada',
+    'Código do frasco':'Código del frasco',
+    'Arma branca':'Arma blanca',
+    'Arma de fogo':'Arma de fuego',
+    'Juvenil':'Juvenil',
+    'Adulto':'Adulto',
+    'A propriedade não muda depois que a caçada começa — pode haver abate registrado nela.':'La propiedad no cambia una vez iniciada la cacería — puede haber capturas registradas en ella.',
     'aberta':'abierta',
     'abertas':'abiertas',
     'Abertas e encerradas · abates de cada uma':'Abiertas y cerradas · capturas de cada una',
@@ -8434,6 +8455,21 @@ window.salvarArm=function(btn){
 var TIPOS_MANEJO=['Espera','Cães','Espreita','Armadilha','Livre'];
 var ABATEOPTS={ cevas:[], transportes:[], armadilhas:[], caes:[] };
 var ABATE_MANEJO=null;
+/* Mesmas listas do servidor. Se divergirem, o servidor descarta o valor —
+   por isso o teste compara as duas. */
+var METODOS_ABATE_UI=['Arma branca','Arma de fogo','Outros'];
+var DESENV_UI=['Juvenil','Adulto'];
+function optsDe(lista,sel){
+  return '<option value="">—</option>'+lista.map(function(x){
+    return '<option value="'+esc(x)+'"'+(String(sel||'')===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('');
+}
+/* O código do frasco só faz sentido com amostra coletada. */
+window.pintarFrasco=function(){
+  var ch=document.getElementById('ab_amostra'), box=document.getElementById('ab_frascoBox');
+  if(!ch||!box) return;
+  box.style.display=ch.checked?'':'none';
+  if(!ch.checked) setVal('ab_frasco','');
+};
 
 /* ---- Condições do abate: lua e tempo ----
    O valor gravado é o texto simples (sem emoji), igual à lista do backend.
@@ -8752,13 +8788,23 @@ VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
       /* A propriedade é o segundo campo e manda em tudo: é dela que sai o
          prazo do ciclo, os documentos que o amigo enxerga e as cevas e rotas
          que aparecem para escolher. */
-      '<label>Propriedade *</label><select id="mn_propFixa" onchange="avisarPropCiclo();pintarOpcoesDaProp()">'+
-        '<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+
-        MANEJO_OPTS.props.map(function(p){
-          var marca=p.regular?'':' ('+trFrase('irregular')+')';
-          return '<option value="'+esc(p.id)+'"'+(String(m.propriedadeId||'')===p.id?' selected':'')+'>'+
-                 esc(p.nome||'')+esc(marca)+'</option>'; }).join('')+
-      '</select><div id="mn_propAviso"></div>'+
+      /* Na edição a propriedade fica travada: ela define o prazo do ciclo, os
+         documentos que o amigo enxerga e a área a que os abates já registrados
+         pertencem. Trocar depois deixaria abate apontando para área que nunca
+         foi a dele. O servidor recusa de qualquer jeito (PROP_IMUTAVEL); aqui
+         o campo nem se abre. */
+      '<label>Propriedade *</label>'+
+      (ed
+        ? '<select id="mn_propFixa" disabled>'+MANEJO_OPTS.props.map(function(p){
+              return '<option value="'+esc(p.id)+'"'+(String(m.propriedadeId||'')===p.id?' selected':'')+'>'+esc(p.nome||'')+'</option>'; }).join('')+'</select>'+
+          '<div class="meta">🔒 '+trFrase('A propriedade não muda depois que a caçada começa — pode haver abate registrado nela.')+'</div>'
+        : '<select id="mn_propFixa" onchange="avisarPropCiclo();pintarOpcoesDaProp()">'+
+            '<option value="">— '+trFrase('escolha a propriedade')+' —</option>'+
+            MANEJO_OPTS.props.map(function(p){
+              var marca=p.regular?'':' ('+trFrase('irregular')+')';
+              return '<option value="'+esc(p.id)+'"'+(String(m.propriedadeId||'')===p.id?' selected':'')+'>'+
+                     esc(p.nome||'')+esc(marca)+'</option>'; }).join('')+'</select>')+
+      '<div id="mn_propAviso"></div>'+
       '<div id="mn_ctx"></div>'+
       '<label>Observações</label><textarea id="mn_obs">'+esc(m.obs||'')+'</textarea>'+
       '<div class="meta" style="margin:2px 0 10px">Amigos são convidados depois, dentro do ciclo aberto.</div>'+
@@ -9296,10 +9342,20 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
     app('<div class="card">'+ctx+
         '<div class="two"><div><label>Data e hora *</label><input id="ab_dh" type="datetime-local" onchange="sugerirLua()"></div><div><label>Quantidade</label><input id="ab_qtd" inputmode="numeric" value="'+esc(ed?pv('quantidade'):'1')+'"></div></div>'+
         '<div class="two"><div><label>Sexo *</label><select id="ab_sexo"><option>Macho</option><option>Fêmea</option></select></div><div><label>Peso aprox. (kg)</label><input id="ab_peso" inputmode="decimal" value="'+esc(pv('pesoAprox'))+'"></div></div>'+
+        '<div class="two"><div><label>Método de abate</label><select id="ab_metodo">'+
+            optsDe(METODOS_ABATE_UI,pv('metodoAbate'))+'</select></div>'+
+          '<div><label>Desenvolvimento</label><select id="ab_desenv">'+
+            optsDe(DESENV_UI,pv('desenvolvimento'))+'</select></div></div>'+
+        '<label>Comprimento (cm)</label><input id="ab_compr" inputmode="decimal" value="'+esc(pv('comprimento'))+'">'+
         (mostraLocal
           ? '<div class="two"><div><label>Latitude</label><input id="ab_lat" inputmode="decimal" value="'+esc(pvCoord('lat'))+'"></div><div><label>Longitude</label><input id="ab_lng" inputmode="decimal" value="'+esc(pvCoord('lng'))+'"></div></div>'+gpsButton('ab_lat','ab_lng')
           : '<input type="hidden" id="ab_lat" value=""><input type="hidden" id="ab_lng" value="">'+
             '<div class="meta" style="margin:6px 0">📍 '+trFrase('O local do abate é o da ceva escolhida.')+'</div>')+
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:10px">'+
+          '<input type="checkbox" id="ab_amostra"'+(pv('amostraColetada')==='Sim'?' checked':'')+' onchange="pintarFrasco()">'+
+          trFrase('Amostra coletada')+'</label>'+
+        '<div id="ab_frascoBox"><label>'+trFrase('Código do frasco')+'</label>'+
+          '<input id="ab_frasco" value="'+esc(pv('codigoFrasco'))+'"></div>'+
         '<label>Observações</label><textarea id="ab_obs">'+esc(pv('obs'))+'</textarea>'+
         '<label>Foto '+(ed?'(escolha uma nova para trocar)':'(opcional)')+'</label>'+
         (ed&&EDIT.fotoUrl?'<img class="foto-prev" style="display:block" src="'+esc(imgSrc(EDIT.fotoUrl))+'">':'')+
@@ -9307,6 +9363,7 @@ VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registra
         '<button class="btn" onclick="salvarAbate(this)">'+(ed?'Salvar alterações':'Registrar abate')+'</button></div>');
     document.getElementById('ab_dh').value = ed&&EDIT.dataHora?String(EDIT.dataHora).substring(0,16):nowLocal();
     if(ed) setVal('ab_sexo',EDIT.sexo);
+    pintarFrasco();
     COND_MODO='passado'; COND_AUTO=null; COND_BUSCANDO=false;
     if(ed&&pv('luaFase')){ var sl=document.getElementById('ab_lua'); if(sl) sl.setAttribute('data-manual','1'); }
     bindFoto('ab_foto','ab_prev');
@@ -9360,12 +9417,17 @@ window.carregarAlimentosCeva=function(preselect){ var cid=val('ab_ceva'); var se
   server('apiListarAlimentos',cid).then(function(l){ sel.innerHTML='<option value="">—</option>'+l.map(function(a){return '<option value="'+a.id+'">'+esc(a.tipo)+' ('+fmtData(a.data)+')</option>';}).join(''); if(preselect) setVal('ab_alim',preselect); }); };
 window.salvarAbate=function(btn){
   var d={ dataHora:val('ab_dh'), quantidade:val('ab_qtd'), sexo:val('ab_sexo'), pesoAprox:val('ab_peso'),
-    lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo') };
+    lat:val('ab_lat'), lng:val('ab_lng'), obs:val('ab_obs'), luaFase:val('ab_lua'), condicaoTempo:val('ab_tempo'),
+    metodoAbate:val('ab_metodo'), desenvolvimento:val('ab_desenv'), comprimento:val('ab_compr'),
+    amostraColetada:(document.getElementById('ab_amostra')||{}).checked?'Sim':'Não',
+    codigoFrasco:val('ab_frasco') };
   if(!d.dataHora){toast('Informe data e hora');return;}
   if(EDIT){
     btn.disabled=true; btn.textContent='Salvando…';
     server('apiEditar','abate',EDIT.id,{ dataHora:d.dataHora, quantidade:d.quantidade, sexo:d.sexo, pesoAprox:d.pesoAprox,
-      lat:d.lat, lng:d.lng, obs:d.obs, luaFase:d.luaFase||'', condicaoTempo:d.condicaoTempo||'', foto:fotoData('ab_foto') })
+      lat:d.lat, lng:d.lng, obs:d.obs, luaFase:d.luaFase||'', condicaoTempo:d.condicaoTempo||'', foto:fotoData('ab_foto'),
+      metodoAbate:d.metodoAbate, desenvolvimento:d.desenvolvimento, comprimento:d.comprimento,
+      amostraColetada:d.amostraColetada, codigoFrasco:d.codigoFrasco })
       .then(function(){ EDIT=null; toast('Abate salvo ✔'); voltar(); })
       .catch(function(){ btn.disabled=false; btn.textContent='Salvar alterações'; });
     return;
