@@ -1092,7 +1092,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1411';
+var APP_VER = 'vJS.310726.1418';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1581,6 +1581,11 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'aberta':'open',
+    'abertas':'open',
+    'Abertas e encerradas · abates de cada uma':'Open and closed · kills of each',
+    'O abate pertence a uma caçada. Abra a caçada em que ele aconteceu e registre por lá.':'A kill belongs to a hunt. Open the hunt where it happened and record it there.',
+    'Ver minhas caçadas':'See my hunts',
     'Documentação da propriedade':'Property paperwork',
     'Autorização de Acesso e IBAMA, com os anexos':'Access and IBAMA permits, with attachments',
     'Quem está na caçada e convidar mais':'Who is on the hunt, and invite more',
@@ -2919,6 +2924,11 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'aberta':'abierta',
+    'abertas':'abiertas',
+    'Abertas e encerradas · abates de cada uma':'Abiertas y cerradas · capturas de cada una',
+    'O abate pertence a uma caçada. Abra a caçada em que ele aconteceu e registre por lá.':'La captura pertenece a una cacería. Abre la cacería donde ocurrió y regístrala allí.',
+    'Ver minhas caçadas':'Ver mis cacerías',
     'Documentação da propriedade':'Documentación de la propiedad',
     'Autorização de Acesso e IBAMA, com os anexos':'Autorizaciones de acceso e IBAMA, con adjuntos',
     'Quem está na caçada e convidar mais':'Quién está en la cacería, e invitar',
@@ -8647,12 +8657,18 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
       moduloCard('rotas','Rotas','Trajetos dentro da propriedade',true,"abrirRotas('manejo')")+
     '</div><div class="hub-largo" id="mnManejos"></div>';
   app('<div id="mnConvites"></div>'+cards);
-  pintarCardManejos(null);
+  pintarCardManejos([]);
   /* O botão flutuante saiu daqui: quem abre manejo é o card "Manejos" (ou o
      botão MANEJO do menu, que fica pulsando). Evita dois caminhos para a
      mesma coisa na mesma tela. */
   fab('');
-  server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null; pintarCardManejos(m); }).catch(function(){ pintarCardManejos(null); });
+  /* Conta quantas caçadas estão abertas em vez de perguntar por "a" aberta,
+     que deixou de existir como conceito. */
+  server('apiListarManejos').then(function(l){
+    CACHE.manejo=l||[];
+    var abertos=(l||[]).filter(function(m){ return m.status==='aberto'; });
+    MANEJO_ABERTO=abertos[0]||null;
+    pintarCardManejos(abertos); }).catch(function(){ pintarCardManejos([]); });
   carregarConvites().then(function(){ var el=document.getElementById('mnConvites'); if(!el) return;
     el.innerHTML = MEUS_CONVITES.length ? '<div class="card click" style="border-left:5px solid var(--alerta)" onclick="nav(\'manejoConvites\')">'+
       '<h3 style="margin:0 0 4px">🤝 '+MEUS_CONVITES.length+' '+trFrase(MEUS_CONVITES.length===1?'convite pendente':'convites pendentes')+'</h3>'+
@@ -8660,22 +8676,22 @@ VIEWS.manejoHub=function(){ setTitulo('CAÇAR'); setCrumb('CAÇAR');
   }).catch(function(){}); };
 /* O card "Manejos" mora no topo. Com manejo aberto ele pulsa em verde e
    mostra o selo no canto; sem manejo aberto, é um card comum. */
-function pintarCardManejos(m){
+function pintarCardManejos(abertos){
   var el=document.getElementById('mnManejos'); if(!el) return;
-  var aberto=!!m;
-  var sub = aberto
-    ? esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · '+trFrase('desde')+' '+fmtDataHora(m.criadoEm)+
-      (m.souDono===false?' · '+trFrase('Convidado por')+' '+esc(m.donoNome||'—'):'')
-    : trFrase('Abertos e encerrados · abates de cada um');
+  var lista=abertos||[], n=lista.length, m=lista[0]||null;
+  var aberto=n>0;
+  var sub = !aberto ? trFrase('Abertas e encerradas · abates de cada uma')
+    : (n===1
+        ? esc(m.nome||'')+' · '+rotuloTipoManejo(m.tipo)+' · '+trFrase('desde')+' '+fmtDataHora(m.criadoEm)+
+          (m.souDono===false?' · '+trFrase('Convidado por')+' '+esc(m.donoNome||'—'):'')
+        : lista.slice(0,3).map(function(x){ return esc(x.nome||''); }).join(' · ')+(n>3?' …':''));
   el.innerHTML='<div class="card menu-card click'+(aberto?' manejo-aberto':'')+'" onclick="nav(\'manejoLista\')">'+
     '<div class="ic">'+ico('painel')+'</div><div class="txt"><h3>'+trFrase('Caçar agora')+'</h3><p>'+sub+'</p></div>'+
-    (aberto?'<span class="selo-aberto">1 '+trFrase('aberto')+'</span>':'')+'<div class="chev">›</div></div>'; }
-window.novoManejo=function(){
-  var meuAberto=function(m){ return m && m.souDono!==false; };
-  if(meuAberto(MANEJO_ABERTO)){ toast('Você já tem um manejo aberto'); abrirManejo(MANEJO_ABERTO.id); return; }
-  server('apiManejoAberto').then(function(m){ MANEJO_ABERTO=m||null;
-    if(meuAberto(m)){ toast('Você já tem um manejo aberto'); abrirManejo(m.id); } else { MANEJO_EDIT=null; nav('manejoForm'); } })
-  .catch(function(){ MANEJO_EDIT=null; nav('manejoForm'); }); };
+    (aberto?'<span class="selo-aberto">'+n+' '+trFrase(n>1?'abertas':'aberta')+'</span>':'')+'<div class="chev">›</div></div>'; }
+/* Não barra mais: caçadas abertas podem ser várias. O que sustentava a
+   restrição era a dúvida sobre em qual ciclo o abate entrava, e ela acabou —
+   o abate é registrado de dentro da caçada, que manda o próprio id. */
+window.novoManejo=function(){ MANEJO_EDIT=null; nav('manejoForm'); };
 window.novaRota=function(){ nav('rotaForm'); };
 
 /* ---- Compartilhar ceva e propriedade (entrega 6) ---- */
@@ -9039,6 +9055,9 @@ window.responderConvite=function(id,resp,btn){
       if(resp==='aceito' && r && r.manejoId){ MANEJO_ATUAL=null; STATE.manejoId=r.manejoId; STATE.stack=['manejoHub','manejoDetalhe']; render(); }
       else render(); })
     .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
+/* O abate sai de dentro da caçada: MANEJO_ATUAL é o ciclo em que a pessoa
+   está, e é o id dele que vai para o servidor. Com várias caçadas abertas,
+   deixar o servidor escolher seria a mesma ambiguidade que já custou caro. */
 window.registrarAbateNoManejo=function(){ EDIT=null; nav('abateForm'); };
 window.editarAbateDoManejo=function(id){
   var a=(CACHE.abateManejo||[]).filter(function(x){return String(x.id)===String(id);})[0];
@@ -9248,11 +9267,16 @@ function carregarItensProp(p,poly,temPoly){
 }
 
 VIEWS.abateForm=function(){ var ed=!!EDIT; setTitulo(ed?'Editar abate':'Registrar abate'); setCrumb('Manejo',ed?'Editar':'Abate'); loadingBox('Carregando…');
-  var pManejo = ed ? Promise.resolve(null) : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):server('apiManejoAberto'));
+  /* Sem "o" ciclo aberto: agora podem ser vários. O abate só nasce de dentro
+     de uma caçada, então ou MANEJO_ATUAL está aberto, ou a pessoa é mandada
+     escolher em qual delas quer registrar. */
+  var pManejo = ed ? Promise.resolve(null)
+    : (MANEJO_ATUAL&&MANEJO_ATUAL.status==='aberto'?Promise.resolve(MANEJO_ATUAL):Promise.resolve(null));
   pManejo.then(function(m){
     if(!ed && !m){ app('<div class="card"><div class="empty"><div class="big">🎯</div>'+
-        'O abate agora pertence a um manejo, e você não tem manejo aberto.</div>'+
-        '<button class="btn" onclick="voltarENovoManejo()">＋ NOVO CICLO DE CAÇA</button></div>'); return; }
+        trFrase('O abate pertence a uma caçada. Abra a caçada em que ele aconteceu e registre por lá.')+'</div>'+
+        '<button class="btn" onclick="nav(\'manejoLista\')">🎯 '+trFrase('Ver minhas caçadas')+'</button>'+
+        '<button class="btn sec" style="margin-top:8px" onclick="voltarENovoManejo()">＋ '+trFrase('NOVO CICLO DE CAÇA')+'</button></div>'); return; }
     ABATE_MANEJO = m || null;
     var cevas=(m&&m.cevas)||[], rotas=(m&&m.rotas)||[], gente=(m&&m.participantes)||[];
     var mostraLocal = ed ? true : !(m && m.tipo==='ceva');
