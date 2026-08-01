@@ -191,6 +191,20 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+/* Ficha do usuário no admin: rótulo à esquerda, valor à direita, quebrando
+   embaixo no celular em vez de espremer. */
+.fx-tit{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--txt2);border-bottom:1px solid var(--linha);padding-bottom:4px}
+.fx-linha{display:flex;gap:10px;padding:5px 0;border-bottom:1px dashed var(--linha);font-size:13px}
+.fx-rot{flex:0 0 42%;color:var(--txt2)}
+.fx-val{flex:1;font-weight:600;word-break:break-word}
+@media (max-width:520px){ .fx-linha{flex-direction:column;gap:2px} .fx-rot{flex:none} }
+.fx-conts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.fx-cont{background:var(--areia2,#f2ece1);border:1px solid var(--linha);border-radius:10px;
+  padding:8px 4px;text-align:center}
+.fx-cont b{display:block;font-size:18px;line-height:1.1}
+.fx-cont span{font-size:10px;color:var(--txt2)}
+@media (max-width:520px){ .fx-conts{grid-template-columns:repeat(2,1fr)} }
 .ind-guard{font-size:10px;opacity:.8;font-weight:600}
 /* Ação com rótulo: o ícone sozinho obrigava a adivinhar o que o botão fazia. */
 .ib-rot{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
@@ -1161,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.310726.1656';
+var APP_VER = 'vJS.010826.0846';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1657,6 +1671,46 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Usuários da plataforma':'Platform users',
+    'Buscar usuário…':'Search user…',
+    'Não foi possível carregar os usuários':'Could not load the users',
+    'Não foi possível abrir a ficha':'Could not open the record',
+    'Ninguém encontrado com esse termo.':'Nobody found for that term.',
+    'usuário encontrado':'user found',
+    'usuários encontrados':'users found',
+    'mostrando':'showing',
+    'anteriores':'previous',
+    'próximos':'next',
+    'bloqueado':'blocked',
+    'ativo':'active',
+    'e-mail não confirmado':'e-mail not confirmed',
+    'sem ficha':'no record',
+    'Situação':'Status',
+    'E-mail confirmado':'E-mail confirmed',
+    'Cadastro em':'Registered on',
+    'Confirmado em':'Confirmed on',
+    'Primeiro acesso':'First access',
+    'Id do usuário':'User id',
+    'Id da empresa':'Company id',
+    'Id do manejador':'Manager id',
+    'SEM FICHA — grava sem dono':'NO RECORD — saves with no owner',
+    'Bloqueado até':'Blocked until',
+    'Nascimento':'Birth date',
+    'Perfil visível':'Profile visible',
+    'sim':'yes',
+    'não':'no',
+    'Este usuário não tem ficha. Tudo que ele salvar nasce sem dono e some da listagem dele.':'This user has no record. Anything they save is born ownerless and vanishes from their list.',
+    'em dia':'up to date',
+    'sem anexo':'no attachment',
+    'Plano atual':'Current plan',
+    'Válido até':'Valid until',
+    'sem assinatura':'no subscription',
+    'Saldo de indicação':'Referral balance',
+    'dias guardados':'banked days',
+    'Chave de indicação':'Referral key',
+    'Indicado por':'Referred by',
+    'O que ele cadastrou':'What they registered',
+    'Caçadas':'Hunts',
     'Não foi possível carregar os abates desta ceva':'Could not load the kills of this feeder',
     'Nenhum abate registrado nesta ceva ainda.':'No kill recorded on this feeder yet.',
     'guardados':'banked',
@@ -3070,6 +3124,46 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Usuários da plataforma':'Usuarios de la plataforma',
+    'Buscar usuário…':'Buscar usuario…',
+    'Não foi possível carregar os usuários':'No se pudieron cargar los usuarios',
+    'Não foi possível abrir a ficha':'No se pudo abrir la ficha',
+    'Ninguém encontrado com esse termo.':'Nadie encontrado con ese término.',
+    'usuário encontrado':'usuario encontrado',
+    'usuários encontrados':'usuarios encontrados',
+    'mostrando':'mostrando',
+    'anteriores':'anteriores',
+    'próximos':'siguientes',
+    'bloqueado':'bloqueado',
+    'ativo':'activo',
+    'e-mail não confirmado':'correo no confirmado',
+    'sem ficha':'sin ficha',
+    'Situação':'Situación',
+    'E-mail confirmado':'Correo confirmado',
+    'Cadastro em':'Registro el',
+    'Confirmado em':'Confirmado el',
+    'Primeiro acesso':'Primer acceso',
+    'Id do usuário':'Id del usuario',
+    'Id da empresa':'Id de la empresa',
+    'Id do manejador':'Id del manejador',
+    'SEM FICHA — grava sem dono':'SIN FICHA — guarda sin dueño',
+    'Bloqueado até':'Bloqueado hasta',
+    'Nascimento':'Nacimiento',
+    'Perfil visível':'Perfil visible',
+    'sim':'sí',
+    'não':'no',
+    'Este usuário não tem ficha. Tudo que ele salvar nasce sem dono e some da listagem dele.':'Este usuario no tiene ficha. Todo lo que guarde nace sin dueño y desaparece de su lista.',
+    'em dia':'al día',
+    'sem anexo':'sin adjunto',
+    'Plano atual':'Plan actual',
+    'Válido até':'Válido hasta',
+    'sem assinatura':'sin suscripción',
+    'Saldo de indicação':'Saldo de referidos',
+    'dias guardados':'días guardados',
+    'Chave de indicação':'Clave de referidos',
+    'Indicado por':'Referido por',
+    'O que ele cadastrou':'Lo que registró',
+    'Caçadas':'Cacerías',
     'Não foi possível carregar os abates desta ceva':'No se pudieron cargar las capturas de este comedero',
     'Nenhum abate registrado nesta ceva ainda.':'Ninguna captura registrada en este comedero todavía.',
     'guardados':'guardados',
@@ -6503,6 +6597,11 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
     app('<div class="hero-bloco"><h2>\ud83d\udee1\ufe0f Administra\u00e7\u00e3o</h2><p>Envie avisos aos usu\u00e1rios e analise as den\u00fancias.</p></div>'+
       '<div class="card" id="painelCard" data-adm="denuncias"><div class="row"><div class="grow"><h3 style="margin:0 0 4px">\ud83d\udcca Painel da plataforma</h3></div><button class="ib" onclick="carregarPainel()" title="Atualizar">\ud83d\udd04</button></div>'+
       '<div id="painelBox" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
+      '<div class="card" data-adm="usuarios"><h3 style="margin:0 0 4px">👥 Usuários da plataforma</h3>'+
+      '<div class="meta" style="margin-bottom:8px">Busque por nome, e-mail, telefone, cidade, CPF/CNPJ ou id. Clique para ver a ficha completa.</div>'+
+      '<input id="usr_busca" placeholder="Buscar usuário…" oninput="buscarUsuarios(this)">'+
+      '<div id="usrFicha"></div>'+
+      '<div id="usrLista" style="margin-top:10px"><div class="loading"><div class="spin"></div></div></div></div>'+
       '<div class="card" data-adm="avisos"><h3 style="margin:0 0 8px">\ud83d\udce2 Enviar aviso</h3>'+
       '<label>T\u00edtulo *</label><input id="av_tit" placeholder="Ex: Nova fun\u00e7\u00e3o dispon\u00edvel">'+
       '<label>Mensagem *</label><textarea id="av_msg" placeholder="Escreva o comunicado"></textarea>'+
@@ -6566,12 +6665,172 @@ VIEWS.admin=function(){ setTitulo('Administração'); setCrumb('Administração'
    Nada do conteúdo muda: os cards que já existiam são apenas agrupados
    em seções e mostrados um grupo por vez. Cada grupo carrega os próprios
    dados só quando é aberto pela primeira vez. */
+/* ============================================================
+   ADMIN — Usuários
+   Lista com busca e a ficha completa ao clicar no nome. Existe para
+   o suporte não precisar abrir o banco para ver um telefone.
+   ============================================================ */
+var USR={ busca:'', pagina:0, dados:null, carregando:false, aberto:null, ficha:null };
+
+function carregarUsuariosAdm(){
+  var box=document.getElementById('usrLista'); if(!box) return;
+  USR.carregando=true;
+  box.innerHTML='<div class="loading"><div class="spin"></div></div>';
+  server('apiListarUsuarios',USR.busca,USR.pagina).then(function(r){
+    USR.dados=r; USR.carregando=false; pintarUsuariosAdm();
+  }).catch(function(e){
+    USR.carregando=false;
+    box.innerHTML='<div class="empty">'+trFrase('Não foi possível carregar os usuários')+
+      '<br><span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div>';
+  });
+}
+
+/* Busca com respiro: espera a pessoa parar de digitar. Sem isso seria uma
+   chamada por tecla, e a lista varre todas as tabelas. */
+var USR_TIMER=null;
+window.buscarUsuarios=function(el){
+  USR.busca=el.value; USR.pagina=0;
+  clearTimeout(USR_TIMER);
+  USR_TIMER=setTimeout(carregarUsuariosAdm,350);
+};
+window.paginaUsuarios=function(d){ USR.pagina=Math.max(0,USR.pagina+d); carregarUsuariosAdm(); };
+
+function seloTipo(t){
+  return t==='empresa' ? '<span class="pill gray">🏪 '+trFrase('Empresa')+'</span>'
+                       : '<span class="pill">🧑‍🌾 '+trFrase('Manejador')+'</span>';
+}
+
+function pintarUsuariosAdm(){
+  var box=document.getElementById('usrLista'); if(!box) return;
+  var r=USR.dados; if(!r){ box.innerHTML=''; return; }
+  var linhas=(r.usuarios||[]).map(function(u){
+    var alertas=[];
+    if(String(u.ativo)==='false') alertas.push('<span class="pill" style="background:var(--danger)">'+trFrase('bloqueado')+'</span>');
+    if(u.emailConfirmado!=='Sim'&&u.emailConfirmado!==true) alertas.push('<span class="pill warn">'+trFrase('e-mail não confirmado')+'</span>');
+    if(u.tipo!=='empresa'&&!u.temFicha) alertas.push('<span class="pill warn">'+trFrase('sem ficha')+'</span>');
+    return '<div class="doc-linha click" onclick="abrirFichaUsuario(\''+escJs(u.id)+'\')">'+
+      '<div class="grow"><b>'+esc(u.nome||u.login)+'</b> '+seloTipo(u.tipo)+' '+alertas.join(' ')+
+      '<div class="meta no-i18n">'+esc(u.login)+
+        (u.telefone?' · '+esc(u.telefone):'')+(u.cidade?' · '+esc(u.cidade):'')+'</div>'+
+      '<div class="meta">'+trFrase('desde')+' '+fmtData(u.dataCadastro)+'</div></div>'+
+      '<span class="ir-btn">'+trFrase('Abrir')+'</span><div class="chev">›</div></div>';
+  }).join('');
+
+  var nav = (r.pagina>0 || r.temMais)
+    ? '<div class="row" style="gap:8px;margin-top:10px">'+
+      (r.pagina>0?'<button class="btn sm sec grow" onclick="paginaUsuarios(-1)">‹ '+trFrase('anteriores')+'</button>':'')+
+      (r.temMais?'<button class="btn sm sec grow" onclick="paginaUsuarios(1)">'+trFrase('próximos')+' ›</button>':'')+
+      '</div>' : '';
+
+  box.innerHTML='<div class="meta" style="margin-bottom:6px">'+
+      r.total+' '+trFrase(r.total===1?'usuário encontrado':'usuários encontrados')+
+      (r.total>r.porPagina?' · '+trFrase('mostrando')+' '+(r.pagina*r.porPagina+1)+'–'+
+        Math.min((r.pagina+1)*r.porPagina,r.total):'')+'</div>'+
+    (linhas || '<div class="empty">'+trFrase('Ninguém encontrado com esse termo.')+'</div>')+nav;
+  traduzirDOM(box); iconizar(box);
+}
+
+window.abrirFichaUsuario=function(id){
+  USR.aberto=id; USR.ficha=null;
+  var box=document.getElementById('usrFicha'); if(!box) return;
+  box.innerHTML='<div class="loading"><div class="spin"></div></div>';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  server('apiFichaUsuario',id).then(function(f){
+    if(USR.aberto!==id) return;                 /* já clicou em outro */
+    USR.ficha=f; pintarFichaUsuario();
+  }).catch(function(e){
+    if(USR.aberto!==id) return;
+    box.innerHTML='<div class="card"><div class="meta">'+trFrase('Não foi possível abrir a ficha')+
+      '<br><span class="no-i18n">'+esc((e&&e.message)||'')+'</span></div></div>';
+  });
+};
+window.fecharFichaUsuario=function(){ USR.aberto=null; USR.ficha=null;
+  var box=document.getElementById('usrFicha'); if(box) box.innerHTML=''; };
+
+/* Uma linha da ficha. Vazio vira travessão em vez de sumir: saber que o campo
+   está em branco é informação no suporte. */
+function linhaFicha(rot,v,cru){
+  var txt=(v===''||v==null)?'—':String(v);
+  return '<div class="fx-linha"><span class="fx-rot">'+trFrase(rot)+'</span>'+
+    '<span class="fx-val'+(cru?' no-i18n':'')+'">'+esc(txt)+'</span></div>';
+}
+
+function pintarFichaUsuario(){
+  var f=USR.ficha; if(!f) return;
+  var box=document.getElementById('usrFicha'); if(!box) return;
+  var u=f.usuario, d=f.ficha||{}, c=f.contadores||{};
+  var ehEmp=(u.tipo==='empresa');
+
+  var ctf = f.ctf
+    ? (f.ctf.emDia?'<span class="pill ok">✔ '+trFrase('em dia')+'</span>':'<span class="pill" style="background:var(--danger)">'+trFrase('vencido')+'</span>')+
+      ' <span class="no-i18n">'+esc(f.ctf.numero||'')+'</span>'+
+      (f.ctf.vencimento?' · '+trFrase('até')+' '+fmtData(f.ctf.vencimento):'')+
+      (f.ctf.temArquivo?'':' · '+trFrase('sem anexo'))
+    : '<span class="pill" style="background:var(--danger)">'+trFrase('sem CTF')+'</span>';
+
+  var contHtml=[['propriedades','Propriedades'],['cevas','Cevas'],['rotas','Rotas'],
+    ['ciclos','Caçadas'],['abates','Abates'],['documentos','Documentos'],
+    ['trofeus','Troféus'],['indicacoes','Indicações']]
+    .map(function(p){ return '<div class="fx-cont"><b>'+(c[p[0]]||0)+'</b><span>'+trFrase(p[1])+'</span></div>'; }).join('');
+
+  box.innerHTML='<div class="card" style="border-left:5px solid var(--verde)">'+
+    '<div class="row"><div class="grow"><h3 style="margin:0 0 4px">'+
+      esc(d.nome||u.login)+' '+seloTipo(u.tipo)+'</h3>'+
+      '<div class="meta no-i18n">'+esc(u.login)+'</div></div>'+
+      '<button class="ib" onclick="fecharFichaUsuario()" title="'+trFrase('Fechar')+'">✕</button></div>'+
+
+    '<h4 class="fx-tit">'+trFrase('Conta')+'</h4>'+
+    linhaFicha('Situação', String(u.ativo)==='false'?trFrase('bloqueado'):trFrase('ativo'))+
+    linhaFicha('E-mail confirmado', (u.emailConfirmado==='Sim'||u.emailConfirmado===true)?trFrase('sim'):trFrase('não'))+
+    linhaFicha('Cadastro em', u.dataCadastro?fmtDataHora(u.dataCadastro):'')+
+    linhaFicha('Confirmado em', u.confirmadoEm?fmtDataHora(u.confirmadoEm):'')+
+    linhaFicha('Primeiro acesso', u.primeiroAcesso?fmtDataHora(u.primeiroAcesso):'')+
+    linhaFicha('Idioma', u.idioma)+
+    linhaFicha('Id do usuário', u.id, true)+
+    (ehEmp?linhaFicha('Id da empresa', u.empresaId, true)
+          :linhaFicha('Id do manejador', u.manejadorId||trFrase('SEM FICHA — grava sem dono'), true))+
+    (u.bloqueadoAte?linhaFicha('Bloqueado até', fmtDataHora(u.bloqueadoAte)):'')+
+
+    '<h4 class="fx-tit">'+trFrase(ehEmp?'Empresa':'Manejador')+'</h4>'+
+    (f.temFicha
+      ? linhaFicha('Nome', d.nome)+
+        linhaFicha('Telefone', d.telefone||d.whatsapp, true)+
+        linhaFicha(ehEmp?'CNPJ':'CPF', ehEmp?d.cnpj:d.cpf, true)+
+        (ehEmp?'':linhaFicha('CR', d.cr, true)+linhaFicha('Nascimento', d.dataNascimento?fmtData(d.dataNascimento):''))+
+        linhaFicha('E-mail de contato', d.email, true)+
+        linhaFicha('Cidade', d.cidade)+
+        linhaFicha('Endereço', d.endereco)+
+        (ehEmp?'':linhaFicha('Perfil visível', d.visivelNetwork==='Sim'?trFrase('sim'):trFrase('não'))+
+                  linhaFicha('Sala de troféu', d.salaVisivel==='Sim'?trFrase('visível'):trFrase('oculta')))
+      : '<div class="meta" style="color:var(--danger)">⚠️ '+
+        trFrase('Este usuário não tem ficha. Tudo que ele salvar nasce sem dono e some da listagem dele.')+'</div>')+
+
+    (ehEmp?'':'<h4 class="fx-tit">CTF</h4><div class="meta">'+ctf+'</div>')+
+
+    '<h4 class="fx-tit">'+trFrase('Plano')+'</h4>'+
+    /* Nome amigável só existe no servidor (PLANO_NOME). Aqui um mapa curto,
+       com o código cru como reserva se aparecer plano novo. */
+    linhaFicha('Plano atual', ({free:'Novato',n1:'Mateiro',n2:'Veterano',
+      empresa:'Empresa',empresapro:'Empresa Pro'})[f.plano.plano]||f.plano.plano)+
+    linhaFicha('Válido até', f.plano.fim?fmtData(f.plano.fim):trFrase('sem assinatura'))+
+    linhaFicha('Origem', f.plano.origem)+
+    linhaFicha('Saldo de indicação', (u.indicSaldo||0)+' '+trFrase('dias guardados'))+
+    linhaFicha('Chave de indicação', u.chaveIndic, true)+
+    linhaFicha('Indicado por', u.indicadoPor, true)+
+
+    '<h4 class="fx-tit">'+trFrase('O que ele cadastrou')+'</h4>'+
+    '<div class="fx-conts">'+contHtml+'</div>'+
+  '</div>';
+  traduzirDOM(box); iconizar(box);
+}
+
 var ADM_SECOES=[
   {k:'denuncias',  nome:'📊 Painel',     titulos:['📊 Painel da plataforma','🚩 Denúncias'], load:['carregarPainel']},
   {k:'avisos',     nome:'📢 Avisos',     titulos:['📢 Enviar aviso'], load:['carregarAvisosAdmin']},
   {k:'artigos',    nome:'📰 Artigos',    titulos:['📰 Artigos do blog'], load:['carregarArtigosAdm']},
   {k:'campanha',   nome:'🏆 Patrocínio', titulos:['🏆 Campanha de premiação','📬 Fila de patrocínios'],
                    load:['carregarCampanhasAdmin','carregarEmpresasCampanha','carregarPatrociniosAdm']},
+  {k:'usuarios',   nome:'👥 Usuários',   titulos:['👥 Usuários da plataforma'], load:['carregarUsuariosAdm']},
   {k:'suporte',    nome:'🎧 Suporte',    titulos:['🎧 Suporte ao cliente'], load:['carregarSuporteAdm','carregarChamados']},
   {k:'pagamentos', nome:'🧾 Pagamentos', titulos:['🧾 Pagamentos dos clientes','💳 Pagamento (Mercado Pago)'],
                    load:['carregarPagsAdm']},
