@@ -1175,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.0908';
+var APP_VER = 'vJS.020826.0923';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -10275,9 +10275,29 @@ VIEWS.agenda=function(){ setTitulo('Agenda'); setCrumb('Manejo','Agenda'); loadi
 window.agMes=function(delta){ AG_MES=new Date(AG_MES.getFullYear(),AG_MES.getMonth()+delta,1); AG_DIA=null; renderAgenda(); };
 window.agDia=function(k){ AG_DIA=(AG_DIA===k?null:k); renderAgenda(); };
 
-function agItemHtml(i){ var ent=i.escopo==='cao'?'saude':(i.escopo==='cavalo'?'saudeTransp':'manutencao'); var ic=i.escopo==='cao'?'🐕':(i.escopo==='cavalo'?'🐎':'🚗');
+window.delDocAgenda=function(id){
+  if(!confirm(trFrase('Excluir este documento?')+'\n\n'+trFrase('Não há como desfazer.'))) return;
+  server('apiExcluirDocumento',id).then(function(){
+    toast(trFrase('Documento excluído')); render();
+  }).catch(function(e){ toast(msgErro(e)); });
+};
+function agItemHtml(i){
+  /* O escopo decide a entidade de exclusão. Documento caía no `else` e ia
+     como 'manutencao' — o botão de lixeira mandava apagar uma manutenção com
+     o id de um documento. */
+  var ent = i.escopo==='cao' ? 'saude'
+          : i.escopo==='cavalo' ? 'saudeTransp'
+          : i.escopo==='documento' ? 'documento' : 'manutencao';
+  var ic  = i.escopo==='cao' ? '🐕'
+          : i.escopo==='cavalo' ? '🐎'
+          : i.escopo==='documento' ? '📄' : '🚗';
   var st=statusProx(i.proximaData); var pill=st==='atrasada'?'<span class="pill dan">Atrasada</span>':(st==='hoje'?'<span class="pill warn">Hoje</span>':(st==='proxima'?'<span class="pill ok">Agendada</span>':''));
-  var del = i.fixo ? '' : '<button class="ib" onclick="delItem(\''+ent+'\',\''+i.id+'\')" title="Excluir">🗑️</button>';
+  /* `documento` não existe no mapa ENT do apiExcluir genérico — usa a ação
+     própria, que confere o dono e apaga o arquivo junto. */
+  var del = i.fixo ? ''
+    : i.escopo==='documento'
+      ? '<button class="ib" onclick="delDocAgenda(\''+escJs(i.id)+'\')" title="'+trFrase('Excluir')+'">🗑️</button>'
+      : '<button class="ib" onclick="delItem(\''+ent+'\',\''+i.id+'\')" title="'+trFrase('Excluir')+'">🗑️</button>';
   return '<div class="card"><div class="row"><div class="grow"><h3 style="font-size:15px">'+ic+' '+esc(i.animalNome||'')+' — <span class="pill gray">'+esc(i.tipo)+'</span> '+esc(i.descricao||'')+'</h3>'+
     '<div class="meta">'+(i.proximaData?'Próxima: <b>'+fmtData(i.proximaData)+'</b> '+pill:'Feito em '+fmtData(i.data))+(i.obs?'<br>'+esc(i.obs):'')+'</div></div>'+del+'</div></div>'; }
 
