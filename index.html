@@ -1175,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.0950';
+var APP_VER = 'vJS.020826.1006';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1675,6 +1675,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Your CTF is expired or missing. Without it you cannot enter the hunt.',
+    'Quer cadastrar agora?':'Register it now?',
     'CTF e autorizações de propriedade não contam.':'CTF and property permits do not count.',
     'Você usa':'You are using',
     'de':'of',
@@ -3146,6 +3148,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Tu CTF está vencido o no registrado. Sin él no puedes entrar en la cacería.',
+    'Quer cadastrar agora?':'Registrarlo ahora?',
     'CTF e autorizações de propriedade não contam.':'El CTF y las autorizaciones de propiedad no cuentan.',
     'Você usa':'Estás usando',
     'de':'de',
@@ -4666,6 +4670,9 @@ function bloqueioCriar(chave,qtdAtual){
     return { motivo:trFrase('Sua ficha de manejador ainda não existe. Sem ela o registro é salvo sem dono e não aparece na lista.'),
              rotuloAcao:trFrase('Criar meu perfil'), acao:"go('perfilManejador')" };
   }
+  /* `ciclo` não tem limite numérico: passa só pelas travas de CTF e ficha,
+     conferidas acima. */
+  if(chave==='ciclo') return null;
   var lim=(CREDITOS.limites||{})[chave];
   if(lim===undefined||lim===null||lim===-1) return null;
   var q=Number(qtdAtual)||0;
@@ -9367,7 +9374,7 @@ function pintarCardManejos(abertos){
 /* Não barra mais: caçadas abertas podem ser várias. O que sustentava a
    restrição era a dúvida sobre em qual ciclo o abate entrava, e ela acabou —
    o abate é registrado de dentro da caçada, que manda o próprio id. */
-window.novoManejo=function(){ MANEJO_EDIT=null; nav('manejoForm'); };
+window.novoManejo=function(){ if(ctfBloqueiaCiclo()) return; MANEJO_EDIT=null; nav('manejoForm'); };
 window.novaRota=function(){ nav('rotaForm'); };
 
 /* ---- Compartilhar ceva e propriedade (entrega 6) ---- */
@@ -9412,8 +9419,20 @@ function listaChecks(box,itens,marcados,vazio){
       return '<label class="check'+(m[i.id]?' on':'')+'" onclick="toggleCheck(this)"><input type="checkbox" value="'+esc(i.id)+'"'+(m[i.id]?' checked':'')+'>'+esc(i.nome||i.tipo||'—')+'</label>'; }).join('')+'</div>'
     : '<div class="checks" id="'+box+'"><div class="meta">'+vazio+'</div></div>';
 }
-window.abrirManejo=function(id){ MANEJO_ATUAL=null; STATE.manejoId=id;
+/* Sem CTF em dia, a caçada aberta nem abre: o servidor recusa, e um erro
+   seco depois do clique não diz o que fazer. Encerrada segue livre — é
+   histórico. */
+function ctfBloqueiaCiclo(){
+  if(!CREDITOS || CREDITOS.ctfEmDia!==false) return false;
+  if(!confirm(trFrase('Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.')+
+      '\n\n'+trFrase('Quer cadastrar agora?'))) return true;
+  nav('ctf'); return true;
+}
+window.abrirManejo=function(id){
   var da=(CACHE.manejo||[]).filter(function(x){return x.id===id;})[0];
+  /* Encerrada é histórico e continua legível. Aberta exige CTF em dia. */
+  if((!da || da.status==='aberto') && ctfBloqueiaCiclo()) return;
+  MANEJO_ATUAL=null; STATE.manejoId=id;
   STATE.participacaoId=(da&&da.participacaoId)||''; nav('manejoDetalhe'); };
 
 VIEWS.manejoForm=function(){ var ed=!!MANEJO_EDIT;
@@ -9577,8 +9596,12 @@ VIEWS.manejoLista=function(){ setTitulo('Caçar agora'); setCrumb('Caçar agora'
     app(abas+corpo);
     /* O botão de abrir ciclo fica SEMPRE visível na aba dos abertos. Antes ele
        só aparecia com a lista vazia, então quem já tinha uma caçada não via
-       como começar outra — e a recusa, quando vem, explica o motivo. */
-    if(MANEJO_ABA==='aberto') fab('<button class="btn" onclick="novoManejo()">＋ '+trFrase('NOVO CICLO DE CAÇA')+'</button>'); }).catch(erroTela); };
+       como começar outra — e a recusa, quando vem, explica o motivo.
+       Sem CTF em dia ele nasce travado: o servidor recusaria de qualquer
+       jeito, e descobrir isso depois de preencher a caçada é trabalho
+       jogado fora. */
+    if(MANEJO_ABA==='aberto') fab(botaoCriar('＋ '+trFrase('NOVO CICLO DE CAÇA'),'ciclo',0,"novoManejo()"));
+  }).catch(erroTela); };
 
 window.mudarAbaManejo=function(a){ MANEJO_ABA=a; render(); };
 function cardManejo(m){
@@ -9963,15 +9986,17 @@ window.responderCompart=function(tipo,id,resp,btn){
   btn.disabled=true; btn.textContent='…';
   server('apiResponderCompartilhamento',tipo,id,resp).then(function(){
       toast(resp==='aceito'?'Convite aceito ✔':'Convite recusado'); render(); })
-    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
+    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast(msgErro(e)); }); };
 window.responderConvite=function(id,resp,btn){
+  /* Recusar é sempre livre; aceitar entra na caçada e exige CTF em dia. */
+  if(resp==='aceito' && ctfBloqueiaCiclo()) return;
   if(resp==='recusado' && !confirm(trFrase('Recusar o convite? Ele some da sua lista e o dono precisa convidar de novo.'))) return;
   btn.disabled=true; btn.textContent='…';
   server('apiResponderConviteManejo',id,resp).then(function(r){
       toast(resp==='aceito'?'Convite aceito ✔':'Convite recusado');
       if(resp==='aceito' && r && r.manejoId){ MANEJO_ATUAL=null; STATE.manejoId=r.manejoId; STATE.stack=['manejoHub','manejoDetalhe']; render(); }
       else render(); })
-    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast((e&&e.message)||'Erro'); }); };
+    .catch(function(e){ btn.disabled=false; btn.textContent=resp==='aceito'?'Aceitar':'Recusar'; toast(msgErro(e)); }); };
 /* O abate sai de dentro da caçada: MANEJO_ATUAL é o ciclo em que a pessoa
    está, e é o id dele que vai para o servidor. Com várias caçadas abertas,
    deixar o servidor escolher seria a mesma ambiguidade que já custou caro. */
