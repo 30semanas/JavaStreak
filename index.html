@@ -1175,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.010826.0846';
+var APP_VER = 'vJS.020826.0908';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1257,6 +1257,9 @@ function msgErro(e){
   if(cod==='PROP_IRREGULAR')  return trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.');
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
+  if(cod==='ACERVO_SEM_NUMERO') return trFrase('Informe o número do documento');
+  if(cod==='ACERVO_SEM_VALIDADE') return trFrase('Informe a validade do documento');
+  if(cod==='ACERVO_SEM_ANEXO') return trFrase('O anexo é obrigatório: é ele que comprova o documento.');
   if(cod==='PROP_SEM_PRAZO') return trFrase('Faltam as autorizações desta propriedade.');
   if(m==='CTF_VENCIDO') return trFrase('Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para caçar, registrar abate ou entrar na caçada de alguém.');
   if(m==='CTF_SEM_NUMERO') return trFrase('Informe o número do registro');
@@ -1671,6 +1674,15 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Nenhum documento cadastrado nesta aba.':'No document registered on this tab.',
+    'Informe o número do documento':'Enter the document number',
+    'Informe a validade do documento':'Enter the document expiry date',
+    'O anexo é obrigatório: é ele que comprova o documento.':'The attachment is required: it is what proves the document.',
+    'Documento excluído':'Document deleted',
+    'Excluir este documento?':'Delete this document?',
+    'Não há como desfazer.':'There is no undo.',
+    'emitido':'issued',
+    'sem vencimento':'no expiry',
     'Usuários da plataforma':'Platform users',
     'Buscar usuário…':'Search user…',
     'Não foi possível carregar os usuários':'Could not load the users',
@@ -3124,6 +3136,15 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Nenhum documento cadastrado nesta aba.':'Ningún documento registrado en esta pestaña.',
+    'Informe o número do documento':'Indica el número del documento',
+    'Informe a validade do documento':'Indica la validez del documento',
+    'O anexo é obrigatório: é ele que comprova o documento.':'El adjunto es obligatorio: es lo que comprueba el documento.',
+    'Documento excluído':'Documento eliminado',
+    'Excluir este documento?':'Eliminar este documento?',
+    'Não há como desfazer.':'No hay forma de deshacer.',
+    'emitido':'emitido',
+    'sem vencimento':'sin vencimiento',
     'Usuários da plataforma':'Usuarios de la plataforma',
     'Buscar usuário…':'Buscar usuario…',
     'Não foi possível carregar os usuários':'No se pudieron cargar los usuarios',
@@ -5484,20 +5505,22 @@ function statusVenc(v){ if(!v) return '';
    São os três documentos que o manejador tem em quantidade. Cada um vira uma
    lista de linhas que se acrescenta na própria tela e salva de uma vez. */
 var ACERVO_SUB=['CRAF','CR','GT'], ACERVO_ATUAL='CRAF';
+/* null = formulário fechado; '' = novo; id = editando. */
+var ACERVO_EDIT=null;
 var ACERVO_ROT={CRAF:'CRAF',CR:'CR',GT:'GT'};
 var ACERVO_AJUDA={
   CRAF:'Certificado de Registro de Arma de Fogo. Um por arma.',
   CR:'Certificado de Registro do Exército.',
   GT:'Guia de Tráfego. O número é longo — o campo acompanha.'
 };
-window.mudarAcervoSub=function(s){ ACERVO_ATUAL=s; pintarDocs(); };
+window.mudarAcervoSub=function(s){ ACERVO_ATUAL=s; ACERVO_EDIT=null; pintarDocs(); };
 function linhaAcervo(d,i){
   d=d||{};
   return '<div class="acv-linha" data-i="'+i+'">'+
     '<div class="row" style="align-items:center;gap:8px">'+
       '<div class="grow"><label>'+trFrase('Número')+' *</label>'+
         '<input class="acv-num" value="'+esc(d.numero||'')+'" placeholder="'+esc(trFrase('Número do documento'))+'"></div>'+
-      '<button class="ib" onclick="removerLinhaAcervo(this)" title="'+trFrase('Remover')+'">🗑️</button>'+
+
     '</div>'+
     '<input type="hidden" class="acv-id" value="'+esc(d.id||'')+'">'+
     '<div class="two">'+
@@ -5507,7 +5530,7 @@ function linhaAcervo(d,i){
     '<label>'+trFrase('Arquivo (PDF ou imagem)')+'</label>'+
     '<input id="acv_arq_'+i+'" type="file" accept="application/pdf,image/*">'+
     '<div class="meta" style="margin:-4px 0 8px">'+
-      (d.arquivo
+      (d.temArquivo
         ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(d.arquivoNome||'arquivo')+'</span> · '+
           '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(d.id)+'\')">'+trFrase('Abrir')+'</button>'+
           '<br>'+trFrase('Escolher outro arquivo substitui este.')
@@ -5517,26 +5540,19 @@ function linhaAcervo(d,i){
     '<textarea class="acv-obs" rows="2">'+esc(d.obs||'')+'</textarea>'+
     '</div>';
 }
-window.removerLinhaAcervo=function(btn){
-  var l=btn.closest('.acv-linha'); if(l) l.parentNode.removeChild(l);
-};
-window.addLinhaAcervo=function(){
-  var box=document.getElementById('acvLista'); if(!box) return;
-  var i=Date.now();                     /* índice único: os ids de data não podem repetir */
-  var d=document.createElement('div');
-  d.innerHTML=linhaAcervo({},i);
-  var nova=d.firstChild; box.appendChild(nova);
-  traduzirDOM(nova); iconizar(nova);
-  bindArquivo('acv_arq_'+i);            /* sem isto o anexo da linha nova não é lido */
-};
-/* Liga o leitor de arquivo em todas as linhas já desenhadas. */
+/* addLinhaAcervo e removerLinhaAcervo saíram: o formulário agora é de um
+   documento por vez, aberto sob demanda. */
+/* O input de arquivo mudou de lugar junto com elas: vive no formulário, que
+   só existe quando aberto. Sem este bind o anexo não é lido. */
 function bindArquivosAcervo(){
-  var box=document.getElementById('acvLista'); if(!box) return;
+  var box=document.getElementById('acvForm'); if(!box) return;
   Array.prototype.forEach.call(box.querySelectorAll('input[type=file]'), function(el){
     if(el.id) bindArquivo(el.id);
   });
 }
 function corpoAcervoSub(){
+  /* Só os documentos DESTE subtipo: a aba GT mostra GT, CR mostra CR, e por
+     aí. Antes a lista geral repetia tudo embaixo. */
   var l=DOCLISTA.filter(function(d){
     return String(d.categoria)==='acervo' && String(d.tipo)===ACERVO_ATUAL;
   }).sort(function(a,b){ return String(a.vencimento||'').localeCompare(String(b.vencimento||'')); });
@@ -5545,38 +5561,79 @@ function corpoAcervoSub(){
     return '<button class="acv-aba'+(ACERVO_ATUAL===s?' on':'')+'" onclick="mudarAcervoSub(\''+s+'\')">'+
       ACERVO_ROT[s]+(n?' <span class="acv-num">'+n+'</span>':'')+'</button>';
   }).join('')+'</div>';
-  var linhas=l.length ? l.map(function(d,i){ return linhaAcervo(d,i); }).join('') : linhaAcervo({},0);
+
+  /* O formulário fica FECHADO. Antes ele abria sempre, ocupando a tela
+     inteira com uma linha em branco antes mesmo de a pessoa pedir. */
+  var form = ACERVO_EDIT!==null
+    ? '<div class="card" id="acvForm">'+linhaAcervo(ACERVO_EDIT===''?{}:docDoAcervo(ACERVO_EDIT),0)+
+      '<div class="row" style="gap:8px;margin-top:8px">'+
+        '<button class="btn grow" onclick="salvarAcervo(this)">'+trFrase('Salvar')+'</button>'+
+        '<button class="btn sec grow" onclick="fecharAcervoForm()">'+trFrase('Cancelar')+'</button>'+
+      '</div></div>'
+    : '';
+
+  var linhas = l.length ? l.map(function(d){
+    return '<div class="doc-linha"><div class="grow"><b class="no-i18n">nº '+esc(d.numero||'—')+'</b> '+statusVenc(d.vencimento)+
+      '<div class="meta">'+(d.emissao?trFrase('emitido')+' '+fmtData(d.emissao)+' · ':'')+
+        (d.vencimento?trFrase('vence')+' '+fmtData(d.vencimento):trFrase('sem vencimento'))+'</div>'+
+      (d.temArquivo?'<div class="meta">📎 <span class="no-i18n">'+esc(d.arquivoNome||'arquivo')+'</span></div>'
+                   :'<div class="meta" style="color:var(--danger)">⚠️ '+trFrase('sem anexo')+'</div>')+
+      (d.obs?'<div class="meta">'+esc(d.obs)+'</div>':'')+'</div>'+
+      (d.temArquivo?ibRot('📎','Abrir',"abrirDoc('"+escJs(d.id)+"')"):'')+
+      ibRot('✏️','Editar',"editarAcervo('"+escJs(d.id)+"')")+
+      ibRot('🗑️','Excluir',"excluirAcervo('"+escJs(d.id)+"')")+'</div>';
+  }).join('') : '<div class="meta" style="padding:14px 0">'+
+      trFrase('Nenhum documento cadastrado nesta aba.')+'</div>';
+
   return subabas+
     '<div class="card"><div class="meta" style="margin-bottom:10px">'+trFrase(ACERVO_AJUDA[ACERVO_ATUAL])+'</div>'+
-    '<div id="acvLista">'+linhas+'</div>'+
-    '<button class="btn sec" onclick="addLinhaAcervo()">＋ '+trFrase('Adicionar')+' '+ACERVO_ROT[ACERVO_ATUAL]+'</button>'+
-    '<button class="btn" style="margin-top:10px" onclick="salvarAcervo(this)">'+trFrase('Salvar')+'</button>'+
-    '<div class="meta" style="margin-top:8px">'+trFrase('Linha apagada aqui é removida do seu acervo ao salvar.')+'</div></div>'+
-    '<div class="card"><div class="meta">'+trFrase('Os outros documentos do acervo continuam na lista abaixo.')+'</div></div>'+
-    corpoDocumentos('acervo', ACERVO_SUB);
+    (ACERVO_EDIT===null
+      ? botaoCriar('＋ '+trFrase('Adicionar')+' '+ACERVO_ROT[ACERVO_ATUAL],'documentos',DOCLISTA.length,"novoAcervo()")
+      : '')+
+    form+
+    '<div id="acvLista" style="margin-top:10px">'+linhas+'</div></div>';
 }
-window.salvarAcervo=function(btn){
-  var box=document.getElementById('acvLista'); if(!box) return;
-  var itens=[], erro=false;
-  Array.prototype.forEach.call(box.querySelectorAll('.acv-linha'), function(l){
-    var i=l.getAttribute('data-i');
-    var num=(l.querySelector('.acv-num')||{}).value||'';
-    var id=(l.querySelector('.acv-id')||{}).value||'';
-    var emi=val('acv_emi_'+i), venc=val('acv_venc_'+i);
-    var obs=((l.querySelector('.acv-obs')||{}).value||'');
-    var arq=arquivoData('acv_arq_'+i);
-    if(!num.trim() && !emi && !venc && !obs.trim() && !arq) return;
-    if(!num.trim()){ erro=true; return; }
-    var item={id:id,numero:num.trim(),emissao:emi,vencimento:venc,obs:obs};
-    if(arq){ item.arquivo=arq.dados; item.arquivoNome=arq.nome; }
-    itens.push(item);
-  });
-  if(erro){ toast('Informe o número de cada '+ACERVO_ROT[ACERVO_ATUAL]); return; }
-  var rot=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
-  server('apiSalvarAcervoLote',ACERVO_ATUAL,itens).then(function(){
-    toast('Acervo salvo ✔');
+function docDoAcervo(id){
+  return DOCLISTA.filter(function(d){ return String(d.id)===String(id); })[0] || {};
+}
+window.novoAcervo=function(){ ACERVO_EDIT=''; pintarDocs(); };
+window.editarAcervo=function(id){ ACERVO_EDIT=id; pintarDocs(); };
+window.fecharAcervoForm=function(){ ACERVO_EDIT=null; pintarDocs(); };
+window.excluirAcervo=function(id){
+  var d=docDoAcervo(id);
+  if(!confirm(trFrase('Excluir este documento?')+'\n\n'+trFrase('Não há como desfazer.'))) return;
+  server('apiSalvarAcervoLote',ACERVO_ATUAL,[],[id]).then(function(){
+    toast(trFrase('Documento excluído'));
     server('apiListarDocumentos').then(function(l){ DOCLISTA=l||[]; pintarDocs(); });
-  }).catch(function(e){ btn.disabled=false; btn.textContent=rot; toast((e&&e.message)||'Não foi possível salvar'); });
+  }).catch(function(e){ toast(msgErro(e)); });
+};
+/* Um documento por vez. O lote continua existindo no servidor, mas a tela
+   manda uma linha só — foi tentar mandar "todas as linhas visíveis" que fez a
+   função apagar o resto do acervo. */
+window.salvarAcervo=function(btn){
+  var box=document.getElementById('acvForm'); if(!box) return;
+  var l=box.querySelector('.acv-linha'); if(!l) return;
+  var i=l.getAttribute('data-i');
+  var num=((l.querySelector('.acv-num')||{}).value||'').trim();
+  var id=(l.querySelector('.acv-id')||{}).value||'';
+  var emi=val('acv_emi_'+i), venc=val('acv_venc_'+i);
+  var obs=((l.querySelector('.acv-obs')||{}).value||'');
+  var arq=arquivoData('acv_arq_'+i);
+  var jaTem=!!(id && docDoAcervo(id).temArquivo);
+  var rot=ACERVO_ROT[ACERVO_ATUAL];
+  /* O servidor recusa de qualquer jeito; isto é só para não gastar o
+     ida-e-volta. */
+  if(!num){ toast(trFrase('Informe o número do documento')); return; }
+  if(!venc){ toast(trFrase('Informe a validade do documento')); return; }
+  if(venc<emi && emi){ toast(trFrase('A validade não pode ser anterior à emissão')); return; }
+  if(!arq && !jaTem){ toast(trFrase('O anexo é obrigatório: é ele que comprova o documento.')); return; }
+  var item={id:id,numero:num,emissao:emi,vencimento:venc,obs:obs};
+  if(arq){ item.arquivo=arq.dados; item.arquivoNome=arq.nome; }
+  var txt=btn.textContent; btn.disabled=true; btn.textContent=trFrase('Salvando…');
+  server('apiSalvarAcervoLote',ACERVO_ATUAL,[item],[]).then(function(){
+    toast(trFrase('Documento salvo ✔')); ACERVO_EDIT=null;
+    return server('apiListarDocumentos').then(function(l){ DOCLISTA=l||[]; pintarDocs(); });
+  }).catch(function(e){ btn.disabled=false; btn.textContent=txt; toast(msgErro(e)); });
 };
 function corpoDocumentos(cat, excluirTipos){
   var l=DOCLISTA.filter(function(d){
@@ -5656,7 +5713,7 @@ VIEWS.docForm=function(){ var d=DOCEDIT||{}, cat=DOCCAT;
     '<label>Arquivo (PDF ou imagem)</label>'+
     '<input id="dc_arq" type="file" accept="application/pdf,image/*">'+
     '<div class="meta" style="margin:-4px 0 10px">'+
-      (d.arquivo
+      (d.temArquivo
         ? '<b>'+trFrase('Anexo atual')+':</b> <span class="no-i18n">'+esc(d.arquivoNome||'arquivo')+'</span> · '+
           '<button class="btn sm sec" style="width:auto" onclick="abrirDoc(\''+esc(d.id)+'\')">'+trFrase('Abrir')+'</button>'
         : trFrase('O arquivo fica privado: só você vê, e seus parceiros apenas enquanto houver um ciclo aberto com você.'))+
