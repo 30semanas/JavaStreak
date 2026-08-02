@@ -1175,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.0923';
+var APP_VER = 'vJS.020826.0950';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1257,6 +1257,7 @@ function msgErro(e){
   if(cod==='PROP_IRREGULAR')  return trFrase('Esta propriedade está irregular (autorização vencida ou faltando) e não pode receber ceva.');
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
+  if(m==='CTF_TELA_PROPRIA') return trFrase('O CTF é cadastrado em CAÇAR, na tela própria dele.');
   if(cod==='ACERVO_SEM_NUMERO') return trFrase('Informe o número do documento');
   if(cod==='ACERVO_SEM_VALIDADE') return trFrase('Informe a validade do documento');
   if(cod==='ACERVO_SEM_ANEXO') return trFrase('O anexo é obrigatório: é ele que comprova o documento.');
@@ -1674,6 +1675,15 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'CTF e autorizações de propriedade não contam.':'CTF and property permits do not count.',
+    'Você usa':'You are using',
+    'de':'of',
+    'documentos do seu plano':'documents of your plan',
+    'Isso inclui':'This includes',
+    'documento fora destas abas (CTF e autorizações de propriedade).':'document outside these tabs (CTF and property permits).',
+    'documentos fora destas abas (CTF e autorizações de propriedade).':'documents outside these tabs (CTF and property permits).',
+    'Fica em CAÇAR, com tela própria — é ele que libera o manejo.':'It lives under HUNT, on its own screen — it is what unlocks management.',
+    'O CTF é cadastrado em CAÇAR, na tela própria dele.':'The CTF is registered under HUNT, on its own screen.',
     'Nenhum documento cadastrado nesta aba.':'No document registered on this tab.',
     'Informe o número do documento':'Enter the document number',
     'Informe a validade do documento':'Enter the document expiry date',
@@ -3136,6 +3146,15 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'CTF e autorizações de propriedade não contam.':'El CTF y las autorizaciones de propiedad no cuentan.',
+    'Você usa':'Estás usando',
+    'de':'de',
+    'documentos do seu plano':'documentos de tu plan',
+    'Isso inclui':'Esto incluye',
+    'documento fora destas abas (CTF e autorizações de propriedade).':'documento fuera de estas pestañas (CTF y autorizaciones de propiedad).',
+    'documentos fora destas abas (CTF e autorizações de propriedade).':'documentos fuera de estas pestañas (CTF y autorizaciones de propiedad).',
+    'Fica em CAÇAR, com tela própria — é ele que libera o manejo.':'Está en CAZAR, con pantalla propia — es lo que habilita el manejo.',
+    'O CTF é cadastrado em CAÇAR, na tela própria dele.':'El CTF se registra en CAZAR, en su pantalla propia.',
     'Nenhum documento cadastrado nesta aba.':'Ningún documento registrado en esta pestaña.',
     'Informe o número do documento':'Indica el número del documento',
     'Informe a validade do documento':'Indica la validez del documento',
@@ -5586,9 +5605,10 @@ function corpoAcervoSub(){
       trFrase('Nenhum documento cadastrado nesta aba.')+'</div>';
 
   return subabas+
-    '<div class="card"><div class="meta" style="margin-bottom:10px">'+trFrase(ACERVO_AJUDA[ACERVO_ATUAL])+'</div>'+
+    '<div class="card"><div class="meta" style="margin-bottom:10px">'+trFrase(ACERVO_AJUDA[ACERVO_ATUAL])+
+      resumoLimiteDocs()+'</div>'+
     (ACERVO_EDIT===null
-      ? botaoCriar('＋ '+trFrase('Adicionar')+' '+ACERVO_ROT[ACERVO_ATUAL],'documentos',DOCLISTA.length,"novoAcervo()")
+      ? botaoCriar('＋ '+trFrase('Adicionar')+' '+ACERVO_ROT[ACERVO_ATUAL],'documentos',contaDocsUI(),"novoAcervo()")
       : '')+
     form+
     '<div id="acvLista" style="margin-top:10px">'+linhas+'</div></div>';
@@ -5635,9 +5655,33 @@ window.salvarAcervo=function(btn){
     return server('apiListarDocumentos').then(function(l){ DOCLISTA=l||[]; pintarDocs(); });
   }).catch(function(e){ btn.disabled=false; btn.textContent=txt; toast(msgErro(e)); });
 };
+var CTF_TIPO_UI='CTF — Cadastro Técnico Federal (IBAMA)';
+/* O limite do plano conta TODOS os documentos, inclusive os que não aparecem
+   nestas abas: o CTF (tela própria) e as autorizações de propriedade (Acesso
+   e IBAMA). Sem dizer isso, a soma das abas não fecha com o número do limite
+   e o aviso parece errado. */
+/* Conta o mesmo que o servidor: só o que se cadastra em Documentação. CTF e
+   autorizações de propriedade são obrigatórios e não consomem o plano. */
+function contaDocsUI(){
+  return DOCLISTA.filter(function(d){
+    return String(d.tipo)!==CTF_TIPO_UI && String(d.categoria)!=='propriedade';
+  }).length;
+}
+function resumoLimiteDocs(){
+  if(!CREDITOS||!CREDITOS.limites) return '';
+  var lim=CREDITOS.limites.documentos;
+  if(lim===undefined||lim===null||lim===-1) return '';
+  return '<div style="margin-top:8px">'+trFrase('Você usa')+' <b>'+contaDocsUI()+'</b> '+
+    trFrase('de')+' <b>'+lim+'</b> '+trFrase('documentos do seu plano')+'. '+
+    trFrase('CTF e autorizações de propriedade não contam.')+'</div>';
+}
 function corpoDocumentos(cat, excluirTipos){
   var l=DOCLISTA.filter(function(d){
     if(String(d.categoria)!==cat) return false;
+    /* O CTF tem tela própria em CAÇAR, com validação de anexo e validade. Ele
+       não aparece aqui para não haver duas portas para o mesmo registro —
+       quem já tinha um cadastrado antes disto continua vendo, pelo atalho. */
+    if(String(d.tipo)===CTF_TIPO_UI) return false;
     /* Os tipos que têm subaba própria não se repetem na lista geral. */
     return !(excluirTipos && excluirTipos.indexOf(String(d.tipo))>=0);
   });
@@ -5652,8 +5696,18 @@ function corpoDocumentos(cat, excluirTipos){
       '<button class="ib" onclick="editarDoc(\''+d.id+'\')" title="Editar">✏️</button>'+
       '<button class="ib" onclick="excluirDoc(\''+d.id+'\')" title="Excluir">🗑️</button></div>';
   }).join('') : '<div class="meta" style="padding:14px 0">Nenhum documento cadastrado nesta seção.</div>';
+  /* Atalho na aba Pessoal: é lá que a pessoa vai procurar. */
+  var atalhoCtf = (cat!=='pessoal') ? '' :
+    (function(){
+      var meu=DOCLISTA.filter(function(d){ return String(d.tipo)===CTF_TIPO_UI; })[0];
+      return '<div class="doc-linha click" onclick="nav(\'ctf\')">'+
+        '<div class="grow"><b>📄 CTF — '+trFrase('Cadastro Técnico Federal')+'</b> '+
+        (meu?statusVenc(meu.vencimento):'<span class="pill" style="background:var(--danger)">'+trFrase('sem CTF')+'</span>')+
+        '<div class="meta">'+trFrase('Fica em CAÇAR, com tela própria — é ele que libera o manejo.')+'</div></div>'+
+        '<span class="ir-btn">'+trFrase('Abrir')+'</span><div class="chev">›</div></div>';
+    })();
   var aviso = (cat==='veiculo'&&!TRANSPS.length) ? '<div class="meta" style="margin-bottom:10px">Cadastre um veículo em <b>Rotas de manejo → Meio de transporte</b> para vincular documentos.</div>' : '';
-  return '<div class="card">'+aviso+linhas+
+  return '<div class="card">'+aviso+atalhoCtf+linhas+
     '<button class="btn" style="margin-top:12px" onclick="novoDoc()">＋ Adicionar documento</button></div>';
 }
 /* Uma autorização na listagem: selo de vencimento MAIS a data, porque
