@@ -1175,7 +1175,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.1006';
+var APP_VER = 'vJS.020826.1014';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1258,6 +1258,9 @@ function msgErro(e){
   if(cod==='FORA_DA_PROPRIEDADE') return trFrase('Este ponto está fora do limite desenhado de')+' '+nome;
   if(cod==='ROTA_SEM_PONTOS') return trFrase('Marque ao menos 2 pontos no traçado');
   if(m==='CTF_TELA_PROPRIA') return trFrase('O CTF é cadastrado em CAÇAR, na tela própria dele.');
+  if(cod==='AUT_SEM_VALIDADE') return trFrase('Informe a validade da')+' '+nome;
+  if(cod==='AUT_SEM_ANEXO') return trFrase('Anexe o arquivo da')+' '+nome;
+  if(m==='PROP_SEM_DESENHO') return trFrase('Desenhe o limite da propriedade antes de salvar');
   if(cod==='ACERVO_SEM_NUMERO') return trFrase('Informe o número do documento');
   if(cod==='ACERVO_SEM_VALIDADE') return trFrase('Informe a validade do documento');
   if(cod==='ACERVO_SEM_ANEXO') return trFrase('O anexo é obrigatório: é ele que comprova o documento.');
@@ -1675,6 +1678,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Informe a validade da':'Enter the expiry date of the',
+    'Anexe o arquivo da':'Attach the file of the',
     'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Your CTF is expired or missing. Without it you cannot enter the hunt.',
     'Quer cadastrar agora?':'Register it now?',
     'CTF e autorizações de propriedade não contam.':'CTF and property permits do not count.',
@@ -3148,6 +3153,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Informe a validade da':'Indica la validez de la',
+    'Anexe o arquivo da':'Adjunta el archivo de la',
     'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Tu CTF está vencido o no registrado. Sin él no puedes entrar en la cacería.',
     'Quer cadastrar agora?':'Registrarlo ahora?',
     'CTF e autorizações de propriedade não contam.':'El CTF y las autorizaciones de propiedad no cuentan.',
@@ -5791,7 +5798,7 @@ window.salvarDoc=function(btn){ if(!val('dc_tipo')){toast('Selecione o tipo');re
   if(arq){ d.arquivo=arq.dados; d.arquivoNome=arq.nome; }
   if(DOCEDIT) d.id=DOCEDIT.id;
   server('apiSalvarDocumento',d).then(function(){ toast('Documento salvo ✔'); DOCEDIT=null; STATE.stack=['documentacao']; render(); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
+  .catch(function(e){ btn.disabled=false; btn.textContent=trFrase('Adicionar'); toast(msgErro(e)); }); };
 window.excluirDoc=function(id){ if(!confirm('Excluir este documento?'))return;
   server('apiExcluirDocumento',id).then(function(){ toast('Excluído'); render(); }); };
 /* ---- formulário de propriedade ---- */
@@ -5808,8 +5815,10 @@ VIEWS.propForm=function(){ var p=PROPEDIT||{};
     '<label>CPF/CNPJ do proprietário</label><input id="pr_docdono" value="'+esc(p.documentoDono||'')+'">'+
 
     '<label>Número do CAR</label><input id="pr_car" value="'+esc(p.car||'')+'" placeholder="Cadastro Ambiental Rural">'+
-    blocoAutProp('manejo','Autorização de Acesso',p.autManejo,false)+
-    blocoAutProp('ibama','Autorização do IBAMA',p.autIbama,true)+
+    /* As duas são obrigatórias — o rótulo diz isso antes de a pessoa
+       preencher, em vez de o erro aparecer só ao salvar. */
+    blocoAutProp('manejo','Autorização de Acesso *',p.autManejo,false)+
+    blocoAutProp('ibama','Autorização do IBAMA *',p.autIbama,true)+
     '<input type="hidden" id="pr_lat" value="'+esc(p.lat||'')+'"><input type="hidden" id="pr_lng" value="'+esc(p.lng||'')+'">'+
     (p.lat&&p.lng?'<div class="meta" style="margin:6px 0">'+trFrase('Centro do limite')+': '+mapaLink(p.lat,p.lng)+'</div>':'')+
     '<label>Observações</label><textarea id="pr_obs">'+esc(p.obs||'')+'</textarea>'+
@@ -5902,17 +5911,33 @@ window.salvarLimite=function(btn){ if(!LIM_DRAW) return;
   btn.disabled=true; btn.textContent='Salvando…';
   server('apiSalvarPropriedade',d).then(function(){ toast('Limite salvo ✔'); LIM_DRAW=null; PROPEDIT=null; voltarPropriedades(); })
     .catch(function(e){ btn.disabled=false; btn.textContent='💾 Salvar limite'; toast((e&&e.message)||'Erro'); }); };
-window.salvarProp=function(btn){ if(!val('pr_nome')){toast('Informe o nome');return;}
+/* Uma autorização está completa quando tem validade e anexo. O anexo já
+   gravado conta na edição — dá para corrigir a data sem reenviar o arquivo. */
+function autCompleta(chave,rotulo){
+  var pref='ap_'+chave;
+  var jaTem=!!(PROPEDIT && PROPEDIT[chave==='manejo'?'autManejo':'autIbama']
+            && PROPEDIT[chave==='manejo'?'autManejo':'autIbama'].temArquivo);
+  var jaVal=(PROPEDIT && PROPEDIT[chave==='manejo'?'autManejo':'autIbama']
+            && PROPEDIT[chave==='manejo'?'autManejo':'autIbama'].vencimento) || '';
+  if(!val(pref+'_val') && !jaVal){ toast(trFrase('Informe a validade da')+' '+trFrase(rotulo)); return false; }
+  if(!arquivoData(pref+'_arq') && !jaTem){ toast(trFrase('Anexe o arquivo da')+' '+trFrase(rotulo)); return false; }
+  return true;
+}
+window.salvarProp=function(btn){ if(!val('pr_nome')){toast(trFrase('Informe o nome'));return;}
   /* Sem limite a propriedade não serve para nada: não aparece no mapa, não
      entra no manejo livre e não pode ter documentação. Melhor barrar aqui. */
   var temLim = !!(PROPEDIT&&PROPEDIT.temLimite) || !!(LIM_DRAW&&LIM_DRAW.propId===((PROPEDIT&&PROPEDIT.id)||'')&&LIM_DRAW.pontos&&LIM_DRAW.pontos.length>=3);
-  if(!temLim && PROP_ORIGEM==='propriedades'){ toast('Desenhe o limite da propriedade antes de salvar'); return; }
-  btn.disabled=true; btn.textContent='Salvando…';
+  if(!temLim){ toast(trFrase('Desenhe o limite da propriedade antes de salvar')); return; }
+  /* As duas autorizações também: sem elas a propriedade não recebe ceva, rota
+     nem ciclo — ficaria cadastrada só para mostrar "FALTA" na lista. */
+  if(!autCompleta('manejo','Autorização de Acesso')) return;
+  if(!autCompleta('ibama','Autorização IBAMA')) return;
+  btn.disabled=true; btn.textContent=trFrase('Salvando…');
   var d={nome:val('pr_nome'),car:val('pr_car'),dono:val('pr_dono'),documentoDono:val('pr_docdono'),
     autManejo:coletaAut('manejo',false),autIbama:coletaAut('ibama',true),obs:val('pr_obs')};
   if(PROPEDIT) d.id=PROPEDIT.id;
   server('apiSalvarPropriedade',d).then(function(){ toast('Propriedade salva ✔'); PROPEDIT=null; voltarPropriedades(); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Adicionar'; toast((e&&e.message)||'Erro'); }); };
+  .catch(function(e){ btn.disabled=false; btn.textContent=trFrase('Adicionar'); toast(msgErro(e)); }); };
 window.excluirProp=function(id){ if(!confirm('Excluir esta propriedade?'))return;
   server('apiExcluirPropriedade',id).then(function(){ toast('Excluída'); render(); }); };
 
