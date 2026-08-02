@@ -191,6 +191,7 @@
   .ib:active{background:#e7e3d6}
   #map{height:56vh;min-height:320px;border-radius:14px;border:1px solid var(--linha);z-index:1}
   .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+.ico-cacador{background:none;border:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
 /* Ficha do usuário no admin: rótulo à esquerda, valor à direita, quebrando
    embaixo no celular em vez de espremer. */
 .fx-tit{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.4px;
@@ -229,8 +230,12 @@
   border:1px solid var(--linha);border-radius:12px;background:#fff}
 .rel-tab{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
 .rel-tab th,.rel-tab td{padding:7px 10px;border-bottom:1px solid var(--linha);text-align:left}
-.rel-tab thead th{background:var(--areia2,#f2ece1);font-weight:700;position:sticky;top:0}
-.rel-tab tbody tr:nth-child(even){background:#fafafa}
+/* O texto herdava o cinza-claro do card e ficava ilegível — é a tabela que a
+   pessoa vai transcrever no SIMAF, linha por linha. */
+.rel-tab td{color:#23201c}
+.rel-tab thead th{background:#e8dfd0;color:#23201c;font-weight:800;position:sticky;top:0}
+.rel-tab tbody tr:nth-child(even){background:#f6f2ea}
+.rel-tab tbody tr:hover{background:#efe7d8}
 @media print{
   body *{visibility:hidden}
   #relImpressao,#relImpressao *{visibility:visible}
@@ -783,7 +788,11 @@
   .pl-fim{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px}
   .pl-btn{margin-top:8px;width:100%;padding:8px;border-radius:9px;border:1px solid var(--laranja);background:var(--laranja);color:#fff;font-weight:800;font-size:12px;cursor:pointer}
   .pl-btn.sec{background:transparent;color:var(--laranja-claro)}
-  .trof .rk-on{position:absolute;bottom:52px;left:6px;background:var(--laranja);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px}
+  /* Estado do ranking no fluxo do card, não sobreposto ao botão. */
+  .trof .rk-linha{margin:0 8px 6px;padding:4px 8px;border-radius:8px;font-size:10.5px;font-weight:800;text-align:center}
+  .trof .rk-linha.on{background:rgba(46,77,46,.12);color:#2e4d2e}
+  .trof .rk-linha.fora{background:rgba(0,0,0,.06);color:var(--txt2)}
+  .trof .rk-btn{margin:0 8px 8px;width:calc(100% - 16px);white-space:normal;line-height:1.2;min-height:38px}
 
   /* etiqueta do plano ao lado do nome */
 .sb-planos{display:flex;align-items:center;gap:10px;width:calc(100% - 24px);margin:10px 12px 4px;padding:10px 12px;
@@ -1149,7 +1158,11 @@
 
   <div id="markModal"><div class="mk-box">
     <h3 style="margin:0 0 8px">📍 Marcar ponto</h3>
-    <label>Tipo</label><select id="mk_tipo"></select>
+    <label>Tipo</label><select id="mk_tipo" onchange="mudouTipoMarca()"></select>
+    <div id="mk_armBox" style="display:none">
+      <label>Tipo de armadilha *</label><select id="mk_subtipo"></select>
+      <label>Situação</label><select id="mk_status"><option>Ativa</option><option>Inativa</option></select>
+    </div>
     <label>Descrição / aviso</label><input id="mk_desc" placeholder="Ex: ponto de referência, atenção…">
     <label>Foto (opcional)</label><input id="mk_foto" type="file" accept="image/*"><img id="mk_prev" class="foto-prev">
     <button class="btn" onclick="salvarMarcacao(this)">Salvar ponto</button>
@@ -1175,7 +1188,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.1014';
+var APP_VER = 'vJS.020826.1102';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1678,6 +1691,14 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Tipo de armadilha':'Trap type',
+    'Saúde animal':'Animal health',
+    'Cães: matilha, saúde e vacinas':'Dogs: pack, health and vaccines',
+    'no ranking':'in the ranking',
+    'saiu do ranking':'left the ranking',
+    'sai em':'leaves in',
+    'Disputando ranking':'Competing',
+    'Disputar de novo':'Compete again',
     'Informe a validade da':'Enter the expiry date of the',
     'Anexe o arquivo da':'Attach the file of the',
     'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Your CTF is expired or missing. Without it you cannot enter the hunt.',
@@ -3153,6 +3174,14 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Tipo de armadilha':'Tipo de trampa',
+    'Saúde animal':'Salud animal',
+    'Cães: matilha, saúde e vacinas':'Perros: jauría, salud y vacunas',
+    'no ranking':'en el ranking',
+    'saiu do ranking':'salió del ranking',
+    'sai em':'sale en',
+    'Disputando ranking':'Compitiendo',
+    'Disputar de novo':'Competir de nuevo',
     'Informe a validade da':'Indica la validez de la',
     'Anexe o arquivo da':'Adjunta el archivo de la',
     'Seu CTF está vencido ou não foi cadastrado. Sem ele não dá para entrar na caçada.':'Tu CTF está vencido o no registrado. Sin él no puedes entrar en la cacería.',
@@ -4496,9 +4525,10 @@ var NAV_MANEJADOR=[
   {v:'manejoHub', label:'CAÇAR',             icon:'abate', destaque:true},
   {v:'inicio',    label:'Início',            icon:'inicio'},
   {v:'agenda',    label:'Agenda',            icon:'agenda'},
-  {v:'espreita',  label:'Transportes',       icon:'espreita'},
-  {v:'caes',      label:'Meu canil',         icon:'caes'},
-  {v:'armadilha', label:'Armadilha',         icon:'armadilha'},
+  /* Transportes virou MANUTENÇÃO (garagem e marina). Cavalo saiu daqui: ele é
+     bicho, e foi para SAÚDE ANIMAL junto com o canil. */
+  {v:'manutencaoHub', label:'Manutenção',    icon:'espreita'},
+  {v:'saudeAnimal',   label:'Saúde animal',  icon:'caes'},
   {v:'documentacao',label:'Documentação',  icon:'documentacao'},
   {v:'suporte',   label:'Suporte',           icon:'suporte'},
   {v:'mapaGeral', label:'Mapa',              icon:'mapa'},
@@ -7812,7 +7842,28 @@ window.excluirPromo=function(id){ if(!confirm('Encerrar esta promoção?'))retur
    ============================================================ */
 VIEWS.trofeus=function(){ setTitulo('Sala de troféu'); setCrumb('Sala de troféu'); loadingBox('Carregando sala…');
   server('apiMinhaSala').then(function(m){ var vis=m.visivel;
-    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){ return '<div class="trof"><img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')"><div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div><button class="ib trofdel" onclick="excluirTrofeu(\''+t.id+'\')" title="Remover">🗑️</button>'+(t.noRanking?'<span class="rk-on">no ranking</span>':'')+'<button class="btn sm '+(t.noRanking?'':'sec')+'" style="margin:0 8px 8px;width:calc(100% - 16px)" onclick="toggleRanking(\''+t.id+'\','+(t.noRanking?'false':'true')+')">'+(t.noRanking?'✓ Disputando ranking':'🏅 Colocar no ranking')+'</button></div>'; }).join('')+'</div>' : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
+    /* O selo "no ranking" era posicionado absoluto sobre o rodapé e caía em
+       cima do botão. Virou uma linha de estado no fluxo do card, com o tempo
+       que resta — e o botão ganhou a linha inteira, sem sobreposição. */
+    var mine = (m.trofeus&&m.trofeus.length)? '<div class="galeria">'+m.trofeus.map(function(t){
+      var disputando = !!t.noRanking && !t.saiuDoRanking;
+      var estado = t.saiuDoRanking
+        ? '<div class="rk-linha fora">⏳ '+trFrase('saiu do ranking')+'</div>'
+        : (disputando
+            ? '<div class="rk-linha on">🏅 '+trFrase('no ranking')+
+              (t.horasRestantes!=null?' · '+trFrase('sai em')+' '+t.horasRestantes+'h':'')+'</div>'
+            : '');
+      var rotulo = disputando ? '✓ '+trFrase('Disputando ranking')
+                 : (t.saiuDoRanking ? '🏅 '+trFrase('Disputar de novo')
+                                    : '🏅 '+trFrase('Colocar no ranking'));
+      return '<div class="trof">'+
+        '<img src="'+esc(imgSrc(t.fotoUrl))+'" onclick="verFoto(\''+escJs(imgSrc(t.fotoUrl))+'\')">'+
+        '<button class="ib trofdel" onclick="excluirTrofeu(\''+escJs(t.id)+'\')" title="'+trFrase('Remover')+'">🗑️</button>'+
+        '<div class="tt">'+(t.titulo?esc(t.titulo)+'<br>':'')+estrelasRO(t.media)+' <span class="vc">('+t.votos+')</span></div>'+
+        estado+
+        '<button class="btn sm rk-btn'+(disputando?'':' sec')+'" onclick="toggleRanking(\''+escJs(t.id)+'\','+(disputando?'false':'true')+')">'+rotulo+'</button>'+
+        '</div>'; }).join('')+'</div>'
+      : '<div class="meta">Você ainda não adicionou troféus. Toque em Adicionar para colocar suas melhores fotos.</div>';
     app(heroFoto('trofeus','Minha sala de troféu','Aqui ficam só as suas fotos. Deixe a sala visível para entrar no <b>Ranking</b> e avaliar os troféus dos outros.','Troféus')+
       '<div class="card"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px"><input type="checkbox" id="sala_vis" style="width:auto" '+(vis?'checked':'')+' onchange="toggleSala(this)"> Deixar minha sala visível (entra no ranking e permite avaliar)</label></div>'+
       '<div class="card"><div class="row"><div class="grow"><h3 style="margin:0">🤝 Quem pode ver minha sala</h3><div class="meta" style="margin-top:2px">Convide alguém pelo e-mail. A pessoa vê suas fotos <b>mesmo com a sala oculta</b>.</div></div></div>'+
@@ -8036,7 +8087,8 @@ VIEWS.manejo=function(){ setTitulo('Manejo'); setCrumb('Módulos','Manejo');
   app(moduloCard('ceva','Espera (com ceva)','Cevas, alimento e nível',true,"nav('espera')")+
       moduloCard('transporte','Rotas de manejo','Sem cães · transportes',true,"nav('espreita')")+
       moduloCard('canil','Meu canil','Canil, cães e saúde',true,"nav('caes')")+
-      moduloCard('armadilha','Armadilha (captura)','Tipos e localização',true,"nav('armadilha')")+
+      /* Armadilha saiu do hub: agora é um evento marcado na rota, visto só no
+         mapa junto com o resto do percurso. */
       moduloCard('painel','Manejo','Sessões de caça, propriedades e rotas',true,"nav('manejoHub')")+
       moduloCard('calendario','Agenda','Saúde e manutenção de veículos',true,"nav('agenda')")+
       moduloCard('mapa','Mapa','Cevas, abates, armadilhas e canis · com filtro',true,"nav('mapaGeral')")); };
@@ -8217,10 +8269,17 @@ function nomeIconeTransp(t){
   return 'transporte';
 }
 function iconeTransp(t,px){ return ico(nomeIconeTransp(t), px||20); }
-VIEWS.espreita=function(){ setTitulo('Transportes'); setCrumb('Transportes');
-  app(moduloCard('haras','HARAS','Cavalos: saúde, vacinas e casqueamento',true,"abrirTransportes('aras')")+
-      moduloCard('garagem','GARAGEM','Carros, motos e quadriciclos: manutenção',true,"abrirTransportes('garagem')")+
+/* MANUTENÇÃO: só o que é máquina. Cavalo é saúde, não manutenção. */
+VIEWS.manutencaoHub=function(){ setTitulo('Manutenção'); setCrumb('Manutenção');
+  app(moduloCard('garagem','GARAGEM','Carros, motos e quadriciclos: manutenção',true,"abrirTransportes('garagem')")+
       moduloCard('marina','MARINA','Barcos e embarcações: manutenção',true,"abrirTransportes('marina')")); };
+/* SAÚDE ANIMAL: cão e cavalo no mesmo lugar — os dois têm vacina, tratamento
+   e histórico, e estavam em menus diferentes só por acidente de história. */
+VIEWS.saudeAnimal=function(){ setTitulo('Saúde animal'); setCrumb('Saúde animal');
+  app(moduloCard('canil','CANIL','Cães: matilha, saúde e vacinas',true,"nav('caes')")+
+      moduloCard('haras','HARAS','Cavalos: saúde, vacinas e casqueamento',true,"abrirTransportes('aras')")); };
+/* Mantido para não quebrar link antigo: espreita agora leva à Manutenção. */
+VIEWS.espreita=function(){ nav('manutencaoHub'); };
 window.abrirTransportes=function(cat){ STATE.transpCat=cat||'garagem'; nav('transportes'); };
 /* Cada tipo mora numa das três casas. O que não se encaixa cai na garagem. */
 var TIPOS_CAT={ aras:['Cavalo'],
@@ -8393,7 +8452,37 @@ function svgIconMapa(nome,size,cor){ size=size||28; cor=cor||'#2f7d3a';
 function emojiIcon(emoji,size,destaque){ size=size||28; return L.divIcon({html:'<div>'+emoji+'</div>', className:'emoji-mk'+(destaque?' emoji-me':''), iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
 function avatarUrl(o){ o=o||{}; if(o.fotoUrl) return imgSrc(o.fotoUrl); if(o.tipo==='empresa') return AV_STORE; return (String(o.sexo||'').toLowerCase().indexOf('f')===0)?AV_WOMAN:AV_MAN; }
 function avatarIcon(o,size,me){ size=size||46; return L.divIcon({html:'<div class="mk-av'+(me?' me':'')+'" style="background-image:url('+avatarUrl(o)+')"></div>', className:'mk-avwrap', iconSize:[size,size], iconAnchor:[size/2,size/2], popupAnchor:[0,-size/2]}); }
-var TIPOS_MARCA=[ ['Abate','🐗'], ['Referência','📍'], ['Aviso','⚠️'], ['Rastro','🐾'], ['Água','💧'], ['Comida/isca','🌽'], ['Perigo','☠️'], ['Foto/registro','📷'], ['Outro','📌'] ];
+/* A armadilha deixou de ser menu próprio: virou um tipo de marcação, criada
+   na rota e vista só no mapa, junto com os outros eventos do percurso. */
+var TIPOS_MARCA=[ ['Abate','🐗'], ['Armadilha','🪤'], ['Referência','📍'], ['Aviso','⚠️'], ['Rastro','🐾'], ['Água','💧'], ['Comida/isca','🌽'], ['Perigo','☠️'], ['Foto/registro','📷'], ['Outro','📌'] ];
+/* Os tipos que a armadilha tinha quando era entidade própria. */
+var TIPOS_ARM_MARCA=['Jaula','Curral (corral trap)','Laço','Gaiola','Tombador','Outro'];
+/* Só a armadilha mostra os campos extras — nos outros tipos eles não têm
+   sentido e só ocupariam a tela. */
+window.mudouTipoMarca=function(){
+  var box=document.getElementById('mk_armBox'); if(!box) return;
+  box.style.display = (val('mk_tipo')==='Armadilha') ? 'block' : 'none';
+};
+/* Silhueta de caçador ajoelhado, desenhada aqui em traço — o mesmo estilo dos
+   outros ícones do app. Marca a SUA posição no guiamento e na gravação de
+   rota; o pino do manejador na rede continua o de sempre. */
+function iconeCacador(px){
+  var t=px||34;
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="'+t+'" height="'+t+'">'+
+    '<circle cx="24" cy="24" r="22" fill="#fff" stroke="#c25f12" stroke-width="2.5"/>'+
+    '<g fill="none" stroke="#7a4a1e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+
+      '<path d="M17 13h6"/>'+                       /* aba do boné */
+      '<circle cx="21.5" cy="16" r="3.2"/>'+        /* cabeça */
+      '<path d="M20 20l-2 8"/>'+                    /* tronco */
+      '<path d="M21 22l10-3"/>'+                    /* braços à frente */
+      '<path d="M18 28l-4 7h6"/>'+                  /* perna ajoelhada */
+      '<path d="M19 28l5 4v4"/>'+                   /* perna dobrada */
+    '</g>'+
+    '<path d="M28 18l13-4" stroke="#c25f12" stroke-width="3" stroke-linecap="round"/>'+  /* cano */
+    '<path d="M28 19l-3 2" stroke="#7a4a1e" stroke-width="2.6" stroke-linecap="round"/>'+ /* coronha */
+  '</svg>';
+  return L.divIcon({ className:'ico-cacador', html:svg, iconSize:[t,t], iconAnchor:[t/2,t/2] });
+}
 function iconeMarca(t){ for(var i=0;i<TIPOS_MARCA.length;i++) if(TIPOS_MARCA[i][0]===t) return TIPOS_MARCA[i][1]; return '📌'; }
 var LASTPOS=null, MARKCTX=null, MARKPOS=null;
 
@@ -8577,7 +8666,9 @@ function iniciarWatchGravacao(){ if(GEOWATCH!=null) return;
     if(last){ var dd=distMetros(last,p); if(dd<3) { atualizarRecUI(p); return; } ROTA_REC.distancia+=dd; }
     ROTA_REC.pontos.push(p); atualizarEco();
     if(ROUTEMAP&&ROTA_REC._tracado){ desenharTracado(ROUTEMAP,ROTA_REC.pontos,ROTA_REC._limite||[],ROTA_REC._tracado); ROUTEMAP.setView([p.lat,p.lng],ROUTEMAP.getZoom()<14?16:ROUTEMAP.getZoom());
-      if(ROTA_REC._me) ROTA_REC._me.setLatLng([p.lat,p.lng]); else ROTA_REC._me=L.marker([p.lat,p.lng],{icon:emojiIcon(iconeTransp(ROTA_REC.tipoTransporte),30)}).addTo(ROUTEMAP); }
+      /* A sua posição é sempre o caçador; o meio de transporte já aparece na
+         ficha da rota e virava um pino diferente a cada gravação. */
+      if(ROTA_REC._me) ROTA_REC._me.setLatLng([p.lat,p.lng]); else ROTA_REC._me=L.marker([p.lat,p.lng],{icon:iconeCacador(34),zIndexOffset:1000}).addTo(ROUTEMAP); }
     atualizarRecUI(p);
     salvarRecLocal();
   }, function(err){
@@ -8606,7 +8697,7 @@ window.pararRota=function(btn){ if((ROTA_REC.pontos||[]).length<2){ toast('Rota 
       toast(trFrase('Rota salva, mas')+' '+rota.foraDoLimite+' '+trFrase('ponto(s) ficaram fora do limite da propriedade'));
     }
     if(!pend.length) return null;
-    return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
+    return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||'',subtipo:m.subtipo||'',status:m.status||''}); }); }, Promise.resolve());
   })
   .then(function(){
     /* Gravação da caçada livre: a rota entra no ciclo e o ciclo continua
@@ -8752,7 +8843,7 @@ VIEWS.guiaPonto=function(){ var g=GUIA_CTX;
   function porMim(cur){
     if(me){ me.setLatLng([cur.lat,cur.lng]); meHalo.setLatLng([cur.lat,cur.lng]); }
     else { meHalo=L.circleMarker([cur.lat,cur.lng],{radius:11,color:'#1f6feb',weight:2,fillColor:'#1f6feb',fillOpacity:.25}).addTo(map);
-      me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
+      me=L.marker([cur.lat,cur.lng],{icon:iconeCacador(34),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
   var primeiroFix=true;
   function enquadrar(cur){
     if(!primeiroFix) return; primeiroFix=false;
@@ -8813,7 +8904,7 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
   function porMim(cur){
     if(me){ me.setLatLng([cur.lat,cur.lng]); meHalo.setLatLng([cur.lat,cur.lng]); }
     else { meHalo=L.circleMarker([cur.lat,cur.lng],{radius:11,color:'#1f6feb',weight:2,fillColor:'#1f6feb',fillOpacity:.25}).addTo(map);
-      me=L.marker([cur.lat,cur.lng],{icon:emojiIcon('📍',32),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
+      me=L.marker([cur.lat,cur.lng],{icon:iconeCacador(34),zIndexOffset:1000}).addTo(map).bindPopup(trFrase('Você está aqui')); } }
   /* posição inicial imediata: sem isso o usuário só aparece no primeiro watch */
   navigator.geolocation.getCurrentPosition(function(pos){ if(ROUTEMAP!==map) return;
     porMim({lat:pos.coords.latitude,lng:pos.coords.longitude}); }, function(){}, {enableHighAccuracy:true,timeout:8000});
@@ -8834,11 +8925,16 @@ VIEWS.rotaGuia=function(){ var r=ROTA_GUIA; if(!r||!(r.pontos||[]).length){ STAT
 function marcaPopup(m){ return '<div class="pop"><h4>'+iconeMarca(m.tipo)+' '+esc(m.tipo)+'</h4><div class="meta">'+(m.descricao?esc(m.descricao):'')+(m.dataHora?'<br>'+fmtDataHora(m.dataHora):'')+'</div>'+(m.fotoUrl?'<img src="'+esc(imgSrc(m.fotoUrl))+'" style="width:100%;border-radius:8px;margin-top:6px" onclick="verFoto(\''+escJs(imgSrc(m.fotoUrl))+'\')">':'')+'</div>'; }
 window.abrirMark=function(ctx,pos){ var P=pos||LASTPOS; if(!P){ toast('Aguardando posição do GPS…'); return; } MARKCTX=ctx; MARKPOS={ lat:+(+P.lat).toFixed(6), lng:+(+P.lng).toFixed(6) };
   var sel=document.getElementById('mk_tipo'); sel.innerHTML=TIPOS_MARCA.map(function(t){return '<option value="'+t[0]+'">'+t[1]+' '+t[0]+'</option>';}).join('');
+  var sub=document.getElementById('mk_subtipo');
+  if(sub) sub.innerHTML=TIPOS_ARM_MARCA.map(function(t){return '<option>'+t+'</option>';}).join('');
+  mudouTipoMarca();
   document.getElementById('mk_desc').value=''; document.getElementById('mk_foto').value=''; var pv=document.getElementById('mk_prev'); pv.style.display='none'; pv.src='';
   bindFoto('mk_foto','mk_prev'); document.getElementById('markModal').classList.add('open'); };
 window.fecharMark=function(){ document.getElementById('markModal').classList.remove('open'); };
 window.salvarMarcacao=function(btn){ if(!MARKPOS){ toast('Sem posição'); return; }
   var tipo=val('mk_tipo'), desc=val('mk_desc'), foto=fotoData('mk_foto'); var pos={ lat:MARKPOS.lat, lng:MARKPOS.lng };
+  /* Armadilha leva os dois campos que só ela usa. */
+  var extra = (tipo==='Armadilha') ? { subtipo:val('mk_subtipo'), status:val('mk_status') } : {};
   if(MARKCTX==='rec'){
     if(!ROTA_REC.marcacoes) ROTA_REC.marcacoes=[];
     ROTA_REC.marcacoes.push({ tipo:tipo, descricao:desc, foto:foto, lat:pos.lat, lng:pos.lng });
@@ -8854,7 +8950,8 @@ window.salvarMarcacao=function(btn){ if(!MARKPOS){ toast('Sem posição'); retur
   }
   btn.disabled=true; btn.textContent='Salvando…';
   var rotaId=(MARKCTX==='guia'&&ROTA_GUIA)?ROTA_GUIA.id:'';
-  server('apiCriarMarcacao',{ rotaId:rotaId, tipo:tipo, descricao:desc, lat:pos.lat, lng:pos.lng, foto:foto })
+  server('apiCriarMarcacao',{ rotaId:rotaId, tipo:tipo, descricao:desc, lat:pos.lat, lng:pos.lng, foto:foto,
+    subtipo:extra.subtipo||'', status:extra.status||'' })
   .then(function(m){ if(ROUTEMAP&&ROTA_GUIA&&ROTA_GUIA._markLayer) L.marker([coord(m.lat),coord(m.lng)],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(ROTA_GUIA._markLayer).bindPopup(marcaPopup(m));
     toast('Ponto salvo ✔'); fecharMark(); btn.disabled=false; btn.textContent='Salvar ponto'; })
   .catch(function(){ btn.disabled=false; btn.textContent='Salvar ponto'; }); };
@@ -9002,7 +9099,7 @@ window.salvarDesenho=function(btn){ if(!DRAW||DRAW.pontos.length<2){ toast('Marq
   server('apiCriarRota',{ origem:'manual', nome:DRAW.nome, propriedadeId:DRAW.propriedadeId, tipoTransporte:DRAW.tipo, modalidade:DRAW.modalidade, pontos:DRAW.pontos, distancia:Math.round(DRAW.distancia||0) })
   .then(function(rota){
     if(!pend.length) return null;
-    return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||''}); }); }, Promise.resolve());
+    return pend.reduce(function(ch,m){ return ch.then(function(){ return server('apiCriarMarcacao',{rotaId:rota.id,tipo:m.tipo,lat:m.lat,lng:m.lng,descricao:m.descricao,foto:m.foto||'',subtipo:m.subtipo||'',status:m.status||''}); }); }, Promise.resolve());
   })
   .then(function(){ DRAW=null; toast('Rota salva ✔'); STATE.stack=['espreita','rotas']; render(); })
   .catch(function(e){ toast(msgErro(e)); btn.disabled=false; btn.textContent='💾 Salvar rota'; }); };
@@ -10224,7 +10321,7 @@ function carregarItensProp(p,poly,temPoly){
     box.innerHTML='<h3 style="margin:0 0 6px">'+trFrase('Dentro desta área')+'</h3>'+
       cevas.map(function(c){ return pdLinha('🌽',c.nome||'Ceva',c.tipo||'',"abrirCeva('"+escJs(c.id)+"')"); }).join('')+
       rotas.map(function(r){ return pdLinha('🧭',r.nome||'Rota',fmtDist(parseFloat(r.distancia)||0),"abrirRota('"+escJs(r.id)+"')"); }).join('')+
-      arms.map(function(a){ return pdLinha('🪤',a.tipo||'Armadilha',a.status||'',"nav('armadilha')"); }).join('');
+      arms.map(function(a){ return pdLinha('🪤',a.tipo||'Armadilha',a.status||'',"nav('mapaGeral')"); }).join('');
     traduzirDOM(box); iconizar(box);
   }).catch(function(e){
     var box=document.getElementById('pdItens'); if(!box) return;
