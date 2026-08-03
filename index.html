@@ -523,9 +523,29 @@
   body.map-mode .wrap{display:none}
   body.map-mode .fab{display:none!important}
   #mapshell #map{width:100%;height:100%}
-  .map-bar{position:absolute;top:8px;left:8px;right:56px;z-index:820;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+  /* `right` maior para não passar por baixo do seletor de camadas. */
+  .map-bar{position:absolute;top:8px;left:8px;right:8px;z-index:820;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none;
+    max-width:calc(100% - 16px)}
   .map-bar>*{pointer-events:auto}
   .map-bar .chip{background:rgba(255,255,255,.95);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .chip-filtro{font-weight:700}
+  .chip-filtro .chip-num{background:var(--laranja);color:#fff;border-radius:999px;
+    min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:10.5px;padding:0 5px;margin-left:2px}
+  /* Painel dos filtros: abre abaixo do botão, na largura da barra. */
+  .mf-painel{display:none;flex-basis:100%;order:9;background:rgba(255,251,244,.98);
+    border:1px solid var(--linha);border-radius:14px;padding:10px;gap:6px;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);max-height:52vh;overflow:auto}
+  .mf-painel.on{display:flex;flex-wrap:wrap}
+  .mf-tit{flex-basis:100%;font-size:10.5px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.4px;color:var(--txt2);margin:0 0 2px}
+  @media(max-width:640px){
+    /* No celular a busca vai para baixo do botão, e o painel ocupa a largura
+       toda — é onde os chips ficavam ilegíveis, espremidos em duas colunas. */
+    .map-bar{right:56px;gap:5px}
+    .busca-chip{flex-basis:100%;order:2}
+    .mf-painel .chip{flex:1 1 calc(50% - 6px);justify-content:flex-start}
+  }
   .map-panel{position:absolute;top:8px;left:8px;z-index:830;width:min(320px,88%);max-height:78%;overflow:auto;
              background:rgba(255,251,244,.97);border:1px solid var(--linha);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,.25);display:none}
   .map-panel.open{display:block}
@@ -1219,7 +1239,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.020826.1232';
+var APP_VER = 'vJS.030826.0907';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1722,6 +1742,8 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Filtros':'Filters',
+    'Mostrar no mapa':'Show on map',
     'Tipo de armadilha':'Trap type',
     'Saúde animal':'Animal health',
     'Cães: matilha, saúde e vacinas':'Dogs: pack, health and vaccines',
@@ -3205,6 +3227,8 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Filtros':'Filtros',
+    'Mostrar no mapa':'Mostrar en el mapa',
     'Tipo de armadilha':'Tipo de trampa',
     'Saúde animal':'Salud animal',
     'Cães: matilha, saúde e vacinas':'Perros: jauría, salud y vacunas',
@@ -10693,14 +10717,39 @@ function chipsFiltro(){
       '<i style="background:'+x[2]+'"></i>'+ico(x[3],16)+'<span>'+trFrase(x[1])+'</span></span>';
   }).join('');
 }
+/* Quantos filtros estão ligados — vira o contador no botão. */
+function filtrosLigados(){
+  var n=0; Object.keys(MAPFILTER||{}).forEach(function(k){ if(MAPFILTER[k]) n++; });
+  return n;
+}
+var MAPFILTROS_ABERTO=false;
+window.toggleFiltrosMapa=function(){ MAPFILTROS_ABERTO=!MAPFILTROS_ABERTO; buildMapBar(); };
 function buildMapBar(){ var b=document.getElementById('mapBar'); if(!b) return;
+  /* A barra é redesenhada a cada filtro tocado; sem guardar isto, o que a
+     pessoa digitou na busca sumiria a cada toque. */
+  var buscaAntes=(document.getElementById('mapBusca')||{}).value||'';
   var perfil='';
   if(STATE.tipo!=='empresa' && STATE.manejador){ var vis=(STATE.manejador.visivelNetwork==='Sim');
     perfil='<span class="chip'+(vis?' on':'')+'" onclick="go(\'perfilManejador\')" title="Configurar meu perfil na rede">'+
       ico(vis?'ver':'bloqueio',16)+'<span>'+trFrase(vis?'Visível na rede':'Oculto na rede')+'</span></span>'; }
-  /* O chip "Resumo" foi removido a pedido: a barra fica só com os filtros. */
-  b.innerHTML=chipsFiltro()+perfil+
-    '<span class="chip busca-chip"><input id="mapBusca" placeholder="🔎 Buscar amigo ou loja" oninput="buscarNoMapa(this.value)" autocomplete="off"><div id="mapBuscaRes"></div></span>'; }
+  /* Os filtros cobriam metade da tela no celular e batiam no seletor de
+     camadas. Viraram um botão que abre a lista; a busca fica sempre à mão,
+     porque é o que se usa com o mapa já filtrado. */
+  var n=filtrosLigados();
+  var botao='<span class="chip chip-filtro'+(MAPFILTROS_ABERTO?' on':'')+'" onclick="toggleFiltrosMapa()">'+
+    ico('buscar',16)+'<span>'+trFrase('Filtros')+'</span>'+
+    (n?'<b class="chip-num">'+n+'</b>':'')+'</span>';
+  b.innerHTML=botao+
+    '<span class="chip busca-chip"><input id="mapBusca" placeholder="🔎 Buscar amigo ou loja" oninput="buscarNoMapa(this.value)" autocomplete="off"><div id="mapBuscaRes"></div></span>'+
+    '<div class="mf-painel'+(MAPFILTROS_ABERTO?' on':'')+'">'+
+      '<div class="mf-tit">'+trFrase('Mostrar no mapa')+'</div>'+
+      chipsFiltro()+perfil+
+    '</div>';
+  if(buscaAntes){
+    var inp=document.getElementById('mapBusca');
+    if(inp){ inp.value=buscaAntes; buscarNoMapa(buscaAntes); }
+  }
+}
 window.toggleFiltro=function(k){ MAPFILTER[k]=!MAPFILTER[k]; buildMapBar(); desenharMapa(); };
 window.buscarNoMapa=function(q){ var box=document.getElementById('mapBuscaRes'); if(!box) return;
   q=String(q||'').trim().toLowerCase();
