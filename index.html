@@ -1239,7 +1239,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.030826.0907';
+var APP_VER = 'vJS.040826.1001';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -10874,13 +10874,28 @@ function agruparCeva(abs,d,dim){
   abs.forEach(function(a){ var k, qt=parseInt(a.quantidade,10)||1;
     if(dim==='Atrativo') k=d.alimentoTipo[a.alimentoId]||'—';
     else if(dim==='Sexo') k=a.sexo||'—';
+    else if(dim==='Clima') k=a.condicaoTempo||'—';
+    else if(dim==='Lua') k=a.luaFase||'—';
     else if(dim==='Período'){ var h=horaDe(a.dataHora); k=h==null?'—':periodoDe(h); }
     else { var h2=horaDe(a.dataHora); k=h2==null?'—':(h2+'h'); }
     m[k]=(m[k]||0)+qt;
   });
   var keys=Object.keys(m);
   if(dim==='Horário') keys.sort(function(a,b){return (parseInt(a,10)||0)-(parseInt(b,10)||0);});
-  else if(dim==='Período') keys.sort(function(a,b){var o={'Madrugada':0,'Manhã':1,'Tarde':2,'Noite':3,'—':4};return (o[a]||9)-(o[b]||9);});
+  /* `o[a]||9` mandava Madrugada para o fim: o índice dela é 0, e 0 é falso em
+     JavaScript. O gráfico por período começava pela Manhã e terminava na
+     Madrugada — errado desde sempre, e discreto o bastante para passar. */
+  else if(dim==='Período') keys.sort(function(a,b){var o={'Madrugada':0,'Manhã':1,'Tarde':2,'Noite':3,'—':4};
+    return (o[a]==null?9:o[a])-(o[b]==null?9:o[b]);});
+  /* Lua na ordem do ciclo, não em ordem alfabética — o gráfico só faz sentido
+     se as fases aparecerem na sequência em que acontecem. */
+  else if(dim==='Lua'){ var oL={'Lua nova':0,'Crescente inicial':1,'Quarto crescente':2,'Crescente final':3,
+    'Lua cheia':4,'Minguante inicial':5,'Quarto minguante':6,'Minguante final':7,'—':8};
+    keys.sort(function(a,b){ return (oL[a]==null?9:oL[a])-(oL[b]==null?9:oL[b]); }); }
+  /* Clima do mais aberto ao mais fechado, que é como a pessoa pensa. */
+  else if(dim==='Clima'){ var oC={'Aberto':0,'Parcialmente nublado':1,'Nublado':2,'Neblina':3,
+    'Garoa':4,'Chuva':5,'Tempestade':6,'—':7};
+    keys.sort(function(a,b){ return (oC[a]==null?9:oC[a])-(oC[b]==null?9:oC[b]); }); }
   return keys.map(function(k){ return {label:k, value:m[k]}; });
 }
 window.verFoto=function(url){ if(!url)return; document.getElementById('lightboxImg').src=url; document.getElementById('lightbox').classList.add('open'); };
@@ -10897,7 +10912,9 @@ function timelineCevaHtml(abs,d){
 }
 function resumoCevaHtml(abs,d){
   var animais=abs.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||1);},0);
-  var dims=['Atrativo','Sexo','Período','Horário'];
+  /* Clima e Lua entram junto: o abate já guarda os dois, e é o cruzamento
+     deles com a ceva que mostra em que condição o javali aparece ali. */
+  var dims=['Atrativo','Sexo','Período','Horário','Clima','Lua'];
   var btns=dims.map(function(x){ return '<button class="chip'+(CEVATL.dim===x?' on':'')+'" onclick="cevaDim(\''+x+'\')">'+x+'</button>'; }).join(' ');
   var pairs=agruparCeva(abs,d,CEVATL.dim);
   var ult=abs.slice().sort(function(a,b){return String(b.dataHora).localeCompare(String(a.dataHora));})[0];
