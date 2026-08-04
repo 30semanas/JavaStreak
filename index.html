@@ -1239,7 +1239,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
-var APP_VER = 'vJS.040826.1001';
+var APP_VER = 'vJS.040826.1032';
 var STATE = { appNome:'JavaStreak', perfilAtivo:'manejador', manejador:null, ceva:null, canil:null, cao:null, cevaTab:'alimento', stack:[] };
 try{ STATE.perfilAtivo = localStorage.getItem('perfilAtivo') || 'manejador'; }catch(e){}
 
@@ -1742,6 +1742,19 @@ var FRASES = {
     'Abrir agenda':'Open calendar',
     'Fechar':'Close',
     'Ver planos':'See plans',
+    'Não foi possível carregar os abates desta rota':'Could not load the kills of this route',
+    'Nenhum abate registrado nesta rota ainda.':'No kill recorded on this route yet.',
+    'evento marcado no percurso':'event marked on the path',
+    'eventos marcados no percurso':'events marked on the path',
+    'abate registrado':'kill recorded',
+    'abates registrados':'kills recorded',
+    'Ver linha do tempo':'View timeline',
+    'Linha do tempo e estatística':'Timeline and statistics',
+    'Temperatura':'Temperature',
+    'Umidade':'Humidity',
+    'Vento':'Wind',
+    'Pressão':'Pressure',
+    'Sem chuva':'No rain',
     'Filtros':'Filters',
     'Mostrar no mapa':'Show on map',
     'Tipo de armadilha':'Trap type',
@@ -2920,7 +2933,6 @@ var FRASES = {
     'Abate':'Take',
     '🌽 Espera':'🌽 Feeder',
     '🌽 Alimento':'🌽 Feed',
-    '🌽 Atrativo:':'🌽 Attractant:',
     'Visitas':'Visits',
     'oculto':'hidden',
     'Bem-vindo,':'Welcome,',
@@ -3227,6 +3239,19 @@ var FRASES = {
     'Abrir agenda':'Abrir agenda',
     'Fechar':'Cerrar',
     'Ver planos':'Ver planes',
+    'Não foi possível carregar os abates desta rota':'No se pudieron cargar las capturas de esta ruta',
+    'Nenhum abate registrado nesta rota ainda.':'Ninguna captura registrada en esta ruta todavía.',
+    'evento marcado no percurso':'evento marcado en el recorrido',
+    'eventos marcados no percurso':'eventos marcados en el recorrido',
+    'abate registrado':'captura registrada',
+    'abates registrados':'capturas registradas',
+    'Ver linha do tempo':'Ver línea de tiempo',
+    'Linha do tempo e estatística':'Línea de tiempo y estadística',
+    'Temperatura':'Temperatura',
+    'Umidade':'Humedad',
+    'Vento':'Viento',
+    'Pressão':'Presión',
+    'Sem chuva':'Sin lluvia',
     'Filtros':'Filtros',
     'Mostrar no mapa':'Mostrar en el mapa',
     'Tipo de armadilha':'Tipo de trampa',
@@ -4405,7 +4430,6 @@ var FRASES = {
     'Abate':'Abate',
     '🌽 Espera':'🌽 Comedero',
     '🌽 Alimento':'🌽 Alimento',
-    '🌽 Atrativo:':'🌽 Atrayente:',
     'Visitas':'Visitas',
     'oculto':'oculto',
     'Bem-vindo,':'Bienvenido,',
@@ -9067,6 +9091,9 @@ VIEWS.rotaDetalhe=function(){ var r=STATE.rota; if(!r){ STATE.stack=['espreita',
      igual ao detalhe da propriedade. Quem está no campo com a rota aberta
      precisa do documento à mão, não a dois menus de distância. */
   desenharPropDaRota(r,map,pts);
+  /* Mesmo painel do mapa, alcançável de dentro da rota. */
+  fab('<button class="btn" onclick="abrirRotaTimeline(\''+escJs(r.id)+'\')">📈 '+
+      trFrase('Linha do tempo e estatística')+'</button>');
   setTimeout(function(){ map.invalidateSize(); if(pts.length){ try{ map.fitBounds(pts,{padding:[40,40],maxZoom:16}); }catch(e){} } },150);
   server('apiListarMarcacoes',r.id).then(function(ms){ CACHE.marcacao=ms;
     (ms||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(ptOk(la,ln)) L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(mk).bindPopup(marcaPopup(m)); });
@@ -10826,9 +10853,20 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
     add(L.marker([la,ln],{icon:svgIconMapa('armadilha',30,'#b23b3b')}).bindPopup(pop),la,ln); });
   if(MAPFILTER.busca){
     (d.rotas||[]).forEach(function(r){ var line=(r.pontos||[]).map(function(p){return [coord(p.lat),coord(p.lng)];}).filter(function(xy){return ptOk(xy[0],xy[1]);});
-      if(line.length>1){ L.polyline(line,{color:'#3b6ea5',weight:4,opacity:.85}).addTo(MAPLAYER); line.forEach(function(xy){pts.push(xy);});
-        L.marker(line[0],{icon:svgIconMapa('rotas',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(trFrase('Início')+' — '+esc(r.nome||'Rota'));
-        L.marker(line[line.length-1],{icon:svgIconMapa('confirmar',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(trFrase('Chegada')+' — '+esc(r.nome||'Rota')); }
+      if(line.length>1){
+        /* A rota agora abre painel como a ceva: clique no traçado ou no popup
+           mostra a linha do tempo e o resumo dos abates dela. */
+        var nAb=(d.abates||[]).filter(function(a){ return String(a.rotaId||'')===String(r.id); }).length;
+        var popR='<div class="pop"><h4>🧭 '+esc(r.nome||'Rota')+'</h4><div class="meta">'+
+          esc(r.tipoTransporte||'—')+' · '+fmtDist(parseFloat(r.distancia)||0)+'<br><b>'+nAb+'</b> '+
+          trFrase(nAb===1?'abate registrado':'abates registrados')+'</div>'+
+          '<button class="btn sm" style="margin-top:8px" onclick="abrirRotaTimeline(\''+escJs(r.id)+'\')">'+
+          trFrase('Ver linha do tempo')+'</button></div>';
+        var lin=L.polyline(line,{color:'#3b6ea5',weight:4,opacity:.85}).addTo(MAPLAYER).bindPopup(popR);
+        lin.on('dblclick',function(){ abrirRotaTimeline(r.id); });
+        line.forEach(function(xy){pts.push(xy);});
+        L.marker(line[0],{icon:svgIconMapa('rotas',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(popR);
+        L.marker(line[line.length-1],{icon:svgIconMapa('confirmar',30,'#3b6ea5')}).addTo(MAPLAYER).bindPopup(popR); }
     });
     (d.marcacoes||[]).forEach(function(m){ var la=coord(m.lat),ln=coord(m.lng); if(!ptOk(la,ln))return;
       L.marker([la,ln],{icon:emojiIcon(iconeMarca(m.tipo))}).addTo(MAPLAYER).bindPopup(marcaPopup(m)); pts.push([la,ln]); });
@@ -10848,20 +10886,26 @@ function desenharMapa(){ if(!CURRENTMAP||!MAPDATA) return; var d=MAPDATA; MAPLAY
 }
 
 /* ===== Painel: Linha do tempo / Resumo da ceva ===== */
-var CEVATL={ cevaId:null, tab:'tl', dim:'Atrativo', dados:null, carregando:false };
-window.abrirCevaTimeline=function(cevaId){ if(CURRENTMAP) CURRENTMAP.closePopup();
-  CEVATL.cevaId=cevaId; CEVATL.tab='tl'; CEVATL.dim='Atrativo';
-  CEVATL.dados=null; CEVATL.carregando=true;
+/* O painel serve para ceva E rota: mesma linha do tempo, mesmo resumo. A rota
+   não tinha nenhum — os abates registrados nela só apareciam na lista do
+   ciclo, e no mapa ficavam invisíveis. */
+var CEVATL={ tipo:'ceva', id:null, tab:'tl', dim:'Sexo', dados:null, carregando:false, erro:'' };
+function abrirPainelAbates(tipo, id){
+  if(CURRENTMAP) CURRENTMAP.closePopup();
+  CEVATL.tipo=tipo; CEVATL.id=id; CEVATL.tab='tl'; CEVATL.dim='Sexo';
+  CEVATL.dados=null; CEVATL.carregando=true; CEVATL.erro='';
   renderCevaPanel(); document.getElementById('cevaPanel').classList.add('open');
   /* Busca na hora, em vez de reaproveitar a foto do mapa. */
-  server('apiAbatesDaCeva',cevaId).then(function(r){
-    if(CEVATL.cevaId!==cevaId) return;            /* já abriu outra ceva */
+  server(tipo==='rota'?'apiAbatesDaRota':'apiAbatesDaCeva', id).then(function(r){
+    if(CEVATL.id!==id) return;                    /* já abriu outro item */
     CEVATL.dados=r; CEVATL.carregando=false; renderCevaPanel();
   }).catch(function(e){
-    if(CEVATL.cevaId!==cevaId) return;
+    if(CEVATL.id!==id) return;
     CEVATL.dados=null; CEVATL.carregando=false; CEVATL.erro=(e&&e.message)||'Erro'; renderCevaPanel();
   });
-};
+}
+window.abrirCevaTimeline=function(cevaId){ abrirPainelAbates('ceva', cevaId); };
+window.abrirRotaTimeline=function(rotaId){ abrirPainelAbates('rota', rotaId); };
 window.fecharCevaPanel=function(){ document.getElementById('cevaPanel').classList.remove('open'); };
 window.cevaTab=function(t){ CEVATL.tab=t; renderCevaPanel(); };
 window.cevaDim=function(d){ CEVATL.dim=d; renderCevaPanel(); };
@@ -10869,13 +10913,35 @@ function periodoDe(h){ if(h<6)return'Madrugada'; if(h<12)return'Manhã'; if(h<18
 function horaDe(iso){ var s=String(iso||''); var i=s.indexOf('T'); return i>0? parseInt(s.substring(i+1,i+3),10) : null; }
 /* Agrupa por ANIMAIS, não por registro: um abate com quantidade 3 pesa 3.
    Era 1 por vez que se apertava Salvar. */
+/* Números viram faixa. `passo` define a largura: 5 em 5 graus, 20 em 20 por
+   cento. O rótulo já sai pronto para o eixo do gráfico. */
+function faixa_(v, passo, sufixo){
+  var n=parseFloat(String(v==null?'':v).replace(',','.'));
+  if(!isFinite(n)) return '—';
+  var ini=Math.floor(n/passo)*passo;
+  return ini+'–'+(ini+passo)+sufixo;
+}
+/* Chuva é diferente: o que interessa é se choveu, não quantos milímetros a
+   mais. Zero é a maioria dos registros e merece faixa própria. */
+function faixaChuva_(v){
+  var n=parseFloat(String(v==null?'':v).replace(',','.'));
+  if(!isFinite(n)) return '—';
+  if(n<=0)   return 'Sem chuva';
+  if(n<2)    return 'Fraca (até 2 mm)';
+  if(n<10)   return 'Moderada (2–10 mm)';
+  return 'Forte (10 mm+)';
+}
 function agruparCeva(abs,d,dim){
   var m={};
   abs.forEach(function(a){ var k, qt=parseInt(a.quantidade,10)||1;
-    if(dim==='Atrativo') k=d.alimentoTipo[a.alimentoId]||'—';
-    else if(dim==='Sexo') k=a.sexo||'—';
+    if(dim==='Sexo') k=a.sexo||'—';
     else if(dim==='Clima') k=a.condicaoTempo||'—';
     else if(dim==='Lua') k=a.luaFase||'—';
+    else if(dim==='Temperatura') k=faixa_(a.temp, 5, '°C');
+    else if(dim==='Umidade')     k=faixa_(a.umidade, 20, '%');
+    else if(dim==='Vento')       k=faixa_(a.vento, 10, ' km/h');
+    else if(dim==='Pressão')     k=faixa_(a.pressao, 5, ' hPa');
+    else if(dim==='Chuva')       k=faixaChuva_(a.chuvaMm);
     else if(dim==='Período'){ var h=horaDe(a.dataHora); k=h==null?'—':periodoDe(h); }
     else { var h2=horaDe(a.dataHora); k=h2==null?'—':(h2+'h'); }
     m[k]=(m[k]||0)+qt;
@@ -10896,25 +10962,39 @@ function agruparCeva(abs,d,dim){
   else if(dim==='Clima'){ var oC={'Aberto':0,'Parcialmente nublado':1,'Nublado':2,'Neblina':3,
     'Garoa':4,'Chuva':5,'Tempestade':6,'—':7};
     keys.sort(function(a,b){ return (oC[a]==null?9:oC[a])-(oC[b]==null?9:oC[b]); }); }
+  /* Faixa numérica ordena pelo início do intervalo, não pelo texto: senão
+     '10–15' viria antes de '5–10'. O travessão vai sempre para o fim. */
+  else if(dim==='Temperatura'||dim==='Umidade'||dim==='Vento'||dim==='Pressão'){
+    keys.sort(function(a,b){
+      if(a==='—') return 1; if(b==='—') return -1;
+      return (parseFloat(a)||0)-(parseFloat(b)||0); }); }
+  else if(dim==='Chuva'){ var oCh={'Sem chuva':0,'Fraca (até 2 mm)':1,'Moderada (2–10 mm)':2,'Forte (10 mm+)':3,'—':4};
+    keys.sort(function(a,b){ return (oCh[a]==null?9:oCh[a])-(oCh[b]==null?9:oCh[b]); }); }
   return keys.map(function(k){ return {label:k, value:m[k]}; });
 }
 window.verFoto=function(url){ if(!url)return; document.getElementById('lightboxImg').src=url; document.getElementById('lightbox').classList.add('open'); };
 window.fecharFoto=function(){ document.getElementById('lightbox').classList.remove('open'); };
 function timelineCevaHtml(abs,d){
   return '<div class="tl">'+abs.map(function(a){
-    var atr=d.alimentoTipo[a.alimentoId]||'—';
     var foto = a.fotoUrl ? '<button class="btn sm sec" style="margin-top:8px;width:auto" onclick="verFoto(\''+escJs(imgSrc(a.fotoUrl))+'\')">📷 Ver foto do abate</button>' : '';
     return '<div class="tl-item"><div class="tl-dot"></div><div class="tl-card"><div class="row">'+
       (a.fotoUrl?'<img class="thumb" style="width:52px;height:52px;cursor:zoom-in" onclick="verFoto(\''+escJs(imgSrc(a.fotoUrl))+'\')" src="'+esc(imgSrc(a.fotoUrl))+'">':'')+
       '<div class="grow"><div class="dt">'+fmtDataHora(a.dataHora)+'</div><div class="meta">'+
-      esc(a.quantidade||'1')+' animal(is)'+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+'<br>🌽 Atrativo: <b>'+esc(atr)+'</b>'+(a.obs?'<br>'+esc(a.obs):'')+'</div></div></div>'+foto+'</div></div>';
+      esc(a.quantidade||'1')+' animal(is)'+(a.sexo?' · '+esc(a.sexo):'')+(a.pesoAprox?' · ~'+esc(a.pesoAprox)+'kg':'')+
+      (a.condicaoTempo||a.luaFase?'<br>'+esc([a.condicaoTempo,a.luaFase].filter(Boolean).join(' · ')):'')+
+      (a.obs?'<br>'+esc(a.obs):'')+'</div></div></div>'+foto+'</div></div>';
   }).join('')+'</div>';
 }
 function resumoCevaHtml(abs,d){
   var animais=abs.reduce(function(s,a){return s+(parseInt(a.quantidade,10)||1);},0);
   /* Clima e Lua entram junto: o abate já guarda os dois, e é o cruzamento
      deles com a ceva que mostra em que condição o javali aparece ali. */
-  var dims=['Atrativo','Sexo','Período','Horário','Clima','Lua'];
+  /* O abate guarda o clima inteiro — condição, temperatura, umidade, vento,
+     pressão e chuva. Condição e lua já são categorias e viram gráfico direto;
+     os NÚMEROS precisam virar faixa, senão cada abate seria uma coluna de
+     valor 1 e o gráfico não diria nada. */
+  var dims=['Sexo','Período','Horário','Clima','Lua',
+            'Temperatura','Umidade','Vento','Pressão','Chuva'];
   var btns=dims.map(function(x){ return '<button class="chip'+(CEVATL.dim===x?' on':'')+'" onclick="cevaDim(\''+x+'\')">'+x+'</button>'; }).join(' ');
   var pairs=agruparCeva(abs,d,CEVATL.dim);
   var ult=abs.slice().sort(function(a,b){return String(b.dataHora).localeCompare(String(a.dataHora));})[0];
@@ -10924,21 +11004,29 @@ function resumoCevaHtml(abs,d){
     barChart(pairs,{w:330,h:130,color:TIPO_COR.Espera});
 }
 function renderCevaPanel(){
-  var r=CEVATL.dados;
+  var r=CEVATL.dados, ehRota=(CEVATL.tipo==='rota');
   /* Nome vem do mapa enquanto a busca não volta, só para o painel não abrir
      sem título. Os abates NUNCA vêm de lá: é isso que fazia a linha do tempo
      divergir da lista do ciclo. */
-  var doMapa=(MAPDATA&&MAPDATA.cevas||[]).filter(function(c){return c.id===CEVATL.cevaId;})[0];
-  var ceva=(r&&r.ceva)||doMapa; if(!ceva) return;
-  var d={ alimentoTipo:(r&&r.alimentoTipo)||{} };
+  var lista=(MAPDATA&&(ehRota?MAPDATA.rotas:MAPDATA.cevas))||[];
+  var doMapa=lista.filter(function(c){return c.id===CEVATL.id;})[0];
+  var item=(r&&(ehRota?r.rota:r.ceva))||doMapa; if(!item) return;
+  var d={};
   var abs=(r&&r.abates)||[];
-  var head='<div class="row"><h3 class="grow" style="margin:0">🌽 '+esc(ceva.nome||'Ceva')+'</h3><button class="ib" onclick="fecharCevaPanel()">✕</button></div>'+
+  var sub = ehRota && item.distancia ? ' <span class="meta">'+fmtDist(parseFloat(item.distancia)||0)+'</span>' : '';
+  var head='<div class="row"><h3 class="grow" style="margin:0">'+(ehRota?'🧭 ':'🌽 ')+
+    esc(item.nome||(ehRota?'Rota':'Ceva'))+sub+'</h3><button class="ib" onclick="fecharCevaPanel()">✕</button></div>'+
     '<div class="tabs" style="margin:10px 0"><div class="tab'+(CEVATL.tab==='tl'?' on':'')+'" onclick="cevaTab(\'tl\')">📈 Linha do tempo</div><div class="tab'+(CEVATL.tab==='res'?' on':'')+'" onclick="cevaTab(\'res\')">📊 Resumo</div></div>';
   var body;
   if(CEVATL.carregando) body='<div class="loading"><div class="spin"></div></div>';
-  else if(!r && CEVATL.erro) body='<div class="empty">'+trFrase('Não foi possível carregar os abates desta ceva')+
+  else if(!r && CEVATL.erro) body='<div class="empty">'+
+    trFrase(ehRota?'Não foi possível carregar os abates desta rota':'Não foi possível carregar os abates desta ceva')+
     '<br><span class="no-i18n">'+esc(CEVATL.erro)+'</span></div>';
-  else if(!abs.length) body='<div class="empty">'+trFrase('Nenhum abate registrado nesta ceva ainda.')+'</div>';
+  else if(!abs.length) body='<div class="empty">'+
+    trFrase(ehRota?'Nenhum abate registrado nesta rota ainda.':'Nenhum abate registrado nesta ceva ainda.')+
+    (ehRota&&r&&(r.marcacoes||[]).length?'<div class="meta" style="margin-top:8px">'+
+       (r.marcacoes.length)+' '+trFrase(r.marcacoes.length===1?'evento marcado no percurso':'eventos marcados no percurso')+'</div>':'')+
+    '</div>';
   else body=(CEVATL.tab==='tl' ? timelineCevaHtml(abs,d) : resumoCevaHtml(abs,d));
   document.getElementById('cevaPanel').innerHTML=head+body;
 }
